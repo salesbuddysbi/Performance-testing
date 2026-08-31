@@ -395,7 +395,6 @@
     </div>
 
     <script>
-        // STATIC EXACT MAPPINGS (Reverted to the robust state)
         const COL_POLICY = "Policy No";
         const COL_INSURED = "Insured Name";
         const COL_AGENT = "Intermediary Name";
@@ -553,6 +552,8 @@
                 }
             }
 
+            // Always reset on entry to force manual selection
+            document.getElementById('year-select').value = "";
             populateYears();
             resetDashboard();
             showView('view-dashboard');
@@ -575,21 +576,19 @@
 
             yearSelect.innerHTML = '<option value="">Select Financial Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
             
-            document.getElementById('name-select').innerHTML = '<option value="">Select Target Name</option>';
+            document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
             document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
-
-            // Auto-select latest year to improve UX
-            if (years.length > 0) {
-                yearSelect.value = years[0];
-                onYearChange(); // trigger downstream selects
-            }
         }
 
         function onYearChange() {
             const val = document.getElementById('year-select').value;
             state.selectedYear = val ? parseInt(val) : null;
+            state.selectedName = null;
+            state.selectedMonth = null;
             
             if (!state.selectedYear) {
+                document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
+                document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
                 resetDashboard();
                 return;
             }
@@ -597,12 +596,7 @@
             if (state.main === 'ranking') {
                 const monthSelect = document.getElementById('month-select');
                 monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-                if (monthSelect.options.length > 1) {
-                    monthSelect.value = "0"; // Auto-select April
-                    onMonthChange();
-                } else {
-                    resetDashboard();
-                }
+                resetDashboard();
             } else {
                 if (state.sub === 'cluster') {
                     renderDashboard();
@@ -618,20 +612,9 @@
                     });
 
                     const names = [...new Set(filtered.map(row => toTitleCase(row[colKey])).filter(n => n))].sort();
-                    const currentVal = nameSelect.value;
                     nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
                     
-                    // Auto-select logic
-                    const titleCasedCurrent = toTitleCase(currentVal);
-                    if (names.includes(titleCasedCurrent)) {
-                        nameSelect.value = titleCasedCurrent;
-                        renderDashboard();
-                    } else if (names.length > 0) {
-                        nameSelect.value = names[0];
-                        renderDashboard();
-                    } else {
-                        resetDashboard();
-                    }
+                    resetDashboard();
                 }
             }
         }
