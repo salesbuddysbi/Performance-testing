@@ -59,7 +59,7 @@
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div>
                     <h2 class="text-lg font-bold text-slate-800" id="modal-title">Month Details</h2>
-                    <p class="text-xs font-semibold text-slate-500">Transaction Breakdown</p>
+                    <p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Transaction Breakdown</p>
                 </div>
                 <button onclick="closeModal()" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -74,7 +74,7 @@
                             <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                             <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
                             <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">GWP</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium / Status</th>
                         </tr>
                     </thead>
                     <tbody id="modal-table-body" class="divide-y divide-slate-100"></tbody>
@@ -530,7 +530,6 @@
             document.getElementById('dashboard-title').innerText = isRanking ? 'Agent Ranking' : (state.main === 'fresh' ? 'Fresh Business' : 'Renewal Performance');
             document.getElementById('dashboard-subtitle').innerText = isRanking ? (subModule === 'gwp_rank' ? 'GWP Ranking' : 'NOP Ranking') : subModule.toUpperCase();
 
-            // Toggle Parameter dropdowns
             const nameContainer = document.getElementById('name-container');
             const monthContainer = document.getElementById('month-container');
             const nameLabel = document.getElementById('name-select-label');
@@ -552,7 +551,7 @@
                 }
             }
 
-            // Always reset on entry to force manual selection
+            // Always reset to force explicit manual selections
             document.getElementById('year-select').value = "";
             populateYears();
             resetDashboard();
@@ -613,7 +612,6 @@
 
                     const names = [...new Set(filtered.map(row => toTitleCase(row[colKey])).filter(n => n))].sort();
                     nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
-                    
                     resetDashboard();
                 }
             }
@@ -662,48 +660,136 @@
             document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1}`;
             const tbody = document.getElementById('modal-table-body');
             
-            const policies = rawData.filter(row => {
-                const date = parseExcelDate(row[COL_DATE]);
-                if(!date) return false;
+            if (state.main === 'fresh') {
+                document.getElementById('modal-subtitle').innerText = "Fresh & Rollover Policies";
                 
-                const month = date.getMonth();
-                const year = date.getFullYear();
-                const rowFY = month >= 3 ? year : year - 1;
-                const rowFyMonthIndex = month >= 3 ? month - 3 : month + 9;
+                const policies = rawData.filter(row => {
+                    const date = parseExcelDate(row[COL_DATE]);
+                    if(!date) return false;
+                    
+                    const month = date.getMonth();
+                    const year = date.getFullYear();
+                    const rowFY = month >= 3 ? year : year - 1;
+                    const rowFyMonthIndex = month >= 3 ? month - 3 : month + 9;
 
-                if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return false;
-                
-                if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
-                if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
+                    if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return false;
+                    
+                    if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
+                    if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
 
-                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
-                const isRenewalTx = tType.includes('our renewal');
-                
-                return state.main === 'fresh' ? (isFreshBaseTx || tType.includes('cancel')) : isRenewalTx;
-            });
+                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                    if (tType.includes('endorsement')) return false;
 
-            if (policies.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No records found for this period.</td></tr>`;
+                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                    return isFreshBaseTx || tType.includes('cancel');
+                });
+
+                if (policies.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No records found for this period.</td></tr>`;
+                } else {
+                    tbody.innerHTML = policies.map(p => {
+                        const d = parseExcelDate(p[COL_DATE]);
+                        const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
+                        const prem = parseNumber(p[COL_PREM]);
+                        const siStr = formatSumInsured(p[COL_SUM_INSURED]);
+                        const type = (p[COL_TRANSACTION] || '').toLowerCase();
+                        const isCancel = type.includes('cancel');
+
+                        return `
+                        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                            <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
+                            <td class="p-3 text-right whitespace-nowrap">
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[11px] font-bold ${isCancel ? 'text-rose-500' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
+                                    ${isCancel ? `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold">Cancelled</span>` : ''}
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
             } else {
-                tbody.innerHTML = policies.map(p => {
-                    const d = parseExcelDate(p[COL_DATE]);
-                    const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
-                    const prem = parseNumber(p[COL_PREM]);
-                    const siStr = formatSumInsured(p[COL_SUM_INSURED]);
-                    const type = (p[COL_TRANSACTION] || '').toLowerCase();
-                    const isCancel = type.includes('cancel');
+                // RENEWAL DRILL DOWN WITH EXACT MATCHING
+                document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
 
-                    return `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
-                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
-                        <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
-                        <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
-                        <td class="p-3 text-[11px] font-bold ${isCancel ? 'text-rose-500' : 'text-slate-800'} text-right whitespace-nowrap">${isCancel ? '-' : ''}₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
-                    </tr>`;
-                }).join('');
+                let baseDue = [];
+                let currentYearRenewals = [];
+                
+                rawData.forEach(row => {
+                    const date = parseExcelDate(row[COL_DATE]);
+                    if(!date) return;
+
+                    const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+                    const rowFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
+                    
+                    const agent = toTitleCase(row[COL_AGENT] || '');
+                    const manager = toTitleCase(row[COL_MANAGER] || '');
+                    
+                    if (state.sub === 'agent' && agent !== state.selectedName) return;
+                    if (state.sub === 'manager' && manager !== state.selectedName) return;
+
+                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                    if (tType.includes('endorsement') || tType.includes('cancel')) return;
+
+                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
+                    const isRen = tType.includes('our renewal');
+
+                    if (rowFY === state.selectedYear - 1 && isBase && rowFyMonthIndex === monthIndex) {
+                        baseDue.push(row);
+                    }
+                    if (rowFY === state.selectedYear && isRen) {
+                        currentYearRenewals.push(row);
+                    }
+                });
+
+                let renPool = currentYearRenewals.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                
+                let mappedPolicies = baseDue.map(p => {
+                    const sig = (toTitleCase(p[COL_INSURED]) + "|" + toTitleCase(p[COL_PRODUCT])).toLowerCase();
+                    let matchIdx = renPool.findIndex(r => !r.used && r.sig === sig);
+                    let isRenewed = false;
+                    if (matchIdx !== -1) {
+                        renPool[matchIdx].used = true;
+                        isRenewed = true;
+                    }
+                    return { ...p, _isRenewed: isRenewed };
+                });
+
+                // Sort: Show unrenewed first
+                mappedPolicies.sort((a, b) => a._isRenewed === b._isRenewed ? 0 : a._isRenewed ? 1 : -1);
+
+                if (mappedPolicies.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No policies due for renewal this month.</td></tr>`;
+                } else {
+                    tbody.innerHTML = mappedPolicies.map(p => {
+                        const d = parseExcelDate(p[COL_DATE]);
+                        const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
+                        const prem = parseNumber(p[COL_PREM]);
+                        const siStr = formatSumInsured(p[COL_SUM_INSURED]);
+                        
+                        const statusBadge = p._isRenewed 
+                            ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` 
+                            : `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Not Renewed</span>`;
+
+                        return `
+                        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                            <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
+                            <td class="p-3 text-right whitespace-nowrap">
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[11px] font-bold text-slate-800">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
+                                    ${statusBadge}
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
             }
             document.getElementById('drilldown-modal').classList.remove('hidden');
         }
@@ -810,10 +896,11 @@
             }));
 
             let totalFreshAmt = 0, totalFreshNOP = 0, prevFreshAmt = 0, prevFreshNOP = 0;
-            let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0, prevBaseNOP = 0, prevRenewed = 0;
             let productBreakdown = {}, siBreakdown = {}, agentLB = {};
             let agentMonthlyPureGWP = {}; 
-            let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
+
+            // Renewal Exact Matching Pools
+            let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
 
             const now = new Date();
             const currentYear = now.getFullYear();
@@ -823,28 +910,38 @@
                 const date = parseExcelDate(row[COL_DATE]);
                 if (!date) return;
 
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                
+                // Strictly exclude endorsements from everything
+                if (tType.includes('endorsement')) return;
+
                 const month = date.getMonth(); 
                 const year = date.getFullYear();
                 const rowFY = month >= 3 ? year : year - 1;
                 const fyMonthIndex = month >= 3 ? month - 3 : month + 9;
                 
-                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                 const premium = parseNumber(row[COL_PREM]);
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
+                const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
 
                 const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
                 const isRenewalTx = tType.includes('our renewal');
+                const isBaseTx = isFreshBaseTx || isRenewalTx;
                 const isCancelTx = tType.includes('cancel'); 
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
-                    if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, mtdGWP:0, mtdNOP:0, ytdBase:0, ytdRen:0, mtdBase:0, mtdRen:0 };
+                    if(!agentLB[agent]) agentLB[agent] = { 
+                        ytdGWP:0, ytdNOP:0, mtdGWP:0, mtdNOP:0, 
+                        ytdBase:0, ytdRen:0, mtdBase:0, mtdRen:0,
+                        basePolicies: [], renewals: []
+                    };
                 }
 
                 const passesFilter = (state.sub === 'cluster' || 
-                                     (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) === state.selectedName) || 
-                                     (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName));
+                                     (state.sub === 'agent' && agent === state.selectedName) || 
+                                     (state.sub === 'manager' && manager === state.selectedName));
 
-                const passesLBFilter = state.sub === 'cluster' || (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName);
+                const passesLBFilter = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
 
                 if (state.main === 'fresh') {
                     if (rowFY === state.selectedYear) {
@@ -895,32 +992,24 @@
                     }
                 } 
                 else if (state.main === 'renewal') {
-                    if (passesLBFilter) {
-                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) {
-                            agentLB[agent].ytdBase += 1;
-                            if (year === (currentYear - 1) && month === currentMonth) agentLB[agent].mtdBase += 1;
-                        }
-                        if (rowFY === state.selectedYear && isRenewalTx) {
-                            agentLB[agent].ytdRen += 1;
-                            if (year === currentYear && month === currentMonth) agentLB[agent].mtdRen += 1;
-                        }
-                    }
-
+                    // Populate Exact Match Pools for Dashboard & Persistency
                     if (passesFilter) {
-                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) retentionYr1Base += 1;
-                        if (rowFY === state.selectedYear && isRenewalTx) retentionYr1Ren += 1;
-                        if (rowFY === (state.selectedYear - 2) && (isFreshBaseTx || isRenewalTx)) retentionYr2Base += 1;
-                        if (rowFY === (state.selectedYear - 1) && isRenewalTx) retentionYr2Ren += 1;
-
-                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) { totalBaseNOP += 1; fyData[fyMonthIndex].baseNOP += 1; }
-                        if (rowFY === state.selectedYear && isRenewalTx) { totalRenewed += 1; fyData[fyMonthIndex].renRenewed += 1; }
-                        if (rowFY === (state.selectedYear - 2) && (isFreshBaseTx || isRenewalTx)) prevBaseNOP += 1;
-                        if (rowFY === (state.selectedYear - 1) && isRenewalTx) prevRenewed += 1;
+                        if (rowFY === state.selectedYear - 1 && isBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex});
+                        if (rowFY === state.selectedYear && isRenewalTx) renPool.push(row);
+                        
+                        if (rowFY === state.selectedYear - 2 && isBaseTx && !isCancelTx) yr2BasePool.push(row);
+                        if (rowFY === state.selectedYear - 1 && isRenewalTx) yr2RenPool.push(row);
+                    }
+                    
+                    // Populate Pools for Leaderboards
+                    if (passesLBFilter && !isCancelTx) {
+                        if (rowFY === state.selectedYear - 1 && isBaseTx) agentLB[agent].basePolicies.push({...row});
+                        if (rowFY === state.selectedYear && isRenewalTx) agentLB[agent].renewals.push({...row});
                     }
                 }
             });
 
-            // Calculate Activations
+            // Calculate Activations (Fresh only)
             let act = { total: 0, below15k: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
             if (state.main === 'fresh') {
                 Object.keys(agentMonthlyPureGWP).forEach(a => {
@@ -938,17 +1027,82 @@
                 });
             }
 
+            // EXACT RENEWAL MATCHING ENGINE
+            let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
+            let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
+            
             if (state.main === 'renewal') {
-                fyData.forEach((d, index) => {
-                    const calMonth = (index + 3) % 12;
-                    const calYear = index < 9 ? state.selectedYear : state.selectedYear + 1;
+                // 1. Dashboard Chart/Grid Matching
+                let renUsage = renPool.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                
+                basePool.forEach(b => {
+                    const mIdx = b.fyMonthIndex;
+                    const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    
+                    fyData[mIdx].baseNOP += 1;
+                    totalBaseNOP += 1;
+                    
+                    let matchIdx = renUsage.findIndex(r => !r.used && r.sig === sig);
+                    let isRenewed = false;
+                    
+                    if (matchIdx !== -1) {
+                        renUsage[matchIdx].used = true;
+                        isRenewed = true;
+                        fyData[mIdx].renRenewed += 1;
+                        totalRenewed += 1;
+                    }
+                    
+                    const calMonth = (mIdx + 3) % 12;
+                    const calYear = mIdx < 9 ? state.selectedYear : state.selectedYear + 1;
                     const isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
-                    d.isFuture = isFuture;
-                    const shortfall = Math.max(0, d.baseNOP - d.renRenewed);
-                    if (isFuture) { d.renMissed = 0; d.yetToRenew = shortfall; } 
-                    else { d.renMissed = shortfall; d.yetToRenew = 0; }
-                    totalMissed += d.renMissed; totalYet += d.yetToRenew;
+                    fyData[mIdx].isFuture = isFuture;
+
+                    if (!isRenewed) {
+                        if (isFuture) { fyData[mIdx].yetToRenew += 1; totalYet += 1; } 
+                        else { fyData[mIdx].renMissed += 1; totalMissed += 1; }
+                    }
                 });
+
+                // 2. Persistency Matching
+                retentionYr1Base = totalBaseNOP;
+                retentionYr1Ren = totalRenewed;
+
+                retentionYr2Base = yr2BasePool.length;
+                let yr2Usage = yr2RenPool.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                yr2BasePool.forEach(b => {
+                    const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    let matchIdx = yr2Usage.findIndex(r => !r.used && r.sig === sig);
+                    if (matchIdx !== -1) { yr2Usage[matchIdx].used = true; retentionYr2Ren += 1; }
+                });
+
+                // 3. Leaderboard Matching
+                if (state.sub === 'cluster' || state.sub === 'manager') {
+                    Object.keys(agentLB).forEach(agent => {
+                        let ag = agentLB[agent];
+                        let agRenUsage = ag.renewals.map(r => {
+                            const d = parseExcelDate(r[COL_DATE]);
+                            return { 
+                                sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false,
+                                isMTDRenewal: (d.getFullYear() === currentYear && d.getMonth() === currentMonth)
+                            };
+                        });
+                        
+                        ag.basePolicies.forEach(b => {
+                            ag.ytdBase += 1;
+                            const d = parseExcelDate(b[COL_DATE]);
+                            const isMTDBase = (d.getFullYear() === currentYear - 1 && d.getMonth() === currentMonth);
+                            if (isMTDBase) ag.mtdBase += 1;
+                            
+                            const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                            let matchIdx = agRenUsage.findIndex(r => !r.used && r.sig === sig);
+                            if (matchIdx !== -1) {
+                                agRenUsage[matchIdx].used = true;
+                                ag.ytdRen += 1;
+                                if (isMTDBase) ag.mtdRen += 1;
+                            }
+                        });
+                    });
+                }
                 
                 document.getElementById('persistency-tracker').classList.remove('hidden');
                 const yr1Pct = retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0;
@@ -1008,7 +1162,7 @@
                 actSection.classList.remove('grid'); 
             }
 
-            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
+            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed); // Pass zeros for previous retention if not computing dynamically
             renderGrid(fyData);
             renderChart(fyData);
 
@@ -1064,20 +1218,18 @@
                 `;
             } else {
                 const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
-                const prevRenewPercent = pBase > 0 ? Math.round((pRenewed / pBase) * 100) : 0;
+                const prevRenewPercent = 0; // Handled differently now, badge removed to prevent confusion
 
                 summaryDiv.innerHTML = `
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                         <div class="flex items-center mb-1">
                             <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Base Policies</span>
-                            ${getYoYBadge(tBase, pBase)}
                         </div>
                         <div class="text-2xl font-black text-slate-800 tracking-tight">${tBase}</div>
                     </div>
                     <div class="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-200">
                         <div class="flex items-center mb-1">
                             <span class="text-emerald-700 text-[10px] font-bold uppercase tracking-widest">Renewed</span>
-                            ${getYoYBadge(tRenewed, pRenewed)}
                         </div>
                         <div class="text-2xl font-black text-emerald-600 tracking-tight">${tRenewed}</div>
                     </div>
@@ -1088,7 +1240,6 @@
                     <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white">
                         <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center">
                             <span>Pending</span>
-                            ${getYoYBadge(renewPercent, prevRenewPercent)}
                         </div>
                         <div class="flex items-end justify-between">
                             <div class="text-2xl font-black text-amber-400 tracking-tight">${tYet}</div>
