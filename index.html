@@ -22,11 +22,6 @@
         .stat-card { transition: all 0.2s ease-in-out; border: 1px solid #e2e8f0; cursor: pointer; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06); border-color: #cbd5e1; }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
         select { -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; }
         
         /* Badges */
@@ -757,11 +752,8 @@
                     return { ...p, _isRenewed: isRenewed };
                 });
 
-                // Chronological Sort, keeping grouped Renewed vs Unrenewed intact
-                mappedPolicies.sort((a, b) => {
-                    if (a._isRenewed !== b._isRenewed) return a._isRenewed ? 1 : -1;
-                    return (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0));
-                });
+                // Chronological Sort
+                mappedPolicies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
 
                 if (mappedPolicies.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No policies due for renewal this month.</td></tr>`;
@@ -1154,7 +1146,7 @@
                 actSection.classList.remove('grid'); 
             }
 
-            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
+            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, 0, 0);
             renderGrid(fyData);
             renderChart(fyData);
 
@@ -1172,7 +1164,6 @@
                     </div>`).join('');
                 document.getElementById('product-list').innerHTML = prodHtml || '<p class="text-xs text-slate-400">No data found</p>';
 
-                // ASCENDING NUMERICAL SORT FOR SUM INSURED
                 const siHtml = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `
                     <div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0">
                         <span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span>
@@ -1211,7 +1202,8 @@
                 `;
             } else {
                 const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
-                
+                const prevRenewPercent = 0; 
+
                 summaryDiv.innerHTML = `
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                         <div class="flex items-center mb-1">
