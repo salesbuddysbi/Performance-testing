@@ -1162,7 +1162,7 @@
                 actSection.classList.remove('grid'); 
             }
 
-            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed); // Pass zeros for previous retention if not computing dynamically
+            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
             renderGrid(fyData);
             renderChart(fyData);
 
@@ -1218,7 +1218,7 @@
                 `;
             } else {
                 const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
-                const prevRenewPercent = 0; // Handled differently now, badge removed to prevent confusion
+                const prevRenewPercent = 0; 
 
                 summaryDiv.innerHTML = `
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
