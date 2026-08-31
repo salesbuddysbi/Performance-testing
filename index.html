@@ -370,7 +370,24 @@
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
-        // Unified Naming Format (Title Case)
+        // Utility: Flexible Date Parser
+        function parseExcelDate(val) {
+            if (!val) return null;
+            if (val instanceof Date) return isNaN(val) ? null : val;
+            let d = new Date(val);
+            if (!isNaN(d)) return d;
+            
+            if (typeof val === 'string') {
+                const parts = val.split(/[-/]/);
+                if (parts.length === 3) {
+                    // Try parsing DD/MM/YYYY
+                    const fallback = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    if (!isNaN(fallback)) return fallback;
+                }
+            }
+            return null;
+        }
+
         function toTitleCase(str) {
             if (!str) return '';
             return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -407,8 +424,16 @@
                 const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
-                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-                    rawData = rawData.concat(sheet);
+                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+                    // Trim keys heavily to prevent spacing issues
+                    const cleanedSheet = sheet.map(row => {
+                        let cleanRow = {};
+                        for (let key in row) {
+                            cleanRow[key.trim()] = row[key];
+                        }
+                        return cleanRow;
+                    });
+                    rawData = rawData.concat(cleanedSheet);
                 });
                 document.getElementById('upload-overlay').classList.add('hidden');
                 showView('view-home');
@@ -456,8 +481,7 @@
             document.getElementById('month-select').value = "";
             
             populateYears();
-            updateDependentDropdowns();
-            resetDashboardView();
+            updateDependentDropdowns(); // Triggers render automatically
             showView('view-dashboard');
         }
 
@@ -480,13 +504,15 @@
         function populateYears() {
             const yearSelect = document.getElementById('year-select');
             const years = [...new Set(rawData.map(row => {
-                if(!row[COL_DATE]) return null;
-                const d = new Date(row[COL_DATE]);
-                if (isNaN(d)) return null;
+                const d = parseExcelDate(row[COL_DATE]);
+                if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
 
             yearSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            
+            // Auto-select latest year to improve UX
+            if (years.length > 0) yearSelect.value = years[0];
         }
 
         function updateDependentDropdowns() {
@@ -497,7 +523,10 @@
                 const monthSelect = document.getElementById('month-select');
                 if (state.selectedYear) {
                     monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-                } else { monthSelect.innerHTML = '<option value="">Select Month</option>'; }
+                    if (monthSelect.options.length > 1) monthSelect.value = "0"; // Auto select first month (April)
+                } else { 
+                    monthSelect.innerHTML = '<option value="">Select Month</option>'; 
+                }
                 renderRanking();
             } else {
                 const nameSelect = document.getElementById('name-select');
@@ -506,9 +535,8 @@
                     let filteredData = rawData;
                     if (state.selectedYear) {
                         filteredData = rawData.filter(row => {
-                            if (!row[COL_DATE]) return false;
-                            const d = new Date(row[COL_DATE]);
-                            if (isNaN(d)) return false;
+                            const d = parseExcelDate(row[COL_DATE]);
+                            if (!d) return false;
                             const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
                             if (state.main === 'renewal') return rowFY === state.selectedYear || rowFY === (state.selectedYear - 1);
                             return rowFY === state.selectedYear;
@@ -517,7 +545,14 @@
                     const names = [...new Set(filteredData.map(row => row[colKey]).filter(n => n))].sort();
                     const currentVal = nameSelect.value;
                     nameSelect.innerHTML = '<option value="">Select Target Name</option>' + names.map(n => `<option value="${toTitleCase(n)}">${toTitleCase(n)}</option>`).join('');
-                    if(names.includes(currentVal)) nameSelect.value = currentVal;
+                    
+                    // Auto-select robustly
+                    const titleCasedCurrent = toTitleCase(currentVal);
+                    if (names.map(toTitleCase).includes(titleCasedCurrent)) {
+                        nameSelect.value = titleCasedCurrent;
+                    } else if (names.length > 0) {
+                        nameSelect.value = toTitleCase(names[0]);
+                    }
                 }
                 renderDashboard();
             }
@@ -548,9 +583,8 @@
             const tbody = document.getElementById('modal-table-body');
             
             const policies = rawData.filter(row => {
-                if(!row[COL_DATE]) return false;
-                const date = new Date(row[COL_DATE]);
-                if(isNaN(date)) return false;
+                const date = parseExcelDate(row[COL_DATE]);
+                if(!date) return false;
                 
                 const month = date.getMonth();
                 const year = date.getFullYear();
@@ -574,7 +608,7 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No transactions recorded.</td></tr>`;
             } else {
                 tbody.innerHTML = policies.map(p => {
-                    const d = new Date(p[COL_DATE]);
+                    const d = parseExcelDate(p[COL_DATE]);
                     const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
                     const prem = parseFloat(p[COL_PREM]) || 0;
                     const siStr = formatSumInsured(p[COL_SUM_INSURED]);
@@ -621,9 +655,8 @@
             let agents = {};
 
             rawData.forEach(row => {
-                if(!row[COL_DATE]) return;
-                const d = new Date(row[COL_DATE]);
-                if (isNaN(d)) return;
+                const d = parseExcelDate(row[COL_DATE]);
+                if (!d) return;
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
@@ -729,9 +762,8 @@
             const currentMonth = now.getMonth(); 
 
             rawData.forEach(row => {
-                if(!row[COL_DATE]) return;
-                const date = new Date(row[COL_DATE]);
-                if (isNaN(date)) return;
+                const date = parseExcelDate(row[COL_DATE]);
+                if (!date) return;
 
                 const month = date.getMonth(); 
                 const year = date.getFullYear();
@@ -922,7 +954,6 @@
                 actSection.classList.remove('grid'); 
                 
                 // Agents should also see their activation logic in the calendar, 
-                // so we run the monthly loop for them too (if in fresh view)
                 if (state.main === 'fresh') {
                     Object.keys(agentMonthlyPureGWP).forEach(a => {
                         Object.keys(agentMonthlyPureGWP[a]).forEach(mIdx => {
@@ -1033,7 +1064,7 @@
                 const monthName = FY_MONTHS[index];
                 if (state.main === 'fresh') {
                     
-                    const actBadge = (state.sub === 'cluster' || state.sub === 'manager' || state.sub === 'agent') && data.activations > 0 
+                    const actBadge = data.activations > 0 
                         ? `<span class="text-emerald-600 text-[10px] font-bold bg-emerald-50 px-1.5 py-0.5 rounded group-hover:bg-emerald-100 transition-colors shrink-0">${data.activations} Act.</span>` 
                         : '';
 
