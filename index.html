@@ -264,14 +264,48 @@
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 MTD Retention %</h2><div id="lb-mtd-ren" class="space-y-2.5"></div></div>
                     </div>
 
+                    <!-- AGENT ACTIVATIONS (Cluster / Manager) -->
+                    <div id="activation-bands" class="hidden grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-slate-800">Agent Activations (Monthly Pure Fresh GWP)</h2>
+                            <div class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1 rounded-full" id="act-total">Total Activations: 0</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">15k - 50k</div>
+                            <div class="text-2xl font-black text-slate-800 mt-1" id="act-15k">0</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">50k - 1L</div>
+                            <div class="text-2xl font-black text-slate-800 mt-1" id="act-50k">0</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">1L - 2L</div>
+                            <div class="text-2xl font-black text-slate-800 mt-1" id="act-1l">0</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">2L - 3L</div>
+                            <div class="text-2xl font-black text-slate-800 mt-1" id="act-2l">0</div>
+                        </div>
+                        <div class="bg-amber-50 rounded-xl shadow-sm border border-amber-100 p-4 text-center lg:col-span-2">
+                            <div class="text-[10px] font-bold text-amber-600 uppercase">>= 3L</div>
+                            <div class="text-2xl font-black text-amber-700 mt-1" id="act-3l">0</div>
+                        </div>
+                    </div>
+
                     <!-- FRESH BREAKDOWNS -->
                     <div id="fresh-breakdowns" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Product Wise Performance</h2>
+                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                                Product Wise Performance
+                                <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase font-medium">Pure Fresh Only</span>
+                            </h2>
                             <div id="product-list" class="space-y-3 max-h-56 overflow-y-auto pr-2 scroll-area"></div>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Sum Insured Wise</h2>
+                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                                Sum Insured Wise
+                                <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase font-medium">Pure Fresh Only</span>
+                            </h2>
                             <div id="si-list" class="space-y-3 max-h-56 overflow-y-auto pr-2 scroll-area"></div>
                         </div>
                     </div>
@@ -433,6 +467,7 @@
                 document.getElementById('fresh-breakdowns').classList.add('hidden');
                 document.getElementById('cluster-leaderboard-fresh').classList.add('hidden');
                 document.getElementById('cluster-leaderboard-renewal').classList.add('hidden');
+                document.getElementById('activation-bands').classList.add('hidden');
                 document.getElementById('persistency-tracker').classList.add('hidden');
             }
             if(chartInstance) chartInstance.destroy();
@@ -607,7 +642,6 @@
 
             let sorted = Object.keys(agents).filter(a => agents[a].nop > 0 || agents[a].gwp > 0);
             
-            // SMART TIE BREAKERS
             sorted.sort((a, b) => {
                 if (state.sub === 'gwp_rank') {
                     if (agents[b].gwp !== agents[a].gwp) return agents[b].gwp - agents[a].gwp;
@@ -683,6 +717,7 @@
             let totalFreshAmt = 0, totalFreshNOP = 0, prevFreshAmt = 0, prevFreshNOP = 0;
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0, prevBaseNOP = 0, prevRenewed = 0;
             let productBreakdown = {}, siBreakdown = {}, agentLB = {};
+            let agentMonthlyPureGWP = {}; 
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
 
             const now = new Date();
@@ -732,22 +767,32 @@
                             }
                         }
 
+                        // AGENT MONTHLY PURE FRESH CALCULATION
+                        if (passesLBFilter && isFreshBaseTx) {
+                            if (!agentMonthlyPureGWP[agent]) agentMonthlyPureGWP[agent] = {};
+                            if (!agentMonthlyPureGWP[agent][fyMonthIndex]) agentMonthlyPureGWP[agent][fyMonthIndex] = 0;
+                            agentMonthlyPureGWP[agent][fyMonthIndex] += premium;
+                        }
+
                         if(passesFilter && finalNop !== 0) {
                             fyData[fyMonthIndex].freshNOP += finalNop;
                             fyData[fyMonthIndex].freshAmount += finalPrem;
                             totalFreshNOP += finalNop;
                             totalFreshAmt += finalPrem;
+                        }
 
+                        // BREAKDOWNS STRICTLY BASED ON PURE FRESH BASE (No Cancellations)
+                        if (passesFilter && isFreshBaseTx) {
                             let prod = row[COL_PRODUCT] || 'Unspecified';
                             let si = row[COL_SUM_INSURED] || 'Unspecified';
                             
                             if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
-                            productBreakdown[prod].nop += finalNop;
-                            productBreakdown[prod].prem += finalPrem;
+                            productBreakdown[prod].nop += 1;
+                            productBreakdown[prod].prem += premium;
 
                             if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
-                            siBreakdown[si].nop += finalNop;
-                            siBreakdown[si].prem += finalPrem;
+                            siBreakdown[si].nop += 1;
+                            siBreakdown[si].prem += premium;
                         }
                     }
                     else if (rowFY === (state.selectedYear - 1) && passesFilter) {
@@ -810,6 +855,7 @@
 
             const freshLB = document.getElementById('cluster-leaderboard-fresh');
             const renLB = document.getElementById('cluster-leaderboard-renewal');
+            const actSection = document.getElementById('activation-bands');
             
             if (state.sub === 'cluster' || state.sub === 'manager') {
                 if (state.main === 'fresh') {
@@ -823,15 +869,43 @@
                     document.getElementById('lb-ytd-nop').innerHTML = tYtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].ytdNOP}</span></div>`).join('');
                     document.getElementById('lb-mtd-gwp').innerHTML = tMtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${agentLB[a].mtdGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('');
                     document.getElementById('lb-mtd-nop').innerHTML = tMtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].mtdNOP}</span></div>`).join('');
+                    
+                    // RENDER ACTIVATIONS BANDS
+                    actSection.classList.remove('hidden'); actSection.classList.add('grid');
+                    let act = { total: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
+                    Object.keys(agentMonthlyPureGWP).forEach(a => {
+                        Object.keys(agentMonthlyPureGWP[a]).forEach(mIdx => {
+                            let pureGWP = agentMonthlyPureGWP[a][mIdx];
+                            if (pureGWP >= 300000) { act.b3L++; act.total++; }
+                            else if (pureGWP >= 200000) { act.b2L++; act.total++; }
+                            else if (pureGWP >= 100000) { act.b1L++; act.total++; }
+                            else if (pureGWP >= 50000) { act.b50k++; act.total++; }
+                            else if (pureGWP >= 15000) { act.b15k++; act.total++; }
+                        });
+                    });
+                    document.getElementById('act-total').innerText = `Total Activations (YTD): ${act.total}`;
+                    document.getElementById('act-15k').innerText = act.b15k;
+                    document.getElementById('act-50k').innerText = act.b50k;
+                    document.getElementById('act-1l').innerText = act.b1L;
+                    document.getElementById('act-2l').innerText = act.b2L;
+                    document.getElementById('act-3l').innerText = act.b3L;
+
                 } else {
                     freshLB.classList.add('hidden'); renLB.classList.remove('hidden');
+                    actSection.classList.add('hidden'); actSection.classList.remove('grid');
+                    
                     const tYtdRen = Object.keys(agentLB).filter(a => agentLB[a].ytdBase >= 5).sort((a,b) => (agentLB[b].ytdRen/agentLB[b].ytdBase) - (agentLB[a].ytdRen/agentLB[a].ytdBase)).slice(0, 3);
                     const tMtdRen = Object.keys(agentLB).filter(a => agentLB[a].mtdBase >= 1).sort((a,b) => (agentLB[b].mtdRen/agentLB[b].mtdBase) - (agentLB[a].mtdRen/agentLB[a].mtdBase)).slice(0, 3);
 
                     document.getElementById('lb-ytd-ren').innerHTML = tYtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].ytdRen/agentLB[a].ytdBase)*100)}%</span></div>`).join('');
                     document.getElementById('lb-mtd-ren').innerHTML = tMtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].mtdRen/agentLB[a].mtdBase)*100)}%</span></div>`).join('');
                 }
-            } else { freshLB.classList.add('hidden'); renLB.classList.add('hidden'); }
+            } else { 
+                freshLB.classList.add('hidden'); 
+                renLB.classList.add('hidden'); 
+                actSection.classList.add('hidden'); 
+                actSection.classList.remove('grid'); 
+            }
 
             renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
             renderGrid(fyData);
