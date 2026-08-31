@@ -1029,9 +1029,17 @@
 
             // EXACT RENEWAL MATCHING ENGINE
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
+            let prevBaseNOP = 0, prevRenewed = 0; // Fix added here
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
             
             if (state.main === 'renewal') {
+                // Pre-calculate future states
+                fyData.forEach((d, mIdx) => {
+                    const calMonth = (mIdx + 3) % 12;
+                    const calYear = mIdx < 9 ? state.selectedYear : state.selectedYear + 1;
+                    d.isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
+                });
+
                 // 1. Dashboard Chart/Grid Matching
                 let renUsage = renPool.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
                 
@@ -1051,14 +1059,9 @@
                         fyData[mIdx].renRenewed += 1;
                         totalRenewed += 1;
                     }
-                    
-                    const calMonth = (mIdx + 3) % 12;
-                    const calYear = mIdx < 9 ? state.selectedYear : state.selectedYear + 1;
-                    const isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
-                    fyData[mIdx].isFuture = isFuture;
 
                     if (!isRenewed) {
-                        if (isFuture) { fyData[mIdx].yetToRenew += 1; totalYet += 1; } 
+                        if (fyData[mIdx].isFuture) { fyData[mIdx].yetToRenew += 1; totalYet += 1; } 
                         else { fyData[mIdx].renMissed += 1; totalMissed += 1; }
                     }
                 });
@@ -1162,6 +1165,7 @@
                 actSection.classList.remove('grid'); 
             }
 
+            // Fixed variables pass here
             renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
             renderGrid(fyData);
             renderChart(fyData);
