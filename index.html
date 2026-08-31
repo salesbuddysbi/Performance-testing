@@ -19,8 +19,8 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
         .glass-panel { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(16px); border-bottom: 1px solid #e2e8f0; }
-        .stat-card { transition: all 0.2s ease-in-out; border: 1px solid #e2e8f0; cursor: pointer; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06); border-color: #cbd5e1; }
+        .stat-card { transition: all 0.2s ease-in-out; border: 1px solid #e2e8f0; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06); border-color: #cbd5e1; }
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -53,13 +53,13 @@
         </div>
     </div>
 
-    <!-- DRILL-DOWN MODAL -->
+    <!-- GENERAL DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[90] hidden p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800" id="modal-title">Month Details</h2>
-                    <p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Transaction Breakdown</p>
+                    <h2 class="text-lg font-bold text-slate-800" id="modal-title">Details</h2>
+                    <p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Breakdown</p>
                 </div>
                 <button onclick="closeModal()" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -67,16 +67,7 @@
             </div>
             <div class="p-0 overflow-y-auto flex-1 bg-white">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 shadow-sm z-10">
-                        <tr>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
-                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium / Status</th>
-                        </tr>
-                    </thead>
+                    <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 shadow-sm z-10" id="modal-table-head"></thead>
                     <tbody id="modal-table-body" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
@@ -284,7 +275,7 @@
                     <!-- Calendar Grid & Trend -->
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-2 space-y-4">
-                            <div id="fy-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                            <div id="fy-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
                         </div>
                         <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
                             <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Annual Trend</h2>
@@ -294,24 +285,43 @@
                         </div>
                     </div>
 
-                    <!-- CLUSTER / MANAGER LEADERBOARDS -->
-                    <div id="cluster-leaderboard-fresh" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600">Top 3 YTD GWP</h2><div id="lb-ytd-gwp" class="space-y-2.5"></div></div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500">Top 3 YTD NOP</h2><div id="lb-ytd-nop" class="space-y-2.5"></div></div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600">Top 3 MTD GWP</h2><div id="lb-mtd-gwp" class="space-y-2.5"></div></div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500">Top 3 MTD NOP</h2><div id="lb-mtd-nop" class="space-y-2.5"></div></div>
-                    </div>
+                    <!-- CLUSTER / MANAGER LEADERBOARDS WITH MONTH SELECTOR -->
+                    <div id="leaderboard-section-wrapper" class="hidden pt-2 space-y-3">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div>
+                                <h2 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Performance Leaderboards</h2>
+                                <p class="text-[11px] text-slate-400 font-medium">Top 3 performers for the chosen Month & YTD</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Select Month:</span>
+                                <div class="relative w-36">
+                                    <select id="leaderboard-month-select" class="block w-full pl-3 pr-7 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-lg" onchange="renderLeaderboardsForSelectedMonth()">
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div id="cluster-leaderboard-renewal" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 YTD Retention %</h2><div id="lb-ytd-ren" class="space-y-2.5"></div></div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 MTD Retention %</h2><div id="lb-mtd-ren" class="space-y-2.5"></div></div>
+                        <div id="cluster-leaderboard-fresh" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600">Top 3 YTD GWP</h2><div id="lb-ytd-gwp" class="space-y-2.5"></div></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500">Top 3 YTD NOP</h2><div id="lb-ytd-nop" class="space-y-2.5"></div></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600" id="lb-mtd-gwp-title">Top 3 MTD GWP</h2><div id="lb-mtd-gwp" class="space-y-2.5"></div></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500" id="lb-mtd-nop-title">Top 3 MTD NOP</h2><div id="lb-mtd-nop" class="space-y-2.5"></div></div>
+                        </div>
+
+                        <div id="cluster-leaderboard-renewal" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 YTD Retention %</h2><div id="lb-ytd-ren" class="space-y-2.5"></div></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600" id="lb-mtd-ren-title">Top 3 MTD Retention %</h2><div id="lb-mtd-ren" class="space-y-2.5"></div></div>
+                        </div>
                     </div>
 
                     <!-- ACTIVATION BANDS (Manager / Cluster) -->
                     <div id="activation-bands" class="hidden grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-2">
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
                             <div>
-                                <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution</h2>
+                                <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution (YTD Summary)</h2>
                                 <p class="text-[11px] text-slate-400 font-medium mt-0.5">Pure Fresh GWP &ge; &#8377;15,000 / month per agent</p>
                             </div>
                             <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-inner" id="act-total">Total Activations: 0</div>
@@ -412,6 +422,7 @@
         let rawData = [];
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
+        let cachedLeaderboardData = { fresh: {}, renewal: {} };
 
         function parseNumber(val) {
             if (val === undefined || val === null || val === '') return 0;
@@ -549,7 +560,6 @@
                 }
             }
 
-            // Always reset to force explicit manual selections
             document.getElementById('year-select').value = "";
             populateYears();
             resetDashboard();
@@ -652,15 +662,27 @@
             return ``;
         }
 
-        // === DRILL DOWN MODAL ===
-        function openDrillDown(monthIndex) {
+        // === POLICY DRILL DOWN (NOP / Month Click) ===
+        function openPolicyDrillDown(monthIndex) {
             const monthName = FY_MONTHS[monthIndex];
             document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1}`;
+            const thead = document.getElementById('modal-table-head');
             const tbody = document.getElementById('modal-table-body');
             
             if (state.main === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Fresh & Rollover Policies";
+                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Fresh Business)";
                 
+                thead.innerHTML = `
+                    <tr>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">GWP</th>
+                    </tr>`;
+
                 let policies = rawData.filter(row => {
                     const date = parseExcelDate(row[COL_DATE]);
                     if(!date) return false;
@@ -682,11 +704,11 @@
                     return isFreshBaseTx || tType.includes('cancel');
                 });
 
-                // Chronological Sort
+                // Chronological Ascending Sort
                 policies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
 
                 if (policies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No records found for this period.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No fresh business policies recorded for this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = policies.map(p => {
                         const d = parseExcelDate(p[COL_DATE]);
@@ -700,9 +722,10 @@
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                             <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
                             <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
-                            <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
+                            <td class="p-3 text-[11px] font-bold text-blue-600 truncate max-w-[140px]">${toTitleCase(p[COL_AGENT]) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
                                     <span class="text-[11px] font-bold ${isCancel ? 'text-rose-500' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
@@ -713,8 +736,19 @@
                     }).join('');
                 }
             } else {
-                // RENEWAL DRILL DOWN WITH EXACT MATCHING
+                // RENEWAL DRILL DOWN
                 document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
+
+                thead.innerHTML = `
+                    <tr>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Start Date</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
+                    </tr>`;
 
                 let baseDue = [];
                 let currentYearRenewals = [];
@@ -738,12 +772,8 @@
                     const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
                     const isRen = tType.includes('our renewal');
 
-                    if (rowFY === state.selectedYear - 1 && isBase && rowFyMonthIndex === monthIndex) {
-                        baseDue.push(row);
-                    }
-                    if (rowFY === state.selectedYear && isRen) {
-                        currentYearRenewals.push(row);
-                    }
+                    if (rowFY === state.selectedYear - 1 && isBase && rowFyMonthIndex === monthIndex) baseDue.push(row);
+                    if (rowFY === state.selectedYear && isRen) currentYearRenewals.push(row);
                 });
 
                 let renPool = currentYearRenewals.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
@@ -759,14 +789,10 @@
                     return { ...p, _isRenewed: isRenewed };
                 });
 
-                // Chronological Sort, keeping grouped Renewed vs Unrenewed intact
-                mappedPolicies.sort((a, b) => {
-                    if (a._isRenewed !== b._isRenewed) return a._isRenewed ? 1 : -1;
-                    return (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0));
-                });
+                mappedPolicies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
 
                 if (mappedPolicies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No policies due for renewal this month.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No policies due for renewal this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = mappedPolicies.map(p => {
                         const d = parseExcelDate(p[COL_DATE]);
@@ -775,16 +801,17 @@
                         const siStr = formatSumInsured(p[COL_SUM_INSURED]);
                         
                         const statusBadge = p._isRenewed 
-                            ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` 
-                            : `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Not Renewed</span>`;
+                            ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` 
+                            : `<span class="bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Not Renewed</span>`;
 
                         return `
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                             <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
                             <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
-                            <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
+                            <td class="p-3 text-[11px] font-bold text-indigo-600 truncate max-w-[140px]">${toTitleCase(p[COL_AGENT]) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
                                     <span class="text-[11px] font-bold text-slate-800">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
@@ -795,6 +822,106 @@
                     }).join('');
                 }
             }
+            document.getElementById('drilldown-modal').classList.remove('hidden');
+        }
+
+        // === AGENT ACTIVATIONS DRILL DOWN (Act Badge / Slab Click) ===
+        function openActivationDrillDown(monthIndex, specificSlab = null) {
+            const monthName = FY_MONTHS[monthIndex];
+            document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1} - Agent Activations`;
+            document.getElementById('modal-subtitle').innerText = specificSlab ? `Showing Agents in Slab: ${specificSlab}` : "Monthly Active Agents Summary";
+            
+            const thead = document.getElementById('modal-table-head');
+            const tbody = document.getElementById('modal-table-body');
+
+            thead.innerHTML = `
+                <tr>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Rank</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Manager</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Activation Slab</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Fresh NOP</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Pure Fresh GWP</th>
+                </tr>`;
+
+            let agentMap = {};
+
+            rawData.forEach(row => {
+                const date = parseExcelDate(row[COL_DATE]);
+                if(!date) return;
+                
+                const month = date.getMonth();
+                const year = date.getFullYear();
+                const rowFY = month >= 3 ? year : year - 1;
+                const rowFyMonthIndex = month >= 3 ? month - 3 : month + 9;
+
+                if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return;
+                
+                const agent = toTitleCase(row[COL_AGENT] || '');
+                const manager = toTitleCase(row[COL_MANAGER] || '');
+                
+                if (state.sub === 'agent' && agent !== state.selectedName) return;
+                if (state.sub === 'manager' && manager !== state.selectedName) return;
+
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                if (tType.includes('endorsement') || tType.includes('cancel')) return;
+
+                const isFresh = tType.includes('fresh') || tType.includes('roll over');
+                if (isFresh && agent) {
+                    if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
+                    agentMap[agent].gwp += parseNumber(row[COL_PREM]);
+                    agentMap[agent].nop += 1;
+                }
+            });
+
+            let list = Object.keys(agentMap).map(agent => {
+                const gwp = agentMap[agent].gwp;
+                let slab = "Below 15K", slabCode = "below15k", isActivated = false;
+                
+                if (gwp >= 300000) { slab = ">= 3 Lac"; slabCode = "3L+"; isActivated = true; }
+                else if (gwp >= 200000) { slab = "2 Lac - < 3 Lac"; slabCode = "2L"; isActivated = true; }
+                else if (gwp >= 100000) { slab = "1 Lac - < 2 Lac"; slabCode = "1L"; isActivated = true; }
+                else if (gwp >= 50000) { slab = "50K - < 1 Lac"; slabCode = "50K"; isActivated = true; }
+                else if (gwp >= 15000) { slab = "15K - < 50K"; slabCode = "15K"; isActivated = true; }
+
+                return {
+                    agent,
+                    manager: agentMap[agent].manager,
+                    gwp,
+                    nop: agentMap[agent].nop,
+                    slab,
+                    slabCode,
+                    isActivated
+                };
+            });
+
+            if (specificSlab) {
+                list = list.filter(item => item.slabCode === specificSlab);
+            }
+
+            // Sort by GWP descending
+            list.sort((a, b) => b.gwp - a.gwp);
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No agents found for this criteria.</td></tr>`;
+            } else {
+                tbody.innerHTML = list.map((item, i) => {
+                    const slabBadge = item.isActivated 
+                        ? `<span class="bg-blue-50 border border-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">${item.slab}</span>`
+                        : `<span class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">Below 15K (Inactive)</span>`;
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                        <td class="p-3 text-[11px] font-extrabold text-slate-400">#${i+1}</td>
+                        <td class="p-3 text-[11px] font-bold text-slate-800">${item.agent}</td>
+                        <td class="p-3 text-[11px] font-medium text-slate-500">${item.manager || 'N/A'}</td>
+                        <td class="p-3 text-[11px]">${slabBadge}</td>
+                        <td class="p-3 text-[11px] font-bold text-slate-700 text-center">${item.nop}</td>
+                        <td class="p-3 text-[11px] font-black text-blue-600 text-right">₹${item.gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                    </tr>`;
+                }).join('');
+            }
+
             document.getElementById('drilldown-modal').classList.remove('hidden');
         }
 
@@ -876,6 +1003,79 @@
             }).join('');
         }
 
+        // === DYNAMIC MTD LEADERBOARD RENDERER ===
+        function renderLeaderboardsForSelectedMonth() {
+            const mIdx = parseInt(document.getElementById('leaderboard-month-select').value);
+            const mName = FY_MONTHS[mIdx];
+            const calYear = mIdx < 9 ? state.selectedYear : state.selectedYear + 1;
+            const calMonth = (mIdx + 3) % 12;
+
+            if (state.main === 'fresh') {
+                document.getElementById('lb-mtd-gwp-title').innerText = `Top 3 MTD GWP (${mName})`;
+                document.getElementById('lb-mtd-nop-title').innerText = `Top 3 MTD NOP (${mName})`;
+
+                let monthlyAgents = {};
+                rawData.forEach(row => {
+                    const date = parseExcelDate(row[COL_DATE]);
+                    if (!date) return;
+                    if (date.getFullYear() === calYear && date.getMonth() === calMonth) {
+                        const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                        if (tType.includes('endorsement')) return;
+                        
+                        const isFresh = tType.includes('fresh') || tType.includes('roll over');
+                        const isCancel = tType.includes('cancel');
+                        const agent = toTitleCase(row[COL_AGENT] || '');
+                        const manager = toTitleCase(row[COL_MANAGER] || '');
+
+                        const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
+                        if (passes && agent) {
+                            if (!monthlyAgents[agent]) monthlyAgents[agent] = { gwp: 0, nop: 0 };
+                            const prem = parseNumber(row[COL_PREM]);
+                            if (isFresh) { monthlyAgents[agent].gwp += prem; monthlyAgents[agent].nop += 1; }
+                            else if (isCancel) { monthlyAgents[agent].gwp -= Math.abs(prem); monthlyAgents[agent].nop -= 1; }
+                        }
+                    }
+                });
+
+                const tMtdGwp = Object.keys(monthlyAgents).filter(a => monthlyAgents[a].gwp > 0).sort((a,b) => monthlyAgents[b].gwp - monthlyAgents[a].gwp).slice(0, 3);
+                const tMtdNop = Object.keys(monthlyAgents).filter(a => monthlyAgents[a].nop > 0).sort((a,b) => monthlyAgents[b].nop - monthlyAgents[a].nop).slice(0, 3);
+
+                document.getElementById('lb-mtd-gwp').innerHTML = tMtdGwp.length ? tMtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${monthlyAgents[a].gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
+                document.getElementById('lb-mtd-nop').innerHTML = tMtdNop.length ? tMtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${monthlyAgents[a].nop}</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
+
+            } else {
+                document.getElementById('lb-mtd-ren-title').innerText = `Top 3 MTD Retention (${mName})`;
+                
+                let monthlyAgents = {};
+                rawData.forEach(row => {
+                    const date = parseExcelDate(row[COL_DATE]);
+                    if (!date) return;
+
+                    const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+                    const rowFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
+                    if (rowFyMonthIndex !== mIdx) return;
+
+                    const agent = toTitleCase(row[COL_AGENT] || '');
+                    const manager = toTitleCase(row[COL_MANAGER] || '');
+                    const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
+                    if (!passes || !agent) return;
+
+                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                    if (tType.includes('endorsement') || tType.includes('cancel')) return;
+
+                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
+                    const isRen = tType.includes('our renewal');
+
+                    if (!monthlyAgents[agent]) monthlyAgents[agent] = { base: 0, ren: 0 };
+                    if (rowFY === state.selectedYear - 1 && isBase) monthlyAgents[agent].base += 1;
+                    if (rowFY === state.selectedYear && isRen) monthlyAgents[agent].ren += 1;
+                });
+
+                const tMtdRen = Object.keys(monthlyAgents).filter(a => monthlyAgents[a].base >= 1).sort((a,b) => (monthlyAgents[b].ren/monthlyAgents[b].base) - (monthlyAgents[a].ren/monthlyAgents[a].base)).slice(0, 3);
+                document.getElementById('lb-mtd-ren').innerHTML = tMtdRen.length ? tMtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((monthlyAgents[a].ren/monthlyAgents[a].base)*100)}%</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
+            }
+        }
+
         // === MAIN DASHBOARD RENDER ===
         function renderDashboard() {
             document.getElementById('empty-state').classList.add('hidden');
@@ -915,7 +1115,6 @@
                 if (!date) return;
 
                 const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                
                 if (tType.includes('endorsement')) return;
 
                 const month = date.getMonth(); 
@@ -933,11 +1132,7 @@
                 const isCancelTx = tType.includes('cancel'); 
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
-                    if(!agentLB[agent]) agentLB[agent] = { 
-                        ytdGWP:0, ytdNOP:0, mtdGWP:0, mtdNOP:0, 
-                        ytdBase:0, ytdRen:0, mtdBase:0, mtdRen:0,
-                        basePolicies: [], renewals: []
-                    };
+                    if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, ytdBase:0, ytdRen:0, basePolicies: [], renewals: [] };
                 }
 
                 const passesFilter = (state.sub === 'cluster' || 
@@ -955,10 +1150,6 @@
                         if (passesLBFilter && finalNop !== 0) {
                             agentLB[agent].ytdGWP += finalPrem;
                             agentLB[agent].ytdNOP += finalNop;
-                            if (year === currentYear && month === currentMonth) {
-                                agentLB[agent].mtdGWP += finalPrem;
-                                agentLB[agent].mtdNOP += finalNop;
-                            }
                         }
 
                         if (passesFilter && isFreshBaseTx) {
@@ -996,11 +1187,9 @@
                     if (passesFilter) {
                         if (rowFY === state.selectedYear - 1 && isBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex});
                         if (rowFY === state.selectedYear && isRenewalTx) renPool.push(row);
-                        
                         if (rowFY === state.selectedYear - 2 && isBaseTx && !isCancelTx) yr2BasePool.push(row);
                         if (rowFY === state.selectedYear - 1 && isRenewalTx) yr2RenPool.push(row);
                     }
-                    
                     if (passesLBFilter && !isCancelTx) {
                         if (rowFY === state.selectedYear - 1 && isBaseTx) agentLB[agent].basePolicies.push({...row});
                         if (rowFY === state.selectedYear && isRenewalTx) agentLB[agent].renewals.push({...row});
@@ -1008,6 +1197,7 @@
                 }
             });
 
+            // Calculate Activations
             let act = { total: 0, below15k: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
             if (state.main === 'fresh') {
                 Object.keys(agentMonthlyPureGWP).forEach(a => {
@@ -1026,7 +1216,6 @@
             }
 
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
-            let prevBaseNOP = 0, prevRenewed = 0;
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
             
             if (state.main === 'renewal') {
@@ -1075,26 +1264,14 @@
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     Object.keys(agentLB).forEach(agent => {
                         let ag = agentLB[agent];
-                        let agRenUsage = ag.renewals.map(r => {
-                            const d = parseExcelDate(r[COL_DATE]);
-                            return { 
-                                sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false,
-                                isMTDRenewal: (d.getFullYear() === currentYear && d.getMonth() === currentMonth)
-                            };
-                        });
-                        
+                        let agRenUsage = ag.renewals.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
                         ag.basePolicies.forEach(b => {
                             ag.ytdBase += 1;
-                            const d = parseExcelDate(b[COL_DATE]);
-                            const isMTDBase = (d.getFullYear() === currentYear - 1 && d.getMonth() === currentMonth);
-                            if (isMTDBase) ag.mtdBase += 1;
-                            
                             const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
                             let matchIdx = agRenUsage.findIndex(r => !r.used && r.sig === sig);
                             if (matchIdx !== -1) {
                                 agRenUsage[matchIdx].used = true;
                                 ag.ytdRen += 1;
-                                if (isMTDBase) ag.mtdRen += 1;
                             }
                         });
                     });
@@ -1115,23 +1292,31 @@
                 `;
             } else { document.getElementById('persistency-tracker').classList.add('hidden'); }
 
+            const leaderboardWrapper = document.getElementById('leaderboard-section-wrapper');
             const freshLB = document.getElementById('cluster-leaderboard-fresh');
             const renLB = document.getElementById('cluster-leaderboard-renewal');
             const actSection = document.getElementById('activation-bands');
             
             if (state.sub === 'cluster' || state.sub === 'manager') {
+                leaderboardWrapper.classList.remove('hidden');
+                
+                // Populate the MTD switcher dropdown
+                const lbSelect = document.getElementById('leaderboard-month-select');
+                const prevMVal = lbSelect.value;
+                lbSelect.innerHTML = FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+                if (prevMVal !== "") lbSelect.value = prevMVal;
+                else lbSelect.value = "0";
+
                 if (state.main === 'fresh') {
                     freshLB.classList.remove('hidden'); renLB.classList.add('hidden');
                     const tYtdGwp = Object.keys(agentLB).sort((a,b) => agentLB[b].ytdGWP - agentLB[a].ytdGWP).slice(0, 3);
                     const tYtdNop = Object.keys(agentLB).sort((a,b) => agentLB[b].ytdNOP - agentLB[a].ytdNOP).slice(0, 3);
-                    const tMtdGwp = Object.keys(agentLB).sort((a,b) => agentLB[b].mtdGWP - agentLB[a].mtdGWP).slice(0, 3);
-                    const tMtdNop = Object.keys(agentLB).sort((a,b) => agentLB[b].mtdNOP - agentLB[a].mtdNOP).slice(0, 3);
 
                     document.getElementById('lb-ytd-gwp').innerHTML = tYtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${agentLB[a].ytdGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('');
                     document.getElementById('lb-ytd-nop').innerHTML = tYtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].ytdNOP}</span></div>`).join('');
-                    document.getElementById('lb-mtd-gwp').innerHTML = tMtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${agentLB[a].mtdGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('');
-                    document.getElementById('lb-mtd-nop').innerHTML = tMtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].mtdNOP}</span></div>`).join('');
                     
+                    renderLeaderboardsForSelectedMonth();
+
                     actSection.classList.remove('hidden'); actSection.classList.add('grid');
                     document.getElementById('act-total').innerText = `Total Activations: ${act.total}`;
                     document.getElementById('act-below15k').innerText = act.below15k;
@@ -1146,19 +1331,19 @@
                     actSection.classList.add('hidden'); actSection.classList.remove('grid');
                     
                     const tYtdRen = Object.keys(agentLB).filter(a => agentLB[a].ytdBase >= 5).sort((a,b) => (agentLB[b].ytdRen/agentLB[b].ytdBase) - (agentLB[a].ytdRen/agentLB[a].ytdBase)).slice(0, 3);
-                    const tMtdRen = Object.keys(agentLB).filter(a => agentLB[a].mtdBase >= 1).sort((a,b) => (agentLB[b].mtdRen/agentLB[b].mtdBase) - (agentLB[a].mtdRen/agentLB[a].mtdBase)).slice(0, 3);
-
                     document.getElementById('lb-ytd-ren').innerHTML = tYtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].ytdRen/agentLB[a].ytdBase)*100)}%</span></div>`).join('');
-                    document.getElementById('lb-mtd-ren').innerHTML = tMtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].mtdRen/agentLB[a].mtdBase)*100)}%</span></div>`).join('');
+                    
+                    renderLeaderboardsForSelectedMonth();
                 }
             } else { 
+                leaderboardWrapper.classList.add('hidden');
                 freshLB.classList.add('hidden'); 
                 renLB.classList.add('hidden'); 
                 actSection.classList.add('hidden'); 
                 actSection.classList.remove('grid'); 
             }
 
-            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
+            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, 0, 0);
             renderGrid(fyData);
             renderChart(fyData);
 
@@ -1214,7 +1399,6 @@
                 `;
             } else {
                 const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
-                const prevRenewPercent = 0; 
 
                 summaryDiv.innerHTML = `
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -1253,43 +1437,63 @@
                 const monthName = FY_MONTHS[index];
                 if (state.main === 'fresh') {
                     const actBadge = data.activations > 0 
-                        ? `<span class="text-emerald-700 text-[10px] font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded shrink-0">${data.activations} Act.</span>` 
+                        ? `<button onclick="event.stopPropagation(); openActivationDrillDown(${index})" class="text-emerald-700 text-[11px] font-extrabold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Active Agents">${data.activations} Act.</button>` 
                         : '';
-                        
+
+                    const nopBadge = `<button onclick="event.stopPropagation(); openPolicyDrillDown(${index})" class="text-blue-600 text-[11px] font-extrabold bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Policies">${data.freshNOP} NOP</button>`;
+
                     let distributionHtml = '';
-                    if ((state.sub === 'cluster' || state.sub === 'manager') && data.activations > 0) {
+                    if ((state.sub === 'cluster' || state.sub === 'manager') && (data.freshNOP > 0 || data.activations > 0)) {
                         distributionHtml = `
-                        <div class="grid grid-cols-5 gap-1 mt-2.5 pt-2 border-t border-slate-100 text-[8px] text-center">
-                            <div class="flex flex-col bg-slate-50 rounded py-0.5"><span class="text-slate-400 font-semibold mb-0.5">15K</span><span class="font-bold text-slate-800">${data.actDistribution.b15k}</span></div>
-                            <div class="flex flex-col bg-slate-50 rounded py-0.5"><span class="text-slate-400 font-semibold mb-0.5">50K</span><span class="font-bold text-slate-800">${data.actDistribution.b50k}</span></div>
-                            <div class="flex flex-col bg-slate-50 rounded py-0.5"><span class="text-slate-400 font-semibold mb-0.5">1L</span><span class="font-bold text-slate-800">${data.actDistribution.b1L}</span></div>
-                            <div class="flex flex-col bg-slate-50 rounded py-0.5"><span class="text-slate-400 font-semibold mb-0.5">2L</span><span class="font-bold text-slate-800">${data.actDistribution.b2L}</span></div>
-                            <div class="flex flex-col bg-amber-50 rounded py-0.5 border border-amber-100"><span class="text-amber-600 font-semibold mb-0.5">3L+</span><span class="font-bold text-amber-800">${data.actDistribution.b3L}</span></div>
+                        <div class="grid grid-cols-6 gap-1 mt-3 pt-2.5 border-t border-slate-100 text-center">
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, 'below15k')" class="flex flex-col bg-slate-100/70 hover:bg-slate-200/70 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Inactive Agents (<15K)">
+                                <span class="text-[9px] text-slate-400 font-extrabold uppercase">&lt;15K</span>
+                                <span class="font-black text-slate-600 text-xs mt-0.5">${data.actDistribution.below15k}</span>
+                            </div>
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, '15K')" class="flex flex-col bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Agents in 15K - 50K">
+                                <span class="text-[9px] text-slate-500 font-extrabold uppercase">15K</span>
+                                <span class="font-black text-slate-800 text-xs mt-0.5">${data.actDistribution.b15k}</span>
+                            </div>
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, '50K')" class="flex flex-col bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Agents in 50K - 1L">
+                                <span class="text-[9px] text-slate-500 font-extrabold uppercase">50K</span>
+                                <span class="font-black text-slate-800 text-xs mt-0.5">${data.actDistribution.b50k}</span>
+                            </div>
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, '1L')" class="flex flex-col bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Agents in 1L - 2L">
+                                <span class="text-[9px] text-slate-500 font-extrabold uppercase">1L</span>
+                                <span class="font-black text-slate-800 text-xs mt-0.5">${data.actDistribution.b1L}</span>
+                            </div>
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, '2L')" class="flex flex-col bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Agents in 2L - 3L">
+                                <span class="text-[9px] text-slate-500 font-extrabold uppercase">2L</span>
+                                <span class="font-black text-slate-800 text-xs mt-0.5">${data.actDistribution.b2L}</span>
+                            </div>
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, '3L+')" class="flex flex-col bg-amber-50 hover:bg-amber-100 cursor-pointer rounded-lg py-1 transition-all border border-amber-200" title="Click to view Agents >= 3L">
+                                <span class="text-[9px] text-amber-600 font-extrabold uppercase">3L+</span>
+                                <span class="font-black text-amber-800 text-xs mt-0.5">${data.actDistribution.b3L}</span>
+                            </div>
                         </div>`;
                     }
 
                     html += `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card group relative" onclick="openDrillDown(${index})">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card group relative" onclick="openPolicyDrillDown(${index})">
                         <div class="relative z-10">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-extrabold text-slate-400 uppercase group-hover:text-blue-600 transition-colors">${monthName}</span>
+                                <span class="text-xs font-black text-slate-400 uppercase group-hover:text-blue-600 transition-colors">${monthName}</span>
                                 <div class="flex items-center gap-1.5">
                                     ${actBadge}
-                                    <span class="text-blue-600 text-[10px] font-bold bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded shrink-0">${data.freshNOP} NOP</span>
+                                    ${nopBadge}
                                 </div>
                             </div>
-                            <div class="text-sm font-black text-slate-800 truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
+                            <div class="text-base font-black text-slate-800 truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
                             ${distributionHtml}
-                            <div class="mt-2.5 text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-bold">Details <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg></div>
                         </div>
                     </div>`;
                 } else {
                     const badge = data.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded">Future</span>` : ``;
                     html += `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card group relative" onclick="openDrillDown(${index})">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card group relative cursor-pointer" onclick="openPolicyDrillDown(${index})">
                         <div class="relative z-10">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-extrabold text-slate-400 uppercase group-hover:text-slate-600 transition-colors">${monthName}</span>
+                                <span class="text-xs font-black text-slate-400 uppercase group-hover:text-slate-600 transition-colors">${monthName}</span>
                                 ${badge}
                             </div>
                             <div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${data.baseNOP}</span></div>
