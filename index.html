@@ -270,24 +270,28 @@
                             <h2 class="text-sm font-bold text-slate-800">Agent Activations (Monthly Pure Fresh GWP)</h2>
                             <div class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1 rounded-full" id="act-total">Total Activations: 0</div>
                         </div>
+                        <div class="bg-slate-50 rounded-xl shadow-sm border border-slate-200 p-4 text-center opacity-80">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Below 15k</div>
+                            <div class="text-2xl font-black text-slate-500 mt-1" id="act-below15k">0</div>
+                        </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">15k - 50k</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">15k - &lt; 50k</div>
                             <div class="text-2xl font-black text-slate-800 mt-1" id="act-15k">0</div>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">50k - 1L</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">50k - &lt; 1L</div>
                             <div class="text-2xl font-black text-slate-800 mt-1" id="act-50k">0</div>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">1L - 2L</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">1L - &lt; 2L</div>
                             <div class="text-2xl font-black text-slate-800 mt-1" id="act-1l">0</div>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">2L - 3L</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">2L - &lt; 3L</div>
                             <div class="text-2xl font-black text-slate-800 mt-1" id="act-2l">0</div>
                         </div>
-                        <div class="bg-amber-50 rounded-xl shadow-sm border border-amber-100 p-4 text-center lg:col-span-2">
-                            <div class="text-[10px] font-bold text-amber-600 uppercase">>= 3L</div>
+                        <div class="bg-amber-50 rounded-xl shadow-sm border border-amber-100 p-4 text-center">
+                            <div class="text-[10px] font-bold text-amber-600 uppercase">&gt;= 3L</div>
                             <div class="text-2xl font-black text-amber-700 mt-1" id="act-3l">0</div>
                         </div>
                     </div>
@@ -711,7 +715,7 @@
             }
 
             const fyData = Array.from({ length: 12 }, () => ({
-                freshNOP: 0, freshAmount: 0, baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false
+                freshNOP: 0, freshAmount: 0, baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false, activations: 0
             }));
 
             let totalFreshAmt = 0, totalFreshNOP = 0, prevFreshAmt = 0, prevFreshNOP = 0;
@@ -872,18 +876,29 @@
                     
                     // RENDER ACTIVATIONS BANDS
                     actSection.classList.remove('hidden'); actSection.classList.add('grid');
-                    let act = { total: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
+                    let act = { total: 0, below15k: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
+                    
                     Object.keys(agentMonthlyPureGWP).forEach(a => {
                         Object.keys(agentMonthlyPureGWP[a]).forEach(mIdx => {
                             let pureGWP = agentMonthlyPureGWP[a][mIdx];
+                            
+                            // Log month-wise activations to the main calendar dataset (if >= 15k)
+                            if (pureGWP >= 15000) {
+                                fyData[mIdx].activations++;
+                            }
+                            
+                            // Allocate to YTD summary bands
                             if (pureGWP >= 300000) { act.b3L++; act.total++; }
                             else if (pureGWP >= 200000) { act.b2L++; act.total++; }
                             else if (pureGWP >= 100000) { act.b1L++; act.total++; }
                             else if (pureGWP >= 50000) { act.b50k++; act.total++; }
                             else if (pureGWP >= 15000) { act.b15k++; act.total++; }
+                            else { act.below15k++; }
                         });
                     });
+
                     document.getElementById('act-total').innerText = `Total Activations (YTD): ${act.total}`;
+                    document.getElementById('act-below15k').innerText = act.below15k;
                     document.getElementById('act-15k').innerText = act.b15k;
                     document.getElementById('act-50k').innerText = act.b50k;
                     document.getElementById('act-1l').innerText = act.b1L;
@@ -905,6 +920,19 @@
                 renLB.classList.add('hidden'); 
                 actSection.classList.add('hidden'); 
                 actSection.classList.remove('grid'); 
+                
+                // Agents should also see their activation logic in the calendar, 
+                // so we run the monthly loop for them too (if in fresh view)
+                if (state.main === 'fresh') {
+                    Object.keys(agentMonthlyPureGWP).forEach(a => {
+                        Object.keys(agentMonthlyPureGWP[a]).forEach(mIdx => {
+                            let pureGWP = agentMonthlyPureGWP[a][mIdx];
+                            if (pureGWP >= 15000) {
+                                fyData[mIdx].activations++;
+                            }
+                        });
+                    });
+                }
             }
 
             renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
@@ -1004,13 +1032,21 @@
             fyData.forEach((data, index) => {
                 const monthName = FY_MONTHS[index];
                 if (state.main === 'fresh') {
+                    
+                    const actBadge = (state.sub === 'cluster' || state.sub === 'manager' || state.sub === 'agent') && data.activations > 0 
+                        ? `<span class="text-emerald-600 text-[10px] font-bold bg-emerald-50 px-1.5 py-0.5 rounded group-hover:bg-emerald-100 transition-colors shrink-0">${data.activations} Act.</span>` 
+                        : '';
+
                     html += `
                     <div class="bg-white rounded-xl border border-slate-100 p-4 stat-card group relative" onclick="openDrillDown(${index})">
                         <div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl z-0"></div>
                         <div class="relative z-10">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-xs font-bold text-slate-400 uppercase group-hover:text-blue-600 transition-colors">${monthName}</span>
-                                <span class="text-blue-600 text-[10px] font-bold bg-blue-50 px-1.5 py-0.5 rounded group-hover:bg-blue-100 transition-colors">${data.freshNOP} NOP</span>
+                                <div class="flex items-center gap-1.5">
+                                    ${actBadge}
+                                    <span class="text-blue-600 text-[10px] font-bold bg-blue-50 px-1.5 py-0.5 rounded group-hover:bg-blue-100 transition-colors shrink-0">${data.freshNOP} NOP</span>
+                                </div>
                             </div>
                             <div class="text-sm font-extrabold text-slate-800 truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
                             <div class="mt-2 text-[9px] text-slate-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-semibold">View Details <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg></div>
