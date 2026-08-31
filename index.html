@@ -118,7 +118,6 @@
     <!-- VIEW 2: ROLE SELECTION -->
     <div id="view-role" class="hidden flex-1 flex flex-col bg-gradient-to-b from-slate-50 via-white to-slate-100 h-full w-full fade-in z-40 relative overflow-y-auto">
         
-        <!-- Header with Prominent Back Button -->
         <div class="p-6 max-w-5xl mx-auto w-full flex items-center justify-between">
             <button onclick="showView('view-home')" class="inline-flex items-center gap-2 text-slate-700 hover:text-blue-600 bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl text-xs font-bold transition-all hover:border-blue-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -253,11 +252,11 @@
             
             <!-- Empty State Prompt -->
             <div id="empty-state" class="flex flex-col items-center justify-center h-full min-h-[350px] text-center slide-up">
-                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3 border border-slate-200">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                 </div>
                 <h3 class="text-base font-bold text-slate-700 mb-1">Parameters Required</h3>
-                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600">Financial Year</span> and <span class="font-bold text-slate-600" id="empty-parameter-hint">Target Name</span> from the filters above.</p>
+                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600">Financial Year</span> and <span class="font-bold text-slate-600" id="empty-parameter-hint">Target Name</span> from the filters above to view the dashboard.</p>
             </div>
 
             <div id="export-container" class="w-full mx-auto max-w-[1280px]">
@@ -313,9 +312,9 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution</h2>
-                                <p class="text-[11px] text-slate-400 font-medium">Pure Fresh GWP &ge; &#8377;15,000 / month per agent</p>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Pure Fresh GWP &ge; &#8377;15,000 / month per agent</p>
                             </div>
-                            <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-3.5 py-1.5 rounded-xl border border-blue-100" id="act-total">Total Activations: 0</div>
+                            <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-inner" id="act-total">Total Activations: 0</div>
                         </div>
                         <div class="bg-slate-50 rounded-2xl shadow-sm border border-slate-200 p-4 text-center opacity-70">
                             <div class="text-[10px] font-bold text-slate-400 uppercase">Below 15k (Inactive)</div>
@@ -348,14 +347,14 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Product Wise Performance
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">Pure Fresh</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
                             </h2>
                             <div id="product-list" class="space-y-3 max-h-56 overflow-y-auto pr-2"></div>
                         </div>
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Sum Insured Wise
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">Pure Fresh</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
                             </h2>
                             <div id="si-list" class="space-y-3 max-h-56 overflow-y-auto pr-2"></div>
                         </div>
@@ -396,20 +395,18 @@
     </div>
 
     <script>
-        // Data Normalization Map
-        let COL_MAP = {
-            policy: "Policy No",
-            insured: "Insured Name",
-            agent: "Intermediary Name",
-            manager: "SSM Name",
-            imd: "Intermediary Code",
-            agreement: "Agreement Code",
-            date: "Policy Start Date",
-            prem: "GWP",
-            trans: "Transaction Type",
-            product: "Product Name",
-            si: "Total Sum Insured"
-        };
+        // STATIC EXACT MAPPINGS (Reverted to the robust state)
+        const COL_POLICY = "Policy No";
+        const COL_INSURED = "Insured Name";
+        const COL_AGENT = "Intermediary Name";
+        const COL_MANAGER = "SSM Name";
+        const COL_IMD_CODE = "Intermediary Code";
+        const COL_AGR_CODE = "Agreement Code";
+        const COL_DATE = "Policy Start Date";
+        const COL_PREM = "GWP";
+        const COL_TRANSACTION = "Transaction Type";
+        const COL_PRODUCT = "Product Name";
+        const COL_SUM_INSURED = "Total Sum Insured";
 
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
@@ -417,6 +414,16 @@
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
+        // Number Parser to handle strings with commas properly
+        function parseNumber(val) {
+            if (val === undefined || val === null || val === '') return 0;
+            if (typeof val === 'number') return val;
+            const str = val.toString().replace(/,/g, '').trim();
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        }
+
+        // Robust Date Parser
         function parseExcelDate(val) {
             if (!val) return null;
             if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
@@ -472,26 +479,11 @@
                     const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                     
                     if (sheet.length > 0) {
-                        // Dynamically map column headers
-                        const firstRowKeys = Object.keys(sheet[0]);
-                        firstRowKeys.forEach(k => {
-                            const lk = k.trim().toLowerCase();
-                            if (lk.includes('policy') && lk.includes('no')) COL_MAP.policy = k.trim();
-                            else if (lk.includes('insured') || lk.includes('customer')) COL_MAP.insured = k.trim();
-                            else if (lk.includes('intermediary name') || lk.includes('agent name') || lk === 'agent') COL_MAP.agent = k.trim();
-                            else if (lk.includes('ssm') || lk.includes('manager') || lk.includes('sm name')) COL_MAP.manager = k.trim();
-                            else if (lk.includes('start date') || lk.includes('policy date') || lk.includes('risk start')) COL_MAP.date = k.trim();
-                            else if (lk === 'gwp' || lk.includes('premium') || lk.includes('gross')) COL_MAP.prem = k.trim();
-                            else if (lk.includes('transaction') || lk.includes('tx type') || lk === 'type') COL_MAP.trans = k.trim();
-                            else if (lk.includes('product')) COL_MAP.product = k.trim();
-                            else if (lk.includes('sum insured') || lk.includes('si')) COL_MAP.si = k.trim();
-                            else if (lk.includes('code') && lk.includes('imd')) COL_MAP.imd = k.trim();
-                            else if (lk.includes('agreement')) COL_MAP.agreement = k.trim();
-                        });
-
                         const cleanedSheet = sheet.map(row => {
                             let cleanRow = {};
-                            for (let key in row) cleanRow[key.trim()] = row[key];
+                            for (let key in row) {
+                                if (key) cleanRow[key.toString().trim()] = row[key];
+                            }
                             return cleanRow;
                         });
                         rawData = rawData.concat(cleanedSheet);
@@ -576,24 +568,27 @@
         function populateYears() {
             const yearSelect = document.getElementById('year-select');
             const years = [...new Set(rawData.map(row => {
-                const d = parseExcelDate(row[COL_MAP.date]);
+                const d = parseExcelDate(row[COL_DATE]);
                 if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
 
             yearSelect.innerHTML = '<option value="">Select Financial Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
             
-            // Populate blank dependent selects
             document.getElementById('name-select').innerHTML = '<option value="">Select Target Name</option>';
             document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
+
+            // Auto-select latest year to improve UX
+            if (years.length > 0) {
+                yearSelect.value = years[0];
+                onYearChange(); // trigger downstream selects
+            }
         }
 
         function onYearChange() {
             const val = document.getElementById('year-select').value;
             state.selectedYear = val ? parseInt(val) : null;
-            state.selectedName = null;
-            state.selectedMonth = null;
-
+            
             if (!state.selectedYear) {
                 resetDashboard();
                 return;
@@ -602,24 +597,41 @@
             if (state.main === 'ranking') {
                 const monthSelect = document.getElementById('month-select');
                 monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-                resetDashboard();
+                if (monthSelect.options.length > 1) {
+                    monthSelect.value = "0"; // Auto-select April
+                    onMonthChange();
+                } else {
+                    resetDashboard();
+                }
             } else {
                 if (state.sub === 'cluster') {
                     renderDashboard();
                 } else {
                     const nameSelect = document.getElementById('name-select');
-                    const colKey = state.sub === 'agent' ? COL_MAP.agent : COL_MAP.manager;
+                    const colKey = state.sub === 'agent' ? COL_AGENT : COL_MANAGER;
                     
                     const filtered = rawData.filter(row => {
-                        const d = parseExcelDate(row[COL_MAP.date]);
+                        const d = parseExcelDate(row[COL_DATE]);
                         if (!d) return false;
                         const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
                         return rowFY === state.selectedYear;
                     });
 
                     const names = [...new Set(filtered.map(row => toTitleCase(row[colKey])).filter(n => n))].sort();
+                    const currentVal = nameSelect.value;
                     nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
-                    resetDashboard();
+                    
+                    // Auto-select logic
+                    const titleCasedCurrent = toTitleCase(currentVal);
+                    if (names.includes(titleCasedCurrent)) {
+                        nameSelect.value = titleCasedCurrent;
+                        renderDashboard();
+                    } else if (names.length > 0) {
+                        nameSelect.value = names[0];
+                        renderDashboard();
+                    } else {
+                        resetDashboard();
+                    }
                 }
             }
         }
@@ -644,8 +656,8 @@
         }
 
         function formatSumInsured(val) {
-            if (!val || isNaN(val)) return '-';
-            const num = parseFloat(val);
+            const num = parseNumber(val);
+            if (num === 0) return '-';
             if (num >= 10000000) return '₹' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
             if (num >= 100000) return '₹' + (num / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
             if (num >= 1000) return '₹' + (num / 1000).toFixed(2).replace(/\.00$/, '') + ' K';
@@ -668,7 +680,7 @@
             const tbody = document.getElementById('modal-table-body');
             
             const policies = rawData.filter(row => {
-                const date = parseExcelDate(row[COL_MAP.date]);
+                const date = parseExcelDate(row[COL_DATE]);
                 if(!date) return false;
                 
                 const month = date.getMonth();
@@ -678,10 +690,10 @@
 
                 if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return false;
                 
-                if (state.sub === 'agent' && toTitleCase(row[COL_MAP.agent]) !== state.selectedName) return false;
-                if (state.sub === 'manager' && toTitleCase(row[COL_MAP.manager]) !== state.selectedName) return false;
+                if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
+                if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
 
-                const tType = (row[COL_MAP.trans] || '').toString().toLowerCase();
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                 const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
                 const isRenewalTx = tType.includes('our renewal');
                 
@@ -692,19 +704,19 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No records found for this period.</td></tr>`;
             } else {
                 tbody.innerHTML = policies.map(p => {
-                    const d = parseExcelDate(p[COL_MAP.date]);
+                    const d = parseExcelDate(p[COL_DATE]);
                     const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
-                    const prem = parseFloat(p[COL_MAP.prem]) || 0;
-                    const siStr = formatSumInsured(p[COL_MAP.si]);
-                    const type = (p[COL_MAP.trans] || '').toLowerCase();
+                    const prem = parseNumber(p[COL_PREM]);
+                    const siStr = formatSumInsured(p[COL_SUM_INSURED]);
+                    const type = (p[COL_TRANSACTION] || '').toLowerCase();
                     const isCancel = type.includes('cancel');
 
                     return `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
-                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_MAP.policy] || 'N/A'}</td>
-                        <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_MAP.insured]) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_MAP.product] || '-'}</td>
+                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
+                        <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[160px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                        <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[130px]">${p[COL_PRODUCT] || '-'}</td>
                         <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
                         <td class="p-3 text-[11px] font-bold ${isCancel ? 'text-rose-500' : 'text-slate-800'} text-right whitespace-nowrap">${isCancel ? '-' : ''}₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
                     </tr>`;
@@ -731,21 +743,21 @@
             let agents = {};
 
             rawData.forEach(row => {
-                const d = parseExcelDate(row[COL_MAP.date]);
+                const d = parseExcelDate(row[COL_DATE]);
                 if (!d) return;
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
-                    const tType = (row[COL_MAP.trans] || '').toString().toLowerCase();
+                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
                     const isCancelTx = tType.includes('cancel'); 
                     
                     if (isFreshBaseTx || isCancelTx) {
-                        const agent = toTitleCase(row[COL_MAP.agent]);
-                        const manager = toTitleCase(row[COL_MAP.manager]);
+                        const agent = toTitleCase(row[COL_AGENT]);
+                        const manager = toTitleCase(row[COL_MANAGER]);
                         
                         if (agent) {
                             if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager };
-                            const prem = parseFloat(row[COL_MAP.prem]) || 0;
+                            const prem = parseNumber(row[COL_PREM]);
                             if (isFreshBaseTx) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
                             else { agents[agent].nop -= 1; agents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
                         }
@@ -798,13 +810,13 @@
             document.getElementById('dashboard-content').classList.remove('hidden');
 
             if (state.sub === 'agent' && state.selectedName) {
-                const agentRow = rawData.find(r => toTitleCase(r[COL_MAP.agent]) === state.selectedName);
+                const agentRow = rawData.find(r => toTitleCase(r[COL_AGENT]) === state.selectedName);
                 document.getElementById('agent-profile').classList.remove('hidden');
                 document.getElementById('agent-profile').classList.add('flex');
                 document.getElementById('agent-name-display').innerText = state.selectedName;
                 document.getElementById('agent-initials').innerText = state.selectedName.substring(0, 2).toUpperCase();
-                document.getElementById('agent-imd').innerText = agentRow ? (agentRow[COL_MAP.imd] || 'N/A') : 'N/A';
-                document.getElementById('agent-agreement').innerText = agentRow ? (agentRow[COL_MAP.agreement] || 'N/A') : 'N/A';
+                document.getElementById('agent-imd').innerText = agentRow ? (agentRow[COL_IMD_CODE] || 'N/A') : 'N/A';
+                document.getElementById('agent-agreement').innerText = agentRow ? (agentRow[COL_AGR_CODE] || 'N/A') : 'N/A';
             } else {
                 document.getElementById('agent-profile').classList.add('hidden');
                 document.getElementById('agent-profile').classList.remove('flex');
@@ -825,7 +837,7 @@
             const currentMonth = now.getMonth(); 
 
             rawData.forEach(row => {
-                const date = parseExcelDate(row[COL_MAP.date]);
+                const date = parseExcelDate(row[COL_DATE]);
                 if (!date) return;
 
                 const month = date.getMonth(); 
@@ -833,9 +845,9 @@
                 const rowFY = month >= 3 ? year : year - 1;
                 const fyMonthIndex = month >= 3 ? month - 3 : month + 9;
                 
-                const tType = (row[COL_MAP.trans] || '').toString().toLowerCase();
-                const premium = parseFloat(row[COL_MAP.prem]) || 0;
-                const agent = toTitleCase(row[COL_MAP.agent] || 'Unknown');
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                const premium = parseNumber(row[COL_PREM]);
+                const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
 
                 const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
                 const isRenewalTx = tType.includes('our renewal');
@@ -846,10 +858,10 @@
                 }
 
                 const passesFilter = (state.sub === 'cluster' || 
-                                     (state.sub === 'agent' && toTitleCase(row[COL_MAP.agent]) === state.selectedName) || 
-                                     (state.sub === 'manager' && toTitleCase(row[COL_MAP.manager]) === state.selectedName));
+                                     (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) === state.selectedName) || 
+                                     (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName));
 
-                const passesLBFilter = state.sub === 'cluster' || (state.sub === 'manager' && toTitleCase(row[COL_MAP.manager]) === state.selectedName);
+                const passesLBFilter = state.sub === 'cluster' || (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName);
 
                 if (state.main === 'fresh') {
                     if (rowFY === state.selectedYear) {
@@ -882,8 +894,8 @@
 
                         // Strict Pure Fresh Breakdowns (No Cancellations)
                         if (passesFilter && isFreshBaseTx) {
-                            let prod = row[COL_MAP.product] || 'Unspecified';
-                            let si = row[COL_MAP.si] || 'Unspecified';
+                            let prod = row[COL_PRODUCT] || 'Unspecified';
+                            let si = row[COL_SUM_INSURED] || 'Unspecified';
                             
                             if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
                             productBreakdown[prod].nop += 1;
