@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Performance Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; }
+        .hidden { display: none !important; }
+        
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .stat-card { transition: all 0.2s ease-in-out; border: 1px solid #f1f5f9; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #e2e8f0; }
+        
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; }
+        
+        /* Ranking Badges */
+        .rank-1 { background: linear-gradient(135deg, #ffd700 0%, #fdb931 100%); color: #855a00; border: 2px solid #ffe866; }
+        .rank-2 { background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); color: #475569; border: 2px solid #f1f5f9; }
+        .rank-3 { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: 2px solid #fcd34d; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden selection:bg-blue-100 selection:text-blue-900" id="main-body">
+
+    <!-- UPLOAD OVERLAY -->
+    <div id="upload-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[70] hidden p-4">
+        <div class="bg-white p-8 rounded-[1.5rem] shadow-2xl text-center max-w-sm w-full slide-up">
+            <div class="bg-blue-50 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            </div>
+            <h2 class="text-xl font-bold mb-2 text-slate-800">Master Data Required</h2>
+            <p class="text-slate-500 mb-6 text-xs">Upload your master Excel file to initialize.</p>
+            <input type="file" id="file-upload" accept=".xlsx, .xls" class="hidden">
+            <button onclick="document.getElementById('file-upload').click()" class="bg-slate-900 hover:bg-blue-600 text-white font-medium py-2.5 px-6 rounded-lg shadow transition-all duration-300 w-full text-sm">Browse File</button>
+        </div>
+    </div>
+
+    <!-- DRILL-DOWN MODAL -->
+    <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden p-4">
+        <div class="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden">
+            <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800" id="modal-title">Month Details</h2>
+                    <p class="text-xs font-semibold text-slate-500">Policy Breakdown</p>
+                </div>
+                <button onclick="closeModal()" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-0 overflow-y-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 shadow-sm z-10">
+                        <tr>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
+                            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">GWP / Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 1: HOME -->
+    <div id="view-home" class="hidden flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 h-full w-full fade-in z-40 px-4 relative">
+        <div class="z-10 mb-10 text-center slide-up">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">Performance <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Portal</span></h1>
+        </div>
+        <div class="z-10 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5 w-full slide-up" style="animation-delay: 0.1s;">
+            <button onclick="navToRole('fresh')" class="bg-white p-6 rounded-3xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-slate-100 group flex flex-col items-center text-center">
+                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Fresh Business</h2>
+            </button>
+            <button onclick="navToRole('renewal')" class="bg-white p-6 rounded-3xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-slate-100 group flex flex-col items-center text-center">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Renewal Performance</h2>
+            </button>
+            <button onclick="navToRole('ranking')" class="bg-white p-6 rounded-3xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-amber-100 group flex flex-col items-center text-center relative overflow-hidden">
+                <div class="absolute -top-6 -right-6 w-20 h-20 bg-amber-50 rounded-full z-0"></div>
+                <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-500 group-hover:text-white transition-colors relative z-10">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800 relative z-10">Monthly Agent Ranking</h2>
+            </button>
+        </div>
+    </div>
+
+    <!-- VIEW 2: ROLE SELECTION -->
+    <div id="view-role" class="hidden flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 h-full w-full fade-in z-40 px-4 relative">
+        <div class="absolute top-5 left-5 z-50">
+            <button onclick="showView('view-home')" class="flex items-center text-slate-500 hover:text-slate-900 transition-colors font-semibold text-xs bg-white/50 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-md">
+                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back
+            </button>
+        </div>
+        <div class="z-10 mb-8 text-center slide-up">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight" id="role-title">Select Module</h1>
+        </div>
+        
+        <div id="role-standard" class="z-10 max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 w-full slide-up hidden">
+            <button onclick="navToDashboard('agent')" class="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 border border-slate-100 group flex flex-col items-center">
+                <div class="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+                <h2 class="text-base font-semibold text-slate-800">Agent</h2>
+            </button>
+            <button onclick="navToDashboard('manager')" class="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 border border-slate-100 group flex flex-col items-center">
+                <div class="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <h2 class="text-base font-semibold text-slate-800">Manager</h2>
+            </button>
+            <button onclick="navToDashboard('cluster')" class="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 border border-slate-100 group flex flex-col items-center">
+                <div class="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center mb-3 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h2 class="text-base font-semibold text-slate-800">Cluster</h2>
+            </button>
+        </div>
+
+        <div id="role-ranking" class="z-10 max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 w-full hidden slide-up">
+            <button onclick="navToDashboard('gwp_rank')" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 border border-amber-100 group flex flex-col items-center">
+                <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">GWP Ranking</h2>
+            </button>
+            <button onclick="navToDashboard('nop_rank')" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 border border-blue-100 group flex flex-col items-center">
+                <div class="w-14 h-14 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">NOP Ranking</h2>
+            </button>
+        </div>
+    </div>
+
+    <!-- VIEW 3: DASHBOARD / RANKING -->
+    <div id="view-dashboard" class="hidden flex-1 flex flex-col h-full bg-slate-50 fade-in">
+        
+        <header class="glass-panel sticky top-0 z-30">
+            <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <button onclick="showView('view-role')" class="mr-3 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-base font-bold text-slate-900" id="dashboard-title">Performance</h1>
+                            <span class="text-slate-300 text-sm font-light">|</span>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5" id="dashboard-subtitle">Role</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="bg-white border-b border-slate-200 shadow-sm z-20">
+            <div class="max-w-[1200px] mx-auto px-4 py-3 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full" id="filter-bar">
+                    
+                    <div class="relative w-full sm:w-48">
+                        <select id="year-select" class="block w-full pl-3 pr-8 py-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded-lg transition-all" onchange="updateDependentDropdowns()">
+                            <option value="">Select Year</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                    
+                    <div id="name-container" class="relative w-full sm:w-72 hidden">
+                        <select id="name-select" class="block w-full pl-3 pr-8 py-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded-lg transition-all" onchange="renderDashboard()">
+                            <option value="">Select Target Name</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                    <div id="month-container" class="relative w-full sm:w-48 hidden">
+                        <select id="month-select" class="block w-full pl-3 pr-8 py-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded-lg transition-all" onchange="renderRanking()">
+                            <option value="">Select Month</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative" id="main-scroll-area">
+            
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full min-h-[250px] text-center slide-up">
+                <p class="text-slate-400 font-medium text-xs">Select mandatory filters above to load data.</p>
+            </div>
+
+            <!-- EXPORT CONTAINER -->
+            <div id="export-container" class="w-full mx-auto max-w-[1200px]">
+                
+                <!-- 1. STANDARD DASHBOARD UI -->
+                <div class="space-y-5 hidden slide-up pb-10" id="dashboard-content">
+                    
+                    <div id="agent-profile" class="hidden bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="agent-initials"></div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800" id="agent-name-display">Name</h3>
+                                <div class="flex items-center gap-3 mt-1 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                                    <span>IMD: <span class="text-slate-700 font-bold" id="agent-imd"></span></span>
+                                    <span>|</span>
+                                    <span>Agreement: <span class="text-slate-700 font-bold" id="agent-agreement"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="summary-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                        <div class="xl:col-span-2 space-y-4">
+                            <div id="fy-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                        </div>
+                        <div class="xl:col-span-1 bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[350px] xl:h-auto chart-container">
+                            <h2 class="text-sm font-bold text-slate-800 mb-3">Annual Trend</h2>
+                            <div class="relative flex-1 w-full min-h-[200px]">
+                                <canvas id="performanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CLUSTER/MANAGER LEADERBOARDS -->
+                    <div id="cluster-leaderboard-fresh" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600">Top 3 YTD GWP</h2><div id="lb-ytd-gwp" class="space-y-2.5"></div></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500">Top 3 YTD NOP</h2><div id="lb-ytd-nop" class="space-y-2.5"></div></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-blue-600">Top 3 MTD GWP</h2><div id="lb-mtd-gwp" class="space-y-2.5"></div></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-amber-500">Top 3 MTD NOP</h2><div id="lb-mtd-nop" class="space-y-2.5"></div></div>
+                    </div>
+
+                    <div id="cluster-leaderboard-renewal" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 YTD Retention %</h2><div id="lb-ytd-ren" class="space-y-2.5"></div></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4"><h2 class="text-[10px] font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider text-emerald-600">Top 3 MTD Retention %</h2><div id="lb-mtd-ren" class="space-y-2.5"></div></div>
+                    </div>
+
+                    <!-- FRESH BREAKDOWNS -->
+                    <div id="fresh-breakdowns" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Product Wise Performance</h2>
+                            <div id="product-list" class="space-y-3 max-h-56 overflow-y-auto pr-2 scroll-area"></div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                            <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">Sum Insured Wise</h2>
+                            <div id="si-list" class="space-y-3 max-h-56 overflow-y-auto pr-2 scroll-area"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- PERSISTENCY TRACKER (Renewal) -->
+                    <div id="persistency-tracker" class="hidden bg-white rounded-xl shadow-sm border border-slate-100 p-5 mt-2">
+                        <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                            Historical Retention Tracker
+                            <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase">Proxy Calculation</span>
+                        </h2>
+                        <div class="grid grid-cols-2 gap-4" id="persistency-stats"></div>
+                    </div>
+                </div>
+
+                <!-- 2. RANKING BOARD UI -->
+                <div class="max-w-3xl mx-auto hidden slide-up pb-10" id="ranking-board-content">
+                    <div class="bg-white rounded-[2rem] shadow-xl border-4 border-slate-100 overflow-hidden relative">
+                        <!-- Decorative Header -->
+                        <div class="h-36 bg-gradient-to-br from-slate-900 to-slate-800 absolute top-0 left-0 w-full z-0"></div>
+                        <div class="absolute top-0 right-0 w-56 h-56 bg-amber-500 rounded-full blur-3xl opacity-20 z-0"></div>
+                        
+                        <div class="relative z-10 p-8 text-center border-b border-slate-100/10">
+                            <h1 class="text-3xl font-black text-white tracking-tight mb-2 uppercase" id="rb-title">Monthly Ranking</h1>
+                            <p class="text-slate-300 font-semibold text-sm" id="rb-subtitle">Month Year</p>
+                        </div>
+                        
+                        <div class="p-6 bg-slate-50">
+                            <div class="flex justify-between items-center px-4 pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 mb-4">
+                                <span>Agent & Manager</span>
+                                <span id="rb-metric-label">Score</span>
+                            </div>
+                            <div id="rb-list" class="space-y-3">
+                                <!-- Ranking List Injected Here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const COL_POLICY = "Policy No";
+        const COL_INSURED = "Insured Name";
+        const COL_AGENT = "Intermediary Name";
+        const COL_MANAGER = "SSM Name";
+        const COL_IMD_CODE = "Intermediary Code";
+        const COL_AGR_CODE = "Agreement Code";
+        const COL_DATE = "Policy Start Date";
+        const COL_PREM = "GWP";
+        const COL_TRANSACTION = "Transaction Type";
+        const COL_PRODUCT = "Product Name";
+        const COL_SUM_INSURED = "Total Sum Insured";
+        const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+
+        let rawData = [];
+        let chartInstance = null;
+        let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
+
+        // Unified Naming Format (Title Case)
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            attemptFetchDefaultFile();
+            document.getElementById('file-upload').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) loadExcel(file);
+            });
+        });
+
+        async function attemptFetchDefaultFile() {
+            try {
+                let response = await fetch('Kollam Cluster.xlsx');
+                if (!response.ok) response = await fetch('data.xlsx');
+                if (!response.ok) throw new Error('File not found');
+                const arrayBuffer = await response.arrayBuffer();
+                parseExcelData(arrayBuffer);
+            } catch (error) {
+                document.getElementById('upload-overlay').classList.remove('hidden');
+            }
+        }
+
+        function loadExcel(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => parseExcelData(e.target.result);
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseExcelData(buffer) {
+            try {
+                const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+                rawData = [];
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                    rawData = rawData.concat(sheet);
+                });
+                document.getElementById('upload-overlay').classList.add('hidden');
+                showView('view-home');
+            } catch (err) { alert("Error parsing Excel file."); }
+        }
+
+        function showView(viewId) {
+            ['view-home', 'view-role', 'view-dashboard'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function navToRole(mainModule) {
+            state.main = mainModule;
+            if (mainModule === 'ranking') {
+                document.getElementById('role-title').innerText = 'Monthly Agent Ranking';
+                document.getElementById('role-standard').classList.add('hidden');
+                document.getElementById('role-ranking').classList.remove('hidden');
+            } else {
+                document.getElementById('role-title').innerText = mainModule === 'fresh' ? 'Fresh Business' : 'Renewal Performance';
+                document.getElementById('role-standard').classList.remove('hidden');
+                document.getElementById('role-ranking').classList.add('hidden');
+            }
+            showView('view-role');
+        }
+
+        function navToDashboard(subModule) {
+            state.sub = subModule;
+            
+            if (state.main === 'ranking') {
+                document.getElementById('dashboard-title').innerText = 'Agent Ranking';
+                document.getElementById('dashboard-subtitle').innerText = subModule === 'gwp_rank' ? 'GWP' : 'NOP';
+                document.getElementById('name-container').classList.add('hidden');
+                document.getElementById('month-container').classList.remove('hidden');
+            } else {
+                document.getElementById('dashboard-title').innerText = state.main === 'fresh' ? 'Fresh' : 'Renewal';
+                document.getElementById('dashboard-subtitle').innerText = subModule;
+                document.getElementById('name-container').classList.toggle('hidden', subModule === 'cluster');
+                document.getElementById('month-container').classList.add('hidden');
+            }
+            
+            document.getElementById('year-select').value = "";
+            document.getElementById('name-select').value = "";
+            document.getElementById('month-select').value = "";
+            
+            populateYears();
+            updateDependentDropdowns();
+            resetDashboardView();
+            showView('view-dashboard');
+        }
+
+        function resetDashboardView() {
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('ranking-board-content').classList.add('hidden');
+            
+            if (state.main !== 'ranking') {
+                document.getElementById('agent-profile').classList.add('hidden');
+                document.getElementById('fresh-breakdowns').classList.add('hidden');
+                document.getElementById('cluster-leaderboard-fresh').classList.add('hidden');
+                document.getElementById('cluster-leaderboard-renewal').classList.add('hidden');
+                document.getElementById('persistency-tracker').classList.add('hidden');
+            }
+            if(chartInstance) chartInstance.destroy();
+        }
+
+        function populateYears() {
+            const yearSelect = document.getElementById('year-select');
+            const years = [...new Set(rawData.map(row => {
+                if(!row[COL_DATE]) return null;
+                const d = new Date(row[COL_DATE]);
+                if (isNaN(d)) return null;
+                return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+            }).filter(y => y !== null))].sort((a, b) => b - a);
+
+            yearSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+        }
+
+        function updateDependentDropdowns() {
+            const val = document.getElementById('year-select').value;
+            state.selectedYear = val ? parseInt(val) : null;
+            
+            if (state.main === 'ranking') {
+                const monthSelect = document.getElementById('month-select');
+                if (state.selectedYear) {
+                    monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+                } else { monthSelect.innerHTML = '<option value="">Select Month</option>'; }
+                renderRanking();
+            } else {
+                const nameSelect = document.getElementById('name-select');
+                if (state.sub !== 'cluster') {
+                    const colKey = state.sub === 'agent' ? COL_AGENT : COL_MANAGER;
+                    let filteredData = rawData;
+                    if (state.selectedYear) {
+                        filteredData = rawData.filter(row => {
+                            if (!row[COL_DATE]) return false;
+                            const d = new Date(row[COL_DATE]);
+                            if (isNaN(d)) return false;
+                            const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                            if (state.main === 'renewal') return rowFY === state.selectedYear || rowFY === (state.selectedYear - 1);
+                            return rowFY === state.selectedYear;
+                        });
+                    }
+                    const names = [...new Set(filteredData.map(row => row[colKey]).filter(n => n))].sort();
+                    const currentVal = nameSelect.value;
+                    nameSelect.innerHTML = '<option value="">Select Target Name</option>' + names.map(n => `<option value="${toTitleCase(n)}">${toTitleCase(n)}</option>`).join('');
+                    if(names.includes(currentVal)) nameSelect.value = currentVal;
+                }
+                renderDashboard();
+            }
+        }
+
+        function formatSumInsured(val) {
+            if (!val || isNaN(val)) return '-';
+            const num = parseFloat(val);
+            if (num >= 10000000) return '₹' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
+            if (num >= 100000) return '₹' + (num / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
+            if (num >= 1000) return '₹' + (num / 1000).toFixed(2).replace(/\.00$/, '') + ' K';
+            return '₹' + num.toLocaleString('en-IN');
+        }
+
+        function getYoYBadge(current, previous) {
+            if (previous === 0) return '';
+            const diff = ((current - previous) / previous) * 100;
+            const val = Math.abs(diff).toFixed(0);
+            if (diff > 0) return `<span class="bg-emerald-100 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold shadow-sm">↑ ${val}%</span>`;
+            if (diff < 0) return `<span class="bg-rose-100 text-rose-700 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold shadow-sm">↓ ${val}%</span>`;
+            return `<span class="bg-slate-100 text-slate-500 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold shadow-sm">-</span>`;
+        }
+
+        // === DRILL-DOWN MODAL LOGIC ===
+        function openDrillDown(monthIndex) {
+            const monthName = FY_MONTHS[monthIndex];
+            document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1}`;
+            const tbody = document.getElementById('modal-table-body');
+            
+            const policies = rawData.filter(row => {
+                if(!row[COL_DATE]) return false;
+                const date = new Date(row[COL_DATE]);
+                if(isNaN(date)) return false;
+                
+                const month = date.getMonth();
+                const year = date.getFullYear();
+                const rowFY = month >= 3 ? year : year - 1;
+                const rowFyMonthIndex = month >= 3 ? month - 3 : month + 9;
+
+                if (rowFyMonthIndex !== monthIndex) return false;
+                
+                if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
+                if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
+
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                const isRenewalTx = tType.includes('our renewal');
+                
+                if (state.main === 'fresh') { return rowFY === state.selectedYear && (isFreshBaseTx || tType.includes('cancel')); } 
+                else { return rowFY === state.selectedYear && isRenewalTx; }
+            });
+
+            if (policies.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No transactions recorded.</td></tr>`;
+            } else {
+                tbody.innerHTML = policies.map(p => {
+                    const d = new Date(p[COL_DATE]);
+                    const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+                    const prem = parseFloat(p[COL_PREM]) || 0;
+                    const siStr = formatSumInsured(p[COL_SUM_INSURED]);
+                    const type = (p[COL_TRANSACTION] || '').toLowerCase();
+                    const isCancel = type.includes('cancel');
+                    const color = isCancel ? 'text-rose-500' : 'text-slate-800';
+                    const sign = isCancel ? '-' : '';
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
+                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
+                        <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[150px]" title="${toTitleCase(p[COL_INSURED])}">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
+                        <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]" title="${p[COL_PRODUCT]}">${p[COL_PRODUCT] || '-'}</td>
+                        <td class="p-3 text-[11px] font-bold text-blue-600 whitespace-nowrap">${siStr}</td>
+                        <td class="p-3 text-[11px] font-bold ${color} text-right whitespace-nowrap">${sign}₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                    </tr>`;
+                }).join('');
+            }
+            document.getElementById('drilldown-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('drilldown-modal').classList.add('hidden'); }
+
+        // === RANKING RENDER LOGIC ===
+        function renderRanking() {
+            state.selectedYear = parseInt(document.getElementById('year-select').value);
+            const mVal = document.getElementById('month-select').value;
+            state.selectedMonth = mVal === "" ? null : parseInt(mVal);
+            
+            if (!state.selectedYear || state.selectedMonth === null) return resetDashboardView();
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('ranking-board-content').classList.remove('hidden');
+            
+            const calYear = state.selectedMonth < 9 ? state.selectedYear : state.selectedYear + 1;
+            const calMonth = (state.selectedMonth + 3) % 12;
+
+            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top GWP Ranking' : 'Top NOP Ranking';
+            document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1}`;
+            document.getElementById('rb-metric-label').innerText = state.sub === 'gwp_rank' ? 'Premium (GWP)' : 'Policies (NOP)';
+
+            let agents = {};
+
+            rawData.forEach(row => {
+                if(!row[COL_DATE]) return;
+                const d = new Date(row[COL_DATE]);
+                if (isNaN(d)) return;
+
+                if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                    const isCancelTx = tType.includes('cancel'); 
+                    
+                    if (isFreshBaseTx || isCancelTx) {
+                        const agent = toTitleCase(row[COL_AGENT]);
+                        const manager = toTitleCase(row[COL_MANAGER]);
+                        
+                        if (agent) {
+                            if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager };
+                            const prem = parseFloat(row[COL_PREM]) || 0;
+                            if (isFreshBaseTx) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
+                            else { agents[agent].nop -= 1; agents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
+                        }
+                    }
+                }
+            });
+
+            let sorted = Object.keys(agents).filter(a => agents[a].nop > 0 || agents[a].gwp > 0);
+            
+            // SMART TIE BREAKERS
+            sorted.sort((a, b) => {
+                if (state.sub === 'gwp_rank') {
+                    if (agents[b].gwp !== agents[a].gwp) return agents[b].gwp - agents[a].gwp;
+                    return agents[b].nop - agents[a].nop; 
+                } else {
+                    if (agents[b].nop !== agents[a].nop) return agents[b].nop - agents[a].nop;
+                    return agents[b].gwp - agents[a].gwp;
+                }
+            });
+
+            const listDiv = document.getElementById('rb-list');
+            if (sorted.length === 0) {
+                listDiv.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm font-medium">No fresh business found for this month.</div>`;
+                return;
+            }
+
+            listDiv.innerHTML = sorted.map((agent, i) => {
+                let rankClass = "bg-white border-slate-100 text-slate-600";
+                let medal = `#${i+1}`;
+                if (i === 0) { rankClass = "rank-1 text-[20px]"; medal = "🥇"; }
+                else if (i === 1) { rankClass = "rank-2 text-[20px]"; medal = "🥈"; }
+                else if (i === 2) { rankClass = "rank-3 text-[20px]"; medal = "🥉"; }
+
+                const score = state.sub === 'gwp_rank' 
+                    ? `₹${agents[agent].gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}`
+                    : `${agents[agent].nop} NOP`;
+
+                return `
+                <div class="flex items-center p-3 rounded-xl shadow-sm border bg-white border-slate-100 mb-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ${rankClass} shadow-sm shrink-0">${medal}</div>
+                    <div class="ml-4 flex-1 truncate pr-4">
+                        <div class="font-bold text-slate-800 text-sm truncate">${agent}</div>
+                        <div class="text-[10px] font-medium text-slate-400 truncate mt-0.5">Mgr: ${agents[agent].manager || 'N/A'}</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="font-black ${state.sub === 'gwp_rank' ? 'text-blue-600' : 'text-amber-500'} text-base tracking-tight">${score}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // === MAIN DASHBOARD RENDER ===
+        function renderDashboard() {
+            state.selectedYear = parseInt(document.getElementById('year-select').value);
+            state.selectedName = document.getElementById('name-select').value;
+            
+            if (!state.selectedYear) return resetDashboardView();
+            if (state.sub !== 'cluster' && !state.selectedName) return resetDashboardView();
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('ranking-board-content').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+
+            if (state.sub === 'agent') {
+                const agentRow = rawData.find(r => toTitleCase(r[COL_AGENT]) === state.selectedName);
+                if (agentRow) {
+                    document.getElementById('agent-profile').classList.remove('hidden');
+                    document.getElementById('agent-profile').classList.add('flex');
+                    document.getElementById('agent-name-display').innerText = state.selectedName;
+                    document.getElementById('agent-initials').innerText = state.selectedName.substring(0, 2).toUpperCase();
+                    document.getElementById('agent-imd').innerText = agentRow[COL_IMD_CODE] || 'N/A';
+                    document.getElementById('agent-agreement').innerText = agentRow[COL_AGR_CODE] || 'N/A';
+                }
+            } else {
+                document.getElementById('agent-profile').classList.add('hidden');
+                document.getElementById('agent-profile').classList.remove('flex');
+            }
+
+            const fyData = Array.from({ length: 12 }, () => ({
+                freshNOP: 0, freshAmount: 0, baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false
+            }));
+
+            let totalFreshAmt = 0, totalFreshNOP = 0, prevFreshAmt = 0, prevFreshNOP = 0;
+            let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0, prevBaseNOP = 0, prevRenewed = 0;
+            let productBreakdown = {}, siBreakdown = {}, agentLB = {};
+            let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); 
+
+            rawData.forEach(row => {
+                if(!row[COL_DATE]) return;
+                const date = new Date(row[COL_DATE]);
+                if (isNaN(date)) return;
+
+                const month = date.getMonth(); 
+                const year = date.getFullYear();
+                const rowFY = month >= 3 ? year : year - 1;
+                const fyMonthIndex = month >= 3 ? month - 3 : month + 9;
+                
+                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                const premium = parseFloat(row[COL_PREM]) || 0;
+                const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
+
+                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                const isRenewalTx = tType.includes('our renewal');
+                const isCancelTx = tType.includes('cancel'); 
+
+                if (state.sub === 'cluster' || state.sub === 'manager') {
+                    if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, mtdGWP:0, mtdNOP:0, ytdBase:0, ytdRen:0, mtdBase:0, mtdRen:0 };
+                }
+
+                const passesFilter = (state.sub === 'cluster' || 
+                                     (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) === state.selectedName) || 
+                                     (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName));
+
+                const passesLBFilter = state.sub === 'cluster' || (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) === state.selectedName);
+
+                if (state.main === 'fresh') {
+                    if (rowFY === state.selectedYear) {
+                        let finalPrem = 0, finalNop = 0;
+                        if (isFreshBaseTx) { finalNop = 1; finalPrem = premium; } 
+                        else if (isCancelTx) { finalNop = -1; finalPrem = premium > 0 ? -Math.abs(premium) : premium; }
+                        
+                        if (passesLBFilter && finalNop !== 0) {
+                            agentLB[agent].ytdGWP += finalPrem;
+                            agentLB[agent].ytdNOP += finalNop;
+                            if (year === currentYear && month === currentMonth) {
+                                agentLB[agent].mtdGWP += finalPrem;
+                                agentLB[agent].mtdNOP += finalNop;
+                            }
+                        }
+
+                        if(passesFilter && finalNop !== 0) {
+                            fyData[fyMonthIndex].freshNOP += finalNop;
+                            fyData[fyMonthIndex].freshAmount += finalPrem;
+                            totalFreshNOP += finalNop;
+                            totalFreshAmt += finalPrem;
+
+                            let prod = row[COL_PRODUCT] || 'Unspecified';
+                            let si = row[COL_SUM_INSURED] || 'Unspecified';
+                            
+                            if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
+                            productBreakdown[prod].nop += finalNop;
+                            productBreakdown[prod].prem += finalPrem;
+
+                            if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
+                            siBreakdown[si].nop += finalNop;
+                            siBreakdown[si].prem += finalPrem;
+                        }
+                    }
+                    else if (rowFY === (state.selectedYear - 1) && passesFilter) {
+                        if (isFreshBaseTx) { prevFreshNOP += 1; prevFreshAmt += premium; }
+                        else if (isCancelTx) { prevFreshNOP -= 1; prevFreshAmt += (premium > 0 ? -Math.abs(premium) : premium); }
+                    }
+                } 
+                else if (state.main === 'renewal') {
+                    if (passesLBFilter) {
+                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) {
+                            agentLB[agent].ytdBase += 1;
+                            if (year === (currentYear - 1) && month === currentMonth) agentLB[agent].mtdBase += 1;
+                        }
+                        if (rowFY === state.selectedYear && isRenewalTx) {
+                            agentLB[agent].ytdRen += 1;
+                            if (year === currentYear && month === currentMonth) agentLB[agent].mtdRen += 1;
+                        }
+                    }
+
+                    if (passesFilter) {
+                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) retentionYr1Base += 1;
+                        if (rowFY === state.selectedYear && isRenewalTx) retentionYr1Ren += 1;
+                        if (rowFY === (state.selectedYear - 2) && (isFreshBaseTx || isRenewalTx)) retentionYr2Base += 1;
+                        if (rowFY === (state.selectedYear - 1) && isRenewalTx) retentionYr2Ren += 1;
+
+                        if (rowFY === (state.selectedYear - 1) && (isFreshBaseTx || isRenewalTx)) { totalBaseNOP += 1; fyData[fyMonthIndex].baseNOP += 1; }
+                        if (rowFY === state.selectedYear && isRenewalTx) { totalRenewed += 1; fyData[fyMonthIndex].renRenewed += 1; }
+                        if (rowFY === (state.selectedYear - 2) && (isFreshBaseTx || isRenewalTx)) prevBaseNOP += 1;
+                        if (rowFY === (state.selectedYear - 1) && isRenewalTx) prevRenewed += 1;
+                    }
+                }
+            });
+
+            if (state.main === 'renewal') {
+                fyData.forEach((d, index) => {
+                    const calMonth = (index + 3) % 12;
+                    const calYear = index < 9 ? state.selectedYear : state.selectedYear + 1;
+                    const isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
+                    d.isFuture = isFuture;
+                    const shortfall = Math.max(0, d.baseNOP - d.renRenewed);
+                    if (isFuture) { d.renMissed = 0; d.yetToRenew = shortfall; } 
+                    else { d.renMissed = shortfall; d.yetToRenew = 0; }
+                    totalMissed += d.renMissed; totalYet += d.yetToRenew;
+                });
+                
+                document.getElementById('persistency-tracker').classList.remove('hidden');
+                const yr1Pct = retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0;
+                const yr2Pct = retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0;
+                document.getElementById('persistency-stats').innerHTML = `
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
+                        <div><div class="text-[10px] font-bold text-slate-400 uppercase">1st Yr Retention (13M Proxy)</div><div class="text-lg font-black text-slate-800">${yr1Pct}%</div></div>
+                        <div class="text-right"><div class="text-[10px] text-slate-500 font-medium">Base: ${retentionYr1Base}</div><div class="text-[10px] text-emerald-600 font-bold">Renewed: ${retentionYr1Ren}</div></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
+                        <div><div class="text-[10px] font-bold text-slate-400 uppercase">2nd Yr Retention (25M Proxy)</div><div class="text-lg font-black text-slate-800">${yr2Pct}%</div></div>
+                        <div class="text-right"><div class="text-[10px] text-slate-500 font-medium">Base: ${retentionYr2Base}</div><div class="text-[10px] text-emerald-600 font-bold">Renewed: ${retentionYr2Ren}</div></div>
+                    </div>
+                `;
+            } else { document.getElementById('persistency-tracker').classList.add('hidden'); }
+
+            const freshLB = document.getElementById('cluster-leaderboard-fresh');
+            const renLB = document.getElementById('cluster-leaderboard-renewal');
+            
+            if (state.sub === 'cluster' || state.sub === 'manager') {
+                if (state.main === 'fresh') {
+                    freshLB.classList.remove('hidden'); renLB.classList.add('hidden');
+                    const tYtdGwp = Object.keys(agentLB).sort((a,b) => agentLB[b].ytdGWP - agentLB[a].ytdGWP).slice(0, 3);
+                    const tYtdNop = Object.keys(agentLB).sort((a,b) => agentLB[b].ytdNOP - agentLB[a].ytdNOP).slice(0, 3);
+                    const tMtdGwp = Object.keys(agentLB).sort((a,b) => agentLB[b].mtdGWP - agentLB[a].mtdGWP).slice(0, 3);
+                    const tMtdNop = Object.keys(agentLB).sort((a,b) => agentLB[b].mtdNOP - agentLB[a].mtdNOP).slice(0, 3);
+
+                    document.getElementById('lb-ytd-gwp').innerHTML = tYtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${agentLB[a].ytdGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('');
+                    document.getElementById('lb-ytd-nop').innerHTML = tYtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].ytdNOP}</span></div>`).join('');
+                    document.getElementById('lb-mtd-gwp').innerHTML = tMtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${agentLB[a].mtdGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('');
+                    document.getElementById('lb-mtd-nop').innerHTML = tMtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${agentLB[a].mtdNOP}</span></div>`).join('');
+                } else {
+                    freshLB.classList.add('hidden'); renLB.classList.remove('hidden');
+                    const tYtdRen = Object.keys(agentLB).filter(a => agentLB[a].ytdBase >= 5).sort((a,b) => (agentLB[b].ytdRen/agentLB[b].ytdBase) - (agentLB[a].ytdRen/agentLB[a].ytdBase)).slice(0, 3);
+                    const tMtdRen = Object.keys(agentLB).filter(a => agentLB[a].mtdBase >= 1).sort((a,b) => (agentLB[b].mtdRen/agentLB[b].mtdBase) - (agentLB[a].mtdRen/agentLB[a].mtdBase)).slice(0, 3);
+
+                    document.getElementById('lb-ytd-ren').innerHTML = tYtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].ytdRen/agentLB[a].ytdBase)*100)}%</span></div>`).join('');
+                    document.getElementById('lb-mtd-ren').innerHTML = tMtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((agentLB[a].mtdRen/agentLB[a].mtdBase)*100)}%</span></div>`).join('');
+                }
+            } else { freshLB.classList.add('hidden'); renLB.classList.add('hidden'); }
+
+            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet, prevBaseNOP, prevRenewed);
+            renderGrid(fyData);
+            renderChart(fyData);
+
+            const breakdownSection = document.getElementById('fresh-breakdowns');
+            if (state.main === 'fresh') {
+                breakdownSection.classList.remove('hidden'); breakdownSection.classList.add('grid');
+                
+                const prodHtml = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `
+                    <div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0">
+                        <span class="font-medium text-slate-700 truncate pr-2 w-1/2" title="${p}">${p}</span>
+                        <div class="text-right w-1/2">
+                            <div class="font-bold text-slate-800 tracking-tight">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})} <span class="text-[9px] text-slate-400 font-normal">GWP</span></div>
+                            <div class="text-[10px] text-blue-600 font-bold mt-0.5">${productBreakdown[p].nop} Policies</div>
+                        </div>
+                    </div>`).join('');
+                document.getElementById('product-list').innerHTML = prodHtml || '<p class="text-xs text-slate-400">No data found</p>';
+
+                const siHtml = Object.keys(siBreakdown).sort((a,b) => siBreakdown[b].prem - siBreakdown[a].prem).map(s => `
+                    <div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0">
+                        <span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span>
+                        <div class="text-right w-1/2">
+                            <div class="font-bold text-slate-800 tracking-tight">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})} <span class="text-[9px] text-slate-400 font-normal">GWP</span></div>
+                            <div class="text-[10px] text-blue-600 font-bold mt-0.5">${siBreakdown[s].nop} Policies</div>
+                        </div>
+                    </div>`).join('');
+                document.getElementById('si-list').innerHTML = siHtml || '<p class="text-xs text-slate-400">No data found</p>';
+            } else { breakdownSection.classList.add('hidden'); breakdownSection.classList.remove('grid'); }
+        }
+
+        function renderSummary(tFreshAmt, tFreshNOP, pFreshAmt, pFreshNOP, tBase, tRenewed, tMissed, tYet, pBase, pRenewed) {
+            const summaryDiv = document.getElementById('summary-section');
+            if (state.main === 'fresh') {
+                summaryDiv.innerHTML = `
+                    <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white col-span-1 md:col-span-2 relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-2xl opacity-20"></div>
+                        <div class="flex items-center mb-1 relative z-10">
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Net Premium (GWP)</span>
+                            ${getYoYBadge(tFreshAmt, pFreshAmt)}
+                        </div>
+                        <div class="text-3xl font-extrabold relative tracking-tight z-10">₹${tFreshAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-center">
+                        <div class="flex items-center mb-1">
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Policy Count</span>
+                            ${getYoYBadge(tFreshNOP, pFreshNOP)}
+                        </div>
+                        <div class="text-2xl font-extrabold text-blue-600 tracking-tight">${tFreshNOP}</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-center">
+                        <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Ticket Size</div>
+                        <div class="text-2xl font-extrabold text-slate-800 tracking-tight">₹${tFreshNOP > 0 ? Math.round(tFreshAmt / tFreshNOP).toLocaleString('en-IN') : 0}</div>
+                    </div>
+                `;
+            } else {
+                const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
+                const prevRenewPercent = pBase > 0 ? Math.round((pRenewed / pBase) * 100) : 0;
+
+                summaryDiv.innerHTML = `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-1">
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Base</span>
+                            ${getYoYBadge(tBase, pBase)}
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-800 tracking-tight">${tBase}</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-100">
+                        <div class="flex items-center mb-1">
+                            <span class="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">Renewed</span>
+                            ${getYoYBadge(tRenewed, pRenewed)}
+                        </div>
+                        <div class="text-2xl font-extrabold text-emerald-600 tracking-tight">${tRenewed}</div>
+                    </div>
+                    <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-100">
+                        <div class="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div>
+                        <div class="text-2xl font-extrabold text-rose-600 tracking-tight">${tMissed}</div>
+                    </div>
+                    <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white">
+                        <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center">
+                            <span>Pending</span>
+                            ${getYoYBadge(renewPercent, prevRenewPercent)}
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <div class="text-2xl font-extrabold text-amber-400 tracking-tight">${tYet}</div>
+                            <div class="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">Rt: ${renewPercent}%</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderGrid(fyData) {
+            const grid = document.getElementById('fy-grid');
+            let html = '';
+            fyData.forEach((data, index) => {
+                const monthName = FY_MONTHS[index];
+                if (state.main === 'fresh') {
+                    html += `
+                    <div class="bg-white rounded-xl border border-slate-100 p-4 stat-card group relative" onclick="openDrillDown(${index})">
+                        <div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl z-0"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-slate-400 uppercase group-hover:text-blue-600 transition-colors">${monthName}</span>
+                                <span class="text-blue-600 text-[10px] font-bold bg-blue-50 px-1.5 py-0.5 rounded group-hover:bg-blue-100 transition-colors">${data.freshNOP} NOP</span>
+                            </div>
+                            <div class="text-sm font-extrabold text-slate-800 truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
+                            <div class="mt-2 text-[9px] text-slate-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-semibold">View Details <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg></div>
+                        </div>
+                    </div>`;
+                } else {
+                    const badge = data.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded group-hover:bg-amber-100">Future</span>` : ``;
+                    html += `
+                    <div class="bg-white rounded-xl border border-slate-100 p-4 stat-card group relative" onclick="openDrillDown(${index})">
+                        <div class="absolute inset-0 bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl z-0"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-slate-400 uppercase group-hover:text-slate-600 transition-colors">${monthName}</span>
+                                ${badge}
+                            </div>
+                            <div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${data.baseNOP}</span></div>
+                            <div class="space-y-1 mt-2 pt-2 border-t border-slate-50">
+                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-emerald-600 font-bold">${data.renRenewed}</span></div>
+                                ${data.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${data.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-rose-500 font-bold">${data.renMissed}</span></div>`}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            grid.innerHTML = html;
+        }
+
+        function renderChart(fyData) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            const labels = FY_MONTHS;
+            let datasets = [];
+            let chartOptions = { 
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 10, weight: '600' } } } }
+            };
+
+            if (state.main === 'fresh') {
+                datasets = [
+                    { label: 'GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#3b82f6', borderRadius: 4, type: 'bar', yAxisID: 'y' },
+                    { label: 'Policy Count', data: fyData.map(d => d.freshNOP), borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#fff', type: 'line', tension: 0.4, yAxisID: 'y1' }
+                ];
+                chartOptions.scales = { x: { grid: { display: false } }, y: { display: false }, y1: { display: false } };
+            } else {
+                datasets = [
+                    { label: 'Renewed', data: fyData.map(d => d.renRenewed), backgroundColor: '#10b981', borderRadius: 2, type: 'bar' },
+                    { label: 'Missed', data: fyData.map(d => d.renMissed), backgroundColor: '#f43f5e', borderRadius: 2, type: 'bar' },
+                    { label: 'Pending', data: fyData.map(d => d.yetToRenew), backgroundColor: '#fbbf24', borderRadius: 2, type: 'bar' }
+                ];
+                chartOptions.scales = { x: { stacked: true, grid: { display: false } }, y: { stacked: true, display: false } };
+            }
+            chartInstance = new Chart(ctx, { type: 'bar', data: { labels, datasets }, options: chartOptions });
+        }
+    </script>
+</body>
+</html>
