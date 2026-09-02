@@ -405,20 +405,21 @@
     </div>
 
     <script>
-        const COL_POLICY = "Policy No";
-        const COL_PREV_POLICY = "Previous Policy No";
-        const COL_ALT_POLICY = "Alternate Policy No";
-        const COL_INSURED = "Insured Name";
-        const COL_AGENT = "Intermediary Name";
-        const COL_MANAGER = "SSM Name";
-        const COL_IMD_CODE = "Intermediary Code";
-        const COL_AGR_CODE = "Agreement Code";
-        const COL_DATE = "Policy Start Date";
-        const COL_END_DATE = "Policy End Date";
-        const COL_PREM = "GWP";
-        const COL_TRANSACTION = "Transaction Type";
-        const COL_PRODUCT = "Product Name";
-        const COL_SUM_INSURED = "Total Sum Insured";
+        // Use fuzzy matching keys so Excel typos won't break the system
+        const COL_POLICY_KEYS = ["policy no", "policyno", "policy number"];
+        const COL_PREV_POLICY_KEYS = ["previous policy", "prev policy"];
+        const COL_ALT_POLICY_KEYS = ["alternate policy", "alt policy"];
+        const COL_INSURED_KEYS = ["insured name", "customer name"];
+        const COL_AGENT_KEYS = ["intermediary name", "agent name", "agent"];
+        const COL_MANAGER_KEYS = ["ssm name", "manager name"];
+        const COL_IMD_CODE_KEYS = ["intermediary code", "imd code"];
+        const COL_AGR_CODE_KEYS = ["agreement code"];
+        const COL_DATE_KEYS = ["policy start date", "start date"];
+        const COL_END_DATE_KEYS = ["policy end date", "end date"];
+        const COL_PREM_KEYS = ["gwp", "premium"];
+        const COL_TRANSACTION_KEYS = ["transaction type", "type"];
+        const COL_PRODUCT_KEYS = ["product name", "product"];
+        const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
 
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
@@ -426,7 +427,19 @@
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
-        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC ("Rollover means renewal")
+        function getColValue(row, possibleKeys) {
+            const rowKeys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let k of rowKeys) {
+                    const kClean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (kClean === pkClean || kClean.includes(pkClean)) return row[k];
+                }
+            }
+            return "";
+        }
+
+        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC 
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
@@ -434,14 +447,12 @@
             
             if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
 
-            // Explicitly catches "roll over" and blocks it from fresh
             const isRenewal = tType.includes('renewal') || tType.includes('roll') || tType.includes('rnw');
             
-            // Fresh is completely blocked if the string contains roll over or renewal
+            // STRICT FRESH: Blocks "roll over" and "renewal" completely
             const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb') && !isRenewal && !isCancel;
             
             const isRetentionBase = isFresh || isRenewal;
-            
             return { isCancel, isRenewal, isFresh, isRetentionBase };
         }
 
@@ -460,12 +471,11 @@
             let y, m, d;
 
             if (typeof val === 'number') {
-                // Read exact date components from numerical serial, bypassing timezone shifts completely
                 let utcDays = Math.floor(val - 25569);
-                if (utcDays > 59) utcDays -= 1; // Corrects Excel's 1900 Leap Year Bug
+                if (utcDays > 59) utcDays -= 1;
                 let tempDate = new Date(utcDays * 86400000);
                 y = tempDate.getUTCFullYear();
-                m = tempDate.getUTCMonth() + 1; // 1-12
+                m = tempDate.getUTCMonth() + 1;
                 d = tempDate.getUTCDate();
             } else if (val instanceof Date) {
                 if (isNaN(val.getTime())) return null;
@@ -473,7 +483,7 @@
                 m = val.getMonth() + 1;
                 d = val.getDate();
             } else {
-                let s = val.toString().trim().split(' ')[0]; // Discard any time string attached
+                let s = val.toString().trim().split(/[\sT]+/)[0];
                 
                 // Matches ISO YYYY-MM-DD
                 let match = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
@@ -482,18 +492,16 @@
                     m = parseInt(match[2], 10);
                     d = parseInt(match[3], 10);
                 } else {
-                    // Strictly prioritize DD/MM/YYYY formatting as per your requirement
+                    // Strictly prioritize DD/MM/YYYY text formatting based on user image
                     match = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
                     if (match) {
                         d = parseInt(match[1], 10);
                         m = parseInt(match[2], 10);
                         y = parseInt(match[3], 10);
                         if (y < 100) y += 2000;
-                        
-                        // Failsafe in case it actually was MM/DD/YYYY
                         if (m > 12) { let temp = m; m = d; d = temp; }
                     } else {
-                        // Matches text dates like 1-Sep-2026
+                        // Matches 1-Sep-2026
                         const monthMap = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
                         match = s.match(/^(\d{1,2})[-\/.\s]+([a-zA-Z]{3,})[-\/.\s]+(\d{2,4})/);
                         if (match) {
@@ -503,7 +511,6 @@
                             y = parseInt(match[3], 10);
                             if (y < 100) y += 2000;
                         } else {
-                            // Ultimate fallback
                             let temp = new Date(s);
                             if (!isNaN(temp.getTime())) {
                                 y = temp.getFullYear();
@@ -516,7 +523,7 @@
             }
 
             if (y && m && d) {
-                // Initialize the pure local date explicitly at 12:00 PM NOON to mathematically prevent midnight timezone shift boundaries
+                // Initialize explicitly at 12:00 PM NOON to mathematically prevent midnight timezone boundaries
                 return new Date(y, m - 1, d, 12, 0, 0);
             }
             return null;
@@ -555,11 +562,11 @@
 
         function parseExcelData(buffer) {
             try {
-                // Disabled JS Date conversion to allow pure serial/string reads
+                // 3. Forcing pure string read using format "dd/mm/yyyy" for bulletproof interpretation
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
-                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "", raw: false, dateNF: "dd/mm/yyyy" });
                     
                     if (sheet.length > 0) {
                         const cleanedSheet = sheet.map(row => {
@@ -651,7 +658,7 @@
         function populateYears() {
             const yearSelect = document.getElementById('year-select');
             const years = [...new Set(rawData.map(row => {
-                const d = parseExcelDate(row[COL_DATE]);
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
@@ -684,16 +691,16 @@
                     renderDashboard();
                 } else {
                     const nameSelect = document.getElementById('name-select');
-                    const colKey = state.sub === 'agent' ? COL_AGENT : COL_MANAGER;
+                    const colKeys = state.sub === 'agent' ? COL_AGENT_KEYS : COL_MANAGER_KEYS;
                     
                     const filtered = rawData.filter(row => {
-                        const d = parseExcelDate(row[COL_DATE]);
+                        const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                         if (!d) return false;
                         const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
                         return rowFY === state.selectedYear;
                     });
 
-                    const names = [...new Set(filtered.map(row => toTitleCase(row[colKey])).filter(n => n))].sort();
+                    const names = [...new Set(filtered.map(row => toTitleCase(getColValue(row, colKeys))).filter(n => n))].sort();
                     nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
                     resetDashboard();
                 }
@@ -758,7 +765,7 @@
                     </tr>`;
 
                 let policies = rawData.filter(row => {
-                    const date = parseExcelDate(row[COL_DATE]);
+                    const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if(!date) return false;
                     
                     const month = date.getMonth();
@@ -768,32 +775,32 @@
 
                     if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return false;
                     
-                    if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
-                    if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
+                    if (state.sub === 'agent' && toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.selectedName) return false;
+                    if (state.sub === 'manager' && toTitleCase(getColValue(row, COL_MANAGER_KEYS)) !== state.selectedName) return false;
 
-                    const tx = parseTransactionType(row[COL_TRANSACTION]);
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                     return tx.isFresh || tx.isCancel;
                 });
 
-                policies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
+                policies.sort((a, b) => (parseExcelDate(getColValue(a, COL_DATE_KEYS)) || new Date(0)) - (parseExcelDate(getColValue(b, COL_DATE_KEYS)) || new Date(0)));
 
                 if (policies.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No pure fresh business policies recorded for this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = policies.map(p => {
-                        const d = parseExcelDate(p[COL_DATE]);
+                        const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                         const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
-                        const prem = parseNumber(p[COL_PREM]);
-                        const siStr = formatSumInsured(p[COL_SUM_INSURED]);
-                        const tx = parseTransactionType(p[COL_TRANSACTION]);
+                        const prem = parseNumber(getColValue(p, COL_PREM_KEYS));
+                        const siStr = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
+                        const tx = parseTransactionType(getColValue(p, COL_TRANSACTION_KEYS));
 
                         return `
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                             <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
-                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-bold text-blue-600 truncate max-w-[140px]">${toTitleCase(p[COL_AGENT]) || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-bold text-blue-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_AGENT_KEYS)) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${getColValue(p, COL_PRODUCT_KEYS) || '-'}</td>
                             <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
@@ -822,8 +829,8 @@
                 let currentYearRenewals = [];
                 
                 rawData.forEach(row => {
-                    const date = parseExcelDate(row[COL_DATE]);
-                    const endDate = parseExcelDate(row[COL_END_DATE]);
+                    const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                    const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                     if(!date) return;
 
                     const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
@@ -841,29 +848,29 @@
                         expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
                     }
                     
-                    const agent = toTitleCase(row[COL_AGENT] || '');
-                    const manager = toTitleCase(row[COL_MANAGER] || '');
+                    const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
+                    const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
                     
                     if (state.sub === 'agent' && agent !== state.selectedName) return;
                     if (state.sub === 'manager' && manager !== state.selectedName) return;
 
-                    const tx = parseTransactionType(row[COL_TRANSACTION]);
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
 
                     if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(row);
                     if (rowFY === state.selectedYear && tx.isRenewal) currentYearRenewals.push(row);
                 });
 
                 let renPool = currentYearRenewals.map(r => ({ 
-                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), 
+                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(), 
                     used: false 
                 }));
                 
                 let mappedPolicies = baseDue.map(p => {
-                    const basePolicyNo = (p[COL_POLICY] || '').toString().trim().toLowerCase();
-                    const sig = (toTitleCase(p[COL_INSURED]) + "|" + toTitleCase(p[COL_PRODUCT])).toLowerCase();
+                    const basePolicyNo = (getColValue(p, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const sig = (toTitleCase(getColValue(p, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(p, COL_PRODUCT_KEYS))).toLowerCase();
 
                     let matchIdx = renPool.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -878,16 +885,16 @@
                     return { ...p, _isRenewed: isRenewed };
                 });
 
-                mappedPolicies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
+                mappedPolicies.sort((a, b) => (parseExcelDate(getColValue(a, COL_DATE_KEYS)) || new Date(0)) - (parseExcelDate(getColValue(b, COL_DATE_KEYS)) || new Date(0)));
 
                 if (mappedPolicies.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No policies due for renewal this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = mappedPolicies.map(p => {
-                        const d = parseExcelDate(p[COL_DATE]);
+                        const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                         const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
-                        const prem = parseNumber(p[COL_PREM]);
-                        const siStr = formatSumInsured(p[COL_SUM_INSURED]);
+                        const prem = parseNumber(getColValue(p, COL_PREM_KEYS));
+                        const siStr = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
                         
                         const statusBadge = p._isRenewed 
                             ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` 
@@ -896,10 +903,10 @@
                         return `
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                             <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
-                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${p[COL_POLICY] || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-bold text-indigo-600 truncate max-w-[140px]">${toTitleCase(p[COL_AGENT]) || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(p[COL_INSURED]) || 'Unknown'}</td>
-                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${p[COL_PRODUCT] || '-'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-bold text-indigo-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_AGENT_KEYS)) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
+                            <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${getColValue(p, COL_PRODUCT_KEYS) || '-'}</td>
                             <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
@@ -935,7 +942,7 @@
             let agentMap = {};
 
             rawData.forEach(row => {
-                const date = parseExcelDate(row[COL_DATE]);
+                const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if(!date) return;
                 
                 const month = date.getMonth();
@@ -945,17 +952,17 @@
 
                 if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return;
                 
-                const agent = toTitleCase(row[COL_AGENT] || '');
-                const manager = toTitleCase(row[COL_MANAGER] || '');
+                const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
+                const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
                 
                 if (state.sub === 'agent' && agent !== state.selectedName) return;
                 if (state.sub === 'manager' && manager !== state.selectedName) return;
 
-                const tx = parseTransactionType(row[COL_TRANSACTION]);
+                const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                 
                 if (tx.isFresh && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
-                    agentMap[agent].gwp += parseNumber(row[COL_PREM]);
+                    agentMap[agent].gwp += parseNumber(getColValue(row, COL_PREM_KEYS));
                     agentMap[agent].nop += 1;
                 }
             });
@@ -1027,19 +1034,19 @@
             let agents = {};
 
             rawData.forEach(row => {
-                const d = parseExcelDate(row[COL_DATE]);
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return;
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
-                    const tx = parseTransactionType(row[COL_TRANSACTION]);
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                     
                     if (tx.isFresh || tx.isCancel) {
-                        const agent = toTitleCase(row[COL_AGENT]);
-                        const manager = toTitleCase(row[COL_MANAGER]);
+                        const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS));
+                        const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS));
                         
                         if (agent) {
                             if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager };
-                            const prem = parseNumber(row[COL_PREM]);
+                            const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
                             if (tx.isFresh) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
                             else { agents[agent].nop -= 1; agents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
                         }
@@ -1097,19 +1104,19 @@
 
                 let monthlyAgents = {};
                 rawData.forEach(row => {
-                    const date = parseExcelDate(row[COL_DATE]);
+                    const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if (!date) return;
                     if (date.getFullYear() === calYear && date.getMonth() === calMonth) {
-                        const tx = parseTransactionType(row[COL_TRANSACTION]);
+                        const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
 
                         if (tx.isFresh || tx.isCancel) {
-                            const agent = toTitleCase(row[COL_AGENT] || '');
-                            const manager = toTitleCase(row[COL_MANAGER] || '');
+                            const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
+                            const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
 
                             const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
                             if (passes && agent) {
                                 if (!monthlyAgents[agent]) monthlyAgents[agent] = { gwp: 0, nop: 0 };
-                                const prem = parseNumber(row[COL_PREM]);
+                                const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
                                 if (tx.isFresh) { monthlyAgents[agent].gwp += prem; monthlyAgents[agent].nop += 1; }
                                 else if (tx.isCancel) { monthlyAgents[agent].gwp -= Math.abs(prem); monthlyAgents[agent].nop -= 1; }
                             }
@@ -1131,8 +1138,8 @@
                 let currYrRen = [];
 
                 rawData.forEach(row => {
-                    const date = parseExcelDate(row[COL_DATE]);
-                    const endDate = parseExcelDate(row[COL_END_DATE]);
+                    const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                    const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                     if (!date) return;
 
                     const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
@@ -1150,12 +1157,12 @@
                         expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
                     }
 
-                    const agent = toTitleCase(row[COL_AGENT] || '');
-                    const manager = toTitleCase(row[COL_MANAGER] || '');
+                    const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
+                    const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
                     const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
                     if (!passes || !agent) return;
 
-                    const tx = parseTransactionType(row[COL_TRANSACTION]);
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
 
                     if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === mIdx) {
                         mtdBase.push({agent, ...row});
@@ -1166,10 +1173,10 @@
                 });
 
                 let renUsage = currYrRen.map(r => ({
-                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
                     used: false
                 }));
 
@@ -1178,8 +1185,8 @@
                     if (!monthlyAgents[agent]) monthlyAgents[agent] = { base: 0, ren: 0 };
                     monthlyAgents[agent].base += 1;
 
-                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
 
                     let matchIdx = renUsage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -1204,13 +1211,13 @@
             document.getElementById('dashboard-content').classList.remove('hidden');
 
             if (state.sub === 'agent' && state.selectedName) {
-                const agentRow = rawData.find(r => toTitleCase(r[COL_AGENT]) === state.selectedName);
+                const agentRow = rawData.find(r => toTitleCase(getColValue(r, COL_AGENT_KEYS)) === state.selectedName);
                 document.getElementById('agent-profile').classList.remove('hidden');
                 document.getElementById('agent-profile').classList.add('flex');
                 document.getElementById('agent-name-display').innerText = state.selectedName;
                 document.getElementById('agent-initials').innerText = state.selectedName.substring(0, 2).toUpperCase();
-                document.getElementById('agent-imd').innerText = agentRow ? (agentRow[COL_IMD_CODE] || 'N/A') : 'N/A';
-                document.getElementById('agent-agreement').innerText = agentRow ? (agentRow[COL_AGR_CODE] || 'N/A') : 'N/A';
+                document.getElementById('agent-imd').innerText = agentRow ? (getColValue(agentRow, COL_IMD_CODE_KEYS) || 'N/A') : 'N/A';
+                document.getElementById('agent-agreement').innerText = agentRow ? (getColValue(agentRow, COL_AGR_CODE_KEYS) || 'N/A') : 'N/A';
             } else {
                 document.getElementById('agent-profile').classList.add('hidden');
                 document.getElementById('agent-profile').classList.remove('flex');
@@ -1232,8 +1239,8 @@
             const currentMonth = now.getMonth(); 
 
             rawData.forEach(row => {
-                const date = parseExcelDate(row[COL_DATE]);
-                const endDate = parseExcelDate(row[COL_END_DATE]);
+                const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                 if (!date) return;
 
                 const month = date.getMonth(); 
@@ -1254,11 +1261,11 @@
                     expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
                 }
                 
-                const premium = parseNumber(row[COL_PREM]);
-                const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
-                const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
+                const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
+                const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || 'Unknown');
+                const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || 'Unknown');
 
-                const tx = parseTransactionType(row[COL_TRANSACTION]);
+                const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, ytdBase:0, ytdRen:0, basePolicies: [], renewals: [] };
@@ -1295,8 +1302,8 @@
                         }
 
                         if (passesFilter && tx.isFresh) {
-                            let prod = row[COL_PRODUCT] || 'Unspecified';
-                            let si = row[COL_SUM_INSURED] || 'Unspecified';
+                            let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
+                            let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
                             
                             if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
                             productBreakdown[prod].nop += 1;
@@ -1355,17 +1362,17 @@
                 });
 
                 let renUsage = renPool.map(r => ({ 
-                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
                     used: false 
                 }));
                 
                 basePool.forEach(b => {
                     const mIdx = b.fyMonthIndex;
-                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
                     
                     fyData[mIdx].baseNOP += 1;
                     totalBaseNOP += 1;
@@ -1394,15 +1401,15 @@
 
                 retentionYr2Base = yr2BasePool.length;
                 let yr2Usage = yr2RenPool.map(r => ({ 
-                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
                     used: false 
                 }));
                 yr2BasePool.forEach(b => {
-                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
 
                     let matchIdx = yr2Usage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -1415,16 +1422,16 @@
                     Object.keys(agentLB).forEach(agent => {
                         let ag = agentLB[agent];
                         let agRenUsage = ag.renewals.map(r => ({ 
-                            policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
-                            prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
-                            altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
-                            sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), 
+                            policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                            prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                            altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                            sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(), 
                             used: false 
                         }));
                         ag.basePolicies.forEach(b => {
                             ag.ytdBase += 1;
-                            const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
-                            const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                            const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                            const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
                             
                             let matchIdx = agRenUsage.findIndex(r => !r.used && (
                                 (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
