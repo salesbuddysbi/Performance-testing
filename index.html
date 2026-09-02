@@ -425,25 +425,22 @@
         let rawData = [];
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
-        let cachedLeaderboardData = { fresh: {}, renewal: {} };
 
-        // IMPROVEMENT 2: Hardened Number Parser. (Strips out currency signs like ₹/INR if they were added mid-year)
         function parseNumber(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return val;
-            const str = val.toString().replace(/[^0-9.\-]/g, ''); // Remves EVERYTHING except digits, dots, minus
+            const str = val.toString().replace(/[^0-9.\-]/g, '');
             const num = parseFloat(str);
             return isNaN(num) ? 0 : num;
         }
 
-        // IMPROVEMENT 1: Bulletproof Date Parser. Prevents Javascript from silently skipping/swapping dates
+        // AGGRESSIVE DATE PARSER TO FIX SEPTEMBER: Forces Javascript to correctly identify and evaluate manual text dates
         function parseExcelDate(val) {
             if (!val) return null;
             
-            // 1. If it's already a JS Date object (Excel parsed by XLSX)
+            // 1. If it's already a native UTC JS Date object (Excel parsed by XLSX library)
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return null;
-                // Force it to use the exact UTC parameters locally to prevent midnight shifts jumping a day backward
                 return new Date(val.getUTCFullYear(), val.getUTCMonth(), val.getUTCDate());
             }
             
@@ -454,40 +451,40 @@
                 return date;
             }
             
-            // 3. If it is a string formatted date (e.g. 01.09.2026 or 1 Sep 26)
+            // 3. Fallback: Aggressively parse string dates (e.g. "01.09.2026", "1-Sep-26") 
             if (typeof val === 'string') {
                 let s = val.trim();
                 if (!s) return null;
 
-                // Split by dash, slash, dot, or space
-                const parts = s.split(/[-/.\s+]/).filter(p => p);
+                const monthMap = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
                 
+                const parts = s.split(/[-/.\s+]/).filter(p => p);
                 if (parts.length >= 3) {
-                    let p0 = parseInt(parts[0], 10);
-                    let p1 = parseInt(parts[1], 10);
-                    let p2 = parseInt(parts[2], 10);
+                    let d = parseInt(parts[0], 10);
+                    let m;
+                    let mStr = parts[1].toLowerCase().substring(0,3);
                     
-                    if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
-                        let y, m, d;
-                        if (p2 >= 1000) { 
-                            y = p2; 
-                            // DD/MM/YYYY priority for India
-                            if (p1 <= 12 && p0 <= 31) { m = p1; d = p0; } 
-                            else { m = p0; d = p1; }
-                        } 
-                        else if (p0 >= 1000) { 
-                            y = p0; m = p1; d = p2; // YYYY/MM/DD
+                    if (monthMap[mStr] !== undefined) {
+                        m = monthMap[mStr] + 1; // 1-indexed
+                    } else {
+                        m = parseInt(parts[1], 10);
+                    }
+                    
+                    let y = parseInt(parts[2], 10);
+                    if (y < 100) y += 2000;
+                    
+                    if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+                        if (m > 12 && d <= 12) { 
+                            // Handles MM/DD/YYYY to DD/MM/YYYY swap natively
+                            let temp = m; m = d; d = temp;
                         }
-                        
-                        if (y && m && d) return new Date(y, m - 1, d);
+                        return new Date(y, m - 1, d);
                     }
                 }
                 
-                // Final fallback for string format like "1-Sep-2026"
                 let d2 = new Date(s);
                 if (!isNaN(d2.getTime())) return d2;
             }
-            
             return null;
         }
 
@@ -645,7 +642,7 @@
 
             if (state.main === 'ranking') {
                 const monthSelect = document.getElementById('month-select');
-                monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${m}">${m}</option>`).join(''); // Fixed mapping for month selector strings
+                monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
                 resetDashboard();
             } else {
                 if (state.sub === 'cluster') {
@@ -705,7 +702,6 @@
             return ``;
         }
 
-        // === POLICY DRILL DOWN (NOP / Month Click) ===
         function openPolicyDrillDown(monthIndex) {
             const monthName = FY_MONTHS[monthIndex];
             document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1}`;
@@ -713,7 +709,7 @@
             const tbody = document.getElementById('modal-table-body');
             
             if (state.main === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Fresh Business)";
+                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Pure Fresh Business)";
                 
                 thead.innerHTML = `
                     <tr>
@@ -743,15 +739,15 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement')) return false;
 
-                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new'); // Added fallback for "new"
+                    // STRICT FILTER: Only specifically labeled "fresh" transactions
+                    const isFreshBaseTx = tType.includes('fresh');
                     return isFreshBaseTx || tType.includes('cancel');
                 });
 
-                // Chronological Ascending Sort
                 policies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
 
                 if (policies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No fresh business policies recorded for this month.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No pure fresh business policies recorded for this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = policies.map(p => {
                         const d = parseExcelDate(p[COL_DATE]);
@@ -779,7 +775,6 @@
                     }).join('');
                 }
             } else {
-                // RENEWAL DRILL DOWN
                 document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
 
                 thead.innerHTML = `
@@ -825,6 +820,7 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
+                    // Renewal module considers any base business
                     const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
                     const isRen = tType.includes('our renewal');
 
@@ -893,7 +889,6 @@
             document.getElementById('drilldown-modal').classList.remove('hidden');
         }
 
-        // === AGENT ACTIVATIONS DRILL DOWN (Act Badge / Slab Click) ===
         function openActivationDrillDown(monthIndex, specificSlab = null) {
             const monthName = FY_MONTHS[monthIndex];
             document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1} - Agent Activations`;
@@ -934,7 +929,9 @@
                 const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                 if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                const isFresh = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
+                // STRICT FILTER for Agent Activation (Pure Fresh Only)
+                const isFresh = tType.includes('fresh');
+                
                 if (isFresh && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
                     agentMap[agent].gwp += parseNumber(row[COL_PREM]);
@@ -967,7 +964,6 @@
                 list = list.filter(item => item.slabCode === specificSlab);
             }
 
-            // Sort by GWP descending
             list.sort((a, b) => b.gwp - a.gwp);
 
             if (list.length === 0) {
@@ -995,7 +991,6 @@
 
         function closeModal() { document.getElementById('drilldown-modal').classList.add('hidden'); }
 
-        // === RANKING BOARD ===
         function renderRanking() {
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('dashboard-content').classList.add('hidden');
@@ -1004,7 +999,7 @@
             const calYear = state.selectedMonth < 9 ? state.selectedYear : state.selectedYear + 1;
             const calMonth = (state.selectedMonth + 3) % 12;
 
-            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top GWP Ranking' : 'Top NOP Ranking';
+            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Pure Fresh Ranking' : 'Top Pure NOP Ranking';
             document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1}`;
             document.getElementById('rb-metric-label').innerText = state.sub === 'gwp_rank' ? 'GWP Premium' : 'NOP Count';
 
@@ -1016,7 +1011,9 @@
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
+                    
+                    // STRICT FILTER: Pure Fresh only for Rankings 
+                    const isFreshBaseTx = tType.includes('fresh');
                     const isCancelTx = tType.includes('cancel'); 
                     
                     if (isFreshBaseTx || isCancelTx) {
@@ -1071,7 +1068,6 @@
             }).join('');
         }
 
-        // === DYNAMIC MTD LEADERBOARD RENDERER ===
         function renderLeaderboardsForSelectedMonth() {
             const mIdx = parseInt(document.getElementById('leaderboard-month-select').value);
             const mName = FY_MONTHS[mIdx];
@@ -1090,7 +1086,8 @@
                         const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                         if (tType.includes('endorsement')) return;
                         
-                        const isFresh = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
+                        // STRICT FILTER: Pure fresh
+                        const isFresh = tType.includes('fresh');
                         const isCancel = tType.includes('cancel');
                         const agent = toTitleCase(row[COL_AGENT] || '');
                         const manager = toTitleCase(row[COL_MANAGER] || '');
@@ -1253,10 +1250,14 @@
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
                 const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
 
-                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
-                const isRenewalTx = tType.includes('our renewal');
-                const isBaseTx = isFreshBaseTx || isRenewalTx;
+                // STRICT FILTER applied exclusively here
+                const isFreshBaseTx = tType.includes('fresh');
                 const isCancelTx = tType.includes('cancel'); 
+                
+                // Keep the broad filter exclusively for calculating the retention base 
+                const isRetentionBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new') || tType.includes('our renewal');
+                const isRenewalTx = tType.includes('our renewal');
+
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, ytdBase:0, ytdRen:0, basePolicies: [], renewals: [] };
@@ -1312,13 +1313,13 @@
                 } 
                 else if (state.main === 'renewal') {
                     if (passesFilter) {
-                        if (expFY === state.selectedYear && isBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                        if (expFY === state.selectedYear && isRetentionBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
                         if (rowFY === state.selectedYear && isRenewalTx) renPool.push(row);
-                        if (expFY === state.selectedYear - 1 && isBaseTx && !isCancelTx) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                        if (expFY === state.selectedYear - 1 && isRetentionBaseTx && !isCancelTx) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
                         if (rowFY === state.selectedYear - 1 && isRenewalTx) yr2RenPool.push(row);
                     }
                     if (passesLBFilter && !isCancelTx) {
-                        if (expFY === state.selectedYear && isBaseTx) agentLB[agent].basePolicies.push({...row});
+                        if (expFY === state.selectedYear && isRetentionBaseTx) agentLB[agent].basePolicies.push({...row});
                         if (rowFY === state.selectedYear && isRenewalTx) agentLB[agent].renewals.push({...row});
                     }
                 }
@@ -1538,7 +1539,7 @@
                     <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white col-span-1 md:col-span-2 relative overflow-hidden">
                         <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-2xl opacity-20"></div>
                         <div class="flex items-center mb-1 relative z-10">
-                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Net Fresh Premium (GWP)</span>
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pure Fresh Premium (GWP)</span>
                             ${getYoYBadge(tFreshAmt, pFreshAmt)}
                         </div>
                         <div class="text-3xl font-black relative tracking-tight z-10">₹${tFreshAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
