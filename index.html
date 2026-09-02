@@ -54,7 +54,7 @@
     </div>
 
     <!-- GENERAL DRILL-DOWN MODAL -->
-    <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[90] hidden p-4">
+    <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[90] hidden p-4" onclick="if(event.target === this) closeModal()">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div>
@@ -87,7 +87,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
                 <h2 class="text-lg font-bold text-slate-800">Fresh Business</h2>
-                <p class="text-slate-400 text-xs mt-1">GWP, NOP & Activations</p>
+                <p class="text-slate-400 text-xs mt-1">Fresh & Rollover GWP, NOP & Activations</p>
             </button>
             <button onclick="navToRole('renewal')" class="bg-white p-7 rounded-3xl shadow-sm hover:shadow-xl transition-all transform hover:-translate-y-1.5 border border-slate-200 group flex flex-col items-center text-center">
                 <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -322,7 +322,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution (YTD Summary)</h2>
-                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Pure Fresh GWP &ge; &#8377;15,000 / month per agent</p>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Fresh & Rollover GWP &ge; &#8377;15,000 / month per agent</p>
                             </div>
                             <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-inner" id="act-total">Total Activations: 0</div>
                         </div>
@@ -352,19 +352,19 @@
                         </div>
                     </div>
 
-                    <!-- FRESH BREAKDOWNS (Pure Fresh Only) -->
+                    <!-- FRESH BREAKDOWNS -->
                     <div id="fresh-breakdowns" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Product Wise Performance
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Fresh & Rollover</span>
                             </h2>
                             <div id="product-list" class="space-y-3"></div>
                         </div>
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Sum Insured Wise
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Fresh & Rollover</span>
                             </h2>
                             <div id="si-list" class="space-y-3"></div>
                         </div>
@@ -427,6 +427,7 @@
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
         function getColValue(row, possibleKeys) {
+            if (!row || typeof row !== 'object') return "";
             const rowKeys = Object.keys(row);
             for (let pk of possibleKeys) {
                 const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -438,7 +439,7 @@
             return "";
         }
 
-        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC ("Rollover means renewal")
+        // ROLLOVER IS CLASSIFIED AS FRESH BUSINESS
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
@@ -446,10 +447,11 @@
             
             if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
 
-            const isRenewal = tType.includes('renewal') || tType.includes('roll') || tType.includes('rnw');
+            // Exclude "roll" from renewals entirely
+            const isRenewal = (tType.includes('renewal') || tType.includes('rnw')) && !tType.includes('roll');
             
-            // STRICT FRESH: Blocks "roll over" and "renewal" completely
-            const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb') && !isRenewal && !isCancel;
+            // Treat "roll" (rollover) as fresh business
+            const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb' || tType.includes('roll')) && !isRenewal && !isCancel;
             
             const isRetentionBase = isFresh || isRenewal;
             return { isCancel, isRenewal, isFresh, isRetentionBase };
@@ -457,21 +459,19 @@
 
         function parseNumber(val) {
             if (val === undefined || val === null || val === '') return 0;
-            if (typeof val === 'number') return val;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
             const str = val.toString().replace(/[^0-9.\-]/g, '');
             const num = parseFloat(str);
             return isNaN(num) ? 0 : num;
         }
 
-        // 2. TIMEZONE-FREE DATE PARSER
+        // TIMEZONE-FREE DATE PARSER
         function parseExcelDate(val) {
             if (val === undefined || val === null || val === '') return null;
             
             let y, m, d;
 
             if (typeof val === 'number') {
-                // Read numeric date explicitly (Excel epoch starts 1900)
-                // Mathematical conversion that bypasses the javascript Date timezone engine
                 let tempDate = new Date(Math.round((val - 25569) * 86400000));
                 y = tempDate.getUTCFullYear();
                 m = tempDate.getUTCMonth() + 1;
@@ -484,14 +484,14 @@
             } else {
                 let s = val.toString().trim().split(/[\sT]+/)[0];
                 
-                // Matches ISO YYYY-MM-DD
+                // ISO YYYY-MM-DD
                 let match = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
                 if (match) {
                     y = parseInt(match[1], 10);
                     m = parseInt(match[2], 10);
                     d = parseInt(match[3], 10);
                 } else {
-                    // Strictly prioritize DD/MM/YYYY text formatting
+                    // Prioritize DD/MM/YYYY text formatting
                     match = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
                     if (match) {
                         d = parseInt(match[1], 10);
@@ -500,7 +500,7 @@
                         if (y < 100) y += 2000;
                         if (m > 12) { let temp = m; m = d; d = temp; }
                     } else {
-                        // Matches 1-Sep-2026
+                        // 1-Sep-2026
                         const monthMap = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
                         match = s.match(/^(\d{1,2})[-\/.\s]+([a-zA-Z]{3,})[-\/.\s]+(\d{2,4})/);
                         if (match) {
@@ -522,7 +522,6 @@
             }
 
             if (y && m && d) {
-                // Initialize explicitly at 12:00 PM NOON to mathematically prevent midnight timezone boundaries
                 return new Date(y, m - 1, d, 12, 0, 0);
             }
             return null;
@@ -538,6 +537,10 @@
             document.getElementById('file-upload').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) loadExcel(file);
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
             });
         });
 
@@ -561,7 +564,6 @@
 
         function parseExcelData(buffer) {
             try {
-                // Cleanest read configuration. No formatting forced on strings.
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
@@ -581,7 +583,7 @@
 
                 document.getElementById('upload-overlay').classList.add('hidden');
                 showView('view-home');
-            } catch (err) { alert("Error parsing Excel file. Please ensure valid format."); }
+            } catch (err) { alert("Error parsing Excel file. Please ensure a valid format."); }
         }
 
         function showView(viewId) {
@@ -602,7 +604,7 @@
                 document.getElementById('role-standard').classList.add('hidden');
                 document.getElementById('role-ranking').classList.remove('hidden');
             } else {
-                breadcrumb.innerText = mainModule === 'fresh' ? 'Fresh Business' : 'Renewal Performance';
+                breadcrumb.innerText = mainModule === 'fresh' ? 'Fresh & Rollover Business' : 'Renewal Performance';
                 title.innerText = mainModule === 'fresh' ? 'Fresh Business Module' : 'Renewal Performance Module';
                 document.getElementById('role-standard').classList.remove('hidden');
                 document.getElementById('role-ranking').classList.add('hidden');
@@ -750,7 +752,7 @@
             const tbody = document.getElementById('modal-table-body');
             
             if (state.main === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Pure Fresh Business)";
+                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Fresh & Rollover Business)";
                 
                 thead.innerHTML = `
                     <tr>
@@ -784,7 +786,7 @@
                 policies.sort((a, b) => (parseExcelDate(getColValue(a, COL_DATE_KEYS)) || new Date(0)) - (parseExcelDate(getColValue(b, COL_DATE_KEYS)) || new Date(0)));
 
                 if (policies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No pure fresh business policies recorded for this month.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No fresh or rollover business recorded for this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = policies.map(p => {
                         const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
@@ -859,17 +861,23 @@
                     if (rowFY === state.selectedYear && tx.isRenewal) currentYearRenewals.push(row);
                 });
 
-                let renPool = currentYearRenewals.map(r => ({ 
-                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(), 
-                    used: false 
-                }));
+                let renPool = currentYearRenewals.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return { 
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
+                        used: false 
+                    };
+                });
                 
                 let mappedPolicies = baseDue.map(p => {
                     const basePolicyNo = (getColValue(p, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
-                    const sig = (toTitleCase(getColValue(p, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(p, COL_PRODUCT_KEYS))).toLowerCase();
+                    const ins = toTitleCase(getColValue(p, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(p, COL_PRODUCT_KEYS));
+                    const sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
 
                     let matchIdx = renPool.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -935,7 +943,7 @@
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Manager</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Activation Slab</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Fresh NOP</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Pure Fresh GWP</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Fresh GWP</th>
                 </tr>`;
 
             let agentMap = {};
@@ -1026,7 +1034,7 @@
             const calYear = state.selectedMonth < 9 ? state.selectedYear : state.selectedYear + 1;
             const calMonth = (state.selectedMonth + 3) % 12;
 
-            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Pure Fresh Ranking' : 'Top Pure NOP Ranking';
+            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Fresh & Rollover Ranking' : 'Top NOP Ranking';
             document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1}`;
             document.getElementById('rb-metric-label').innerText = state.sub === 'gwp_rank' ? 'GWP Premium' : 'NOP Count';
 
@@ -1062,7 +1070,7 @@
 
             const listDiv = document.getElementById('rb-list');
             if (sorted.length === 0) {
-                listDiv.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm font-medium">No fresh business recorded in ${FY_MONTHS[state.selectedMonth]}.</div>`;
+                listDiv.innerHTML = `<div class="text-center p-6 text-slate-400 text-sm font-medium">No fresh or rollover business recorded in ${FY_MONTHS[state.selectedMonth]}.</div>`;
                 return;
             }
 
@@ -1171,13 +1179,17 @@
                     }
                 });
 
-                let renUsage = currYrRen.map(r => ({
-                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
-                    used: false
-                }));
+                let renUsage = currYrRen.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return {
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false
+                    };
+                });
 
                 mtdBase.forEach(b => {
                     const agent = b.agent;
@@ -1185,7 +1197,9 @@
                     monthlyAgents[agent].base += 1;
 
                     const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
 
                     let matchIdx = renUsage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -1203,7 +1217,7 @@
             }
         }
 
-        // === MAIN DASHBOARD RENDER ===
+        // MAIN DASHBOARD RENDER
         function renderDashboard() {
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('ranking-board-content').classList.add('hidden');
@@ -1360,18 +1374,24 @@
                     d.isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
                 });
 
-                let renUsage = renPool.map(r => ({ 
-                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
-                    used: false 
-                }));
+                let renUsage = renPool.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return { 
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false 
+                    };
+                });
                 
                 basePool.forEach(b => {
                     const mIdx = b.fyMonthIndex;
                     const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
                     
                     fyData[mIdx].baseNOP += 1;
                     totalBaseNOP += 1;
@@ -1399,16 +1419,23 @@
                 retentionYr1Ren = totalRenewed;
 
                 retentionYr2Base = yr2BasePool.length;
-                let yr2Usage = yr2RenPool.map(r => ({ 
-                    policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(),
-                    used: false 
-                }));
+                let yr2Usage = yr2RenPool.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return { 
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false 
+                    };
+                });
+
                 yr2BasePool.forEach(b => {
                     const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
-                    const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
 
                     let matchIdx = yr2Usage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -1420,17 +1447,24 @@
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     Object.keys(agentLB).forEach(agent => {
                         let ag = agentLB[agent];
-                        let agRenUsage = ag.renewals.map(r => ({ 
-                            policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                            prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                            altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                            sig: (toTitleCase(getColValue(r, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(r, COL_PRODUCT_KEYS))).toLowerCase(), 
-                            used: false 
-                        }));
+                        let agRenUsage = ag.renewals.map(r => {
+                            const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                            const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                            return { 
+                                policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
+                                used: false 
+                            };
+                        });
+
                         ag.basePolicies.forEach(b => {
                             ag.ytdBase += 1;
                             const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
-                            const b_sig = (toTitleCase(getColValue(b, COL_INSURED_KEYS)) + "|" + toTitleCase(getColValue(b, COL_PRODUCT_KEYS))).toLowerCase();
+                            const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                            const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                            const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
                             
                             let matchIdx = agRenUsage.findIndex(r => !r.used && (
                                 (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
@@ -1539,14 +1573,14 @@
             } else { breakdownSection.classList.add('hidden'); breakdownSection.classList.remove('grid'); }
         }
 
-        function renderSummary(tFreshAmt, tFreshNOP, pFreshAmt, pFreshNOP, tBase, tRenewed, tMissed, tYet, pBase, pRenewed) {
+        function renderSummary(tFreshAmt, tFreshNOP, pFreshAmt, pFreshNOP, tBase, tRenewed, tMissed, tYet) {
             const summaryDiv = document.getElementById('summary-section');
             if (state.main === 'fresh') {
                 summaryDiv.innerHTML = `
                     <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white col-span-1 md:col-span-2 relative overflow-hidden">
                         <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-2xl opacity-20"></div>
                         <div class="flex items-center mb-1 relative z-10">
-                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pure Fresh Premium (GWP)</span>
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Fresh & Rollover Premium (GWP)</span>
                             ${getYoYBadge(tFreshAmt, pFreshAmt)}
                         </div>
                         <div class="text-3xl font-black relative tracking-tight z-10">₹${tFreshAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
