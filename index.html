@@ -426,22 +426,20 @@
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
-        // GLOBAL LOGIC FILTER: Mutually Exclusive Logic for Fresh vs Renewal 
+        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC ("Rollover means renewal")
         function parseTransactionType(typeStr) {
-            const tType = (typeStr || '').toString().toLowerCase();
+            const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
             const isCancel = tType.includes('cancel');
             
-            // Skip pure endorsements entirely
             if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
 
-            // "Roll Over" forces it to be a Renewal
-            const isRenewal = tType.includes('renewal') || tType.includes('roll over') || tType.includes('rollover');
+            // Explicitly catches "roll over" and blocks it from fresh
+            const isRenewal = tType.includes('renewal') || tType.includes('roll') || tType.includes('rnw');
             
-            // Fresh is strictly ONLY fresh/new, and NEVER if it contains roll over or renewal
-            const isFresh = (tType.includes('fresh') || tType.includes('new')) && !isRenewal && !isCancel;
+            // Fresh is completely blocked if the string contains roll over or renewal
+            const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb') && !isRenewal && !isCancel;
             
-            // Base policies eligible to be renewed later
             const isRetentionBase = isFresh || isRenewal;
             
             return { isCancel, isRenewal, isFresh, isRetentionBase };
@@ -455,49 +453,72 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // FULLY TIMEZONE-IMMUNE DATE PARSER (Fixes September Disappearing)
+        // 2. 100% TIMEZONE-FREE DATE PARSER (Fixes September drop-off entirely)
         function parseExcelDate(val) {
-            if (!val) return null;
+            if (val === undefined || val === null || val === '') return null;
             
+            let y, m, d;
+
             if (typeof val === 'number') {
-                // Excel epoch starts at Jan 1 1900 (25569 days before 1970 UNIX epoch).
-                // Create date rigidly at 12:00 PM NOON LOCAL TIME to stop +5:30 IST from pushing dates backward across midnight.
-                return new Date(1970, 0, val - 25569, 12, 0, 0);
+                // Read exact date components from numerical serial, bypassing timezone shifts completely
+                let utcDays = Math.floor(val - 25569);
+                if (utcDays > 59) utcDays -= 1; // Corrects Excel's 1900 Leap Year Bug
+                let tempDate = new Date(utcDays * 86400000);
+                y = tempDate.getUTCFullYear();
+                m = tempDate.getUTCMonth() + 1; // 1-12
+                d = tempDate.getUTCDate();
+            } else if (val instanceof Date) {
+                if (isNaN(val.getTime())) return null;
+                y = val.getFullYear();
+                m = val.getMonth() + 1;
+                d = val.getDate();
+            } else {
+                let s = val.toString().trim().split(' ')[0]; // Discard any time string attached
+                
+                // Matches ISO YYYY-MM-DD
+                let match = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+                if (match) {
+                    y = parseInt(match[1], 10);
+                    m = parseInt(match[2], 10);
+                    d = parseInt(match[3], 10);
+                } else {
+                    // Strictly prioritize DD/MM/YYYY formatting as per your requirement
+                    match = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+                    if (match) {
+                        d = parseInt(match[1], 10);
+                        m = parseInt(match[2], 10);
+                        y = parseInt(match[3], 10);
+                        if (y < 100) y += 2000;
+                        
+                        // Failsafe in case it actually was MM/DD/YYYY
+                        if (m > 12) { let temp = m; m = d; d = temp; }
+                    } else {
+                        // Matches text dates like 1-Sep-2026
+                        const monthMap = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+                        match = s.match(/^(\d{1,2})[-\/.\s]+([a-zA-Z]{3,})[-\/.\s]+(\d{2,4})/);
+                        if (match) {
+                            d = parseInt(match[1], 10);
+                            let mStr = match[2].toLowerCase().substring(0,3);
+                            m = monthMap[mStr];
+                            y = parseInt(match[3], 10);
+                            if (y < 100) y += 2000;
+                        } else {
+                            // Ultimate fallback
+                            let temp = new Date(s);
+                            if (!isNaN(temp.getTime())) {
+                                y = temp.getFullYear();
+                                m = temp.getMonth() + 1;
+                                d = temp.getDate();
+                            }
+                        }
+                    }
+                }
             }
-            
-            let s = val.toString().trim();
-            if (!s) return null;
 
-            // Catch pre-formatted text serial numbers
-            if (/^\d{5}(\.\d+)?$/.test(s)) {
-                return new Date(1970, 0, parseFloat(s) - 25569, 12, 0, 0);
-            }
-
-            // User specified STRICT DD/MM/YYYY text format mapping
-            const ukMatch = s.match(/^([0-9]{1,2})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{2,4})/);
-            if (ukMatch) {
-                let d = parseInt(ukMatch[1], 10);
-                let m = parseInt(ukMatch[2], 10);
-                let y = parseInt(ukMatch[3], 10);
-                if (y < 100) y += 2000;
-                // Force NOON time construction here as well
-                return new Date(y, m - 1, d, 12, 0, 0); 
-            }
-
-            const isoMatch = s.match(/^([0-9]{4})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{1,2})/);
-            if (isoMatch) {
-                let y = parseInt(isoMatch[1], 10);
-                let m = parseInt(isoMatch[2], 10);
-                let d = parseInt(isoMatch[3], 10);
+            if (y && m && d) {
+                // Initialize the pure local date explicitly at 12:00 PM NOON to mathematically prevent midnight timezone shift boundaries
                 return new Date(y, m - 1, d, 12, 0, 0);
             }
-
-            let d2 = new Date(s);
-            if (!isNaN(d2.getTime())) {
-                d2.setHours(12, 0, 0);
-                return d2;
-            }
-
             return null;
         }
 
@@ -534,7 +555,7 @@
 
         function parseExcelData(buffer) {
             try {
-                // Stripped "cellDates: true" to stop Javascript Date Objects from hijacking the Excel serial numbers
+                // Disabled JS Date conversion to allow pure serial/string reads
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
