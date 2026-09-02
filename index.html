@@ -405,7 +405,6 @@
     </div>
 
     <script>
-        // Use fuzzy matching keys so Excel typos won't break the system
         const COL_POLICY_KEYS = ["policy no", "policyno", "policy number"];
         const COL_PREV_POLICY_KEYS = ["previous policy", "prev policy"];
         const COL_ALT_POLICY_KEYS = ["alternate policy", "alt policy"];
@@ -439,7 +438,7 @@
             return "";
         }
 
-        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC 
+        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC ("Rollover means renewal")
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
@@ -464,16 +463,16 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // 2. 100% TIMEZONE-FREE DATE PARSER (Fixes September drop-off entirely)
+        // 2. TIMEZONE-FREE DATE PARSER
         function parseExcelDate(val) {
             if (val === undefined || val === null || val === '') return null;
             
             let y, m, d;
 
             if (typeof val === 'number') {
-                let utcDays = Math.floor(val - 25569);
-                if (utcDays > 59) utcDays -= 1;
-                let tempDate = new Date(utcDays * 86400000);
+                // Read numeric date explicitly (Excel epoch starts 1900)
+                // Mathematical conversion that bypasses the javascript Date timezone engine
+                let tempDate = new Date(Math.round((val - 25569) * 86400000));
                 y = tempDate.getUTCFullYear();
                 m = tempDate.getUTCMonth() + 1;
                 d = tempDate.getUTCDate();
@@ -492,7 +491,7 @@
                     m = parseInt(match[2], 10);
                     d = parseInt(match[3], 10);
                 } else {
-                    // Strictly prioritize DD/MM/YYYY text formatting based on user image
+                    // Strictly prioritize DD/MM/YYYY text formatting
                     match = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
                     if (match) {
                         d = parseInt(match[1], 10);
@@ -562,11 +561,11 @@
 
         function parseExcelData(buffer) {
             try {
-                // 3. Forcing pure string read using format "dd/mm/yyyy" for bulletproof interpretation
+                // Cleanest read configuration. No formatting forced on strings.
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
-                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "", raw: false, dateNF: "dd/mm/yyyy" });
+                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                     
                     if (sheet.length > 0) {
                         const cleanedSheet = sheet.map(row => {
