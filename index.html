@@ -426,6 +426,27 @@
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
 
+        // GLOBAL LOGIC FILTER: Mutually Exclusive Logic for Fresh vs Renewal 
+        function parseTransactionType(typeStr) {
+            const tType = (typeStr || '').toString().toLowerCase();
+            const isEndorsement = tType.includes('endorsement');
+            const isCancel = tType.includes('cancel');
+            
+            // Skip pure endorsements entirely
+            if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
+
+            // "Roll Over" forces it to be a Renewal
+            const isRenewal = tType.includes('renewal') || tType.includes('roll over') || tType.includes('rollover');
+            
+            // Fresh is strictly ONLY fresh/new, and NEVER if it contains roll over or renewal
+            const isFresh = (tType.includes('fresh') || tType.includes('new')) && !isRenewal && !isCancel;
+            
+            // Base policies eligible to be renewed later
+            const isRetentionBase = isFresh || isRenewal;
+            
+            return { isCancel, isRenewal, isFresh, isRetentionBase };
+        }
+
         function parseNumber(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return val;
@@ -434,76 +455,48 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // ULTRA-ROBUST DATE PARSER
+        // FULLY TIMEZONE-IMMUNE DATE PARSER (Fixes September Disappearing)
         function parseExcelDate(val) {
             if (!val) return null;
             
-            if (val instanceof Date) {
-                if (isNaN(val.getTime())) return null;
-                return new Date(val.getUTCFullYear(), val.getUTCMonth(), val.getUTCDate());
-            }
-            
             if (typeof val === 'number') {
-                const date = new Date(Math.round((val - 25569) * 86400 * 1000));
-                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-                return date;
+                // Excel epoch starts at Jan 1 1900 (25569 days before 1970 UNIX epoch).
+                // Create date rigidly at 12:00 PM NOON LOCAL TIME to stop +5:30 IST from pushing dates backward across midnight.
+                return new Date(1970, 0, val - 25569, 12, 0, 0);
             }
             
             let s = val.toString().trim();
             if (!s) return null;
 
-            // Catches formatted serial text (e.g. "45180")
+            // Catch pre-formatted text serial numbers
             if (/^\d{5}(\.\d+)?$/.test(s)) {
-                const serial = parseFloat(s);
-                const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
-                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-                return date;
+                return new Date(1970, 0, parseFloat(s) - 25569, 12, 0, 0);
             }
 
-            const monthMap = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-            
-            // Catches "1 Sep 2026", "01-September-2026"
-            const alphaMatch = s.match(/([0-9]{1,2})[ \-\./]+([A-Za-z]{3,})[ \-\./]+([0-9]{2,4})/);
-            if (alphaMatch) {
-                let d = parseInt(alphaMatch[1], 10);
-                let mStr = alphaMatch[2].toLowerCase().substring(0,3);
-                let y = parseInt(alphaMatch[3], 10);
+            // User specified STRICT DD/MM/YYYY text format mapping
+            const ukMatch = s.match(/^([0-9]{1,2})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{2,4})/);
+            if (ukMatch) {
+                let d = parseInt(ukMatch[1], 10);
+                let m = parseInt(ukMatch[2], 10);
+                let y = parseInt(ukMatch[3], 10);
                 if (y < 100) y += 2000;
-                if (monthMap[mStr] !== undefined) return new Date(y, monthMap[mStr], d);
+                // Force NOON time construction here as well
+                return new Date(y, m - 1, d, 12, 0, 0); 
             }
 
-            // Catches "Sep 1, 2026"
-            const alphaMatch2 = s.match(/([A-Za-z]{3,})[ \-\./]+([0-9]{1,2})[ \-\./,]+([0-9]{2,4})/);
-            if (alphaMatch2) {
-                let mStr = alphaMatch2[1].toLowerCase().substring(0,3);
-                let d = parseInt(alphaMatch2[2], 10);
-                let y = parseInt(alphaMatch2[3], 10);
-                if (y < 100) y += 2000;
-                if (monthMap[mStr] !== undefined) return new Date(y, monthMap[mStr], d);
-            }
-
-            // Catches ISO "2026-09-01"
             const isoMatch = s.match(/^([0-9]{4})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{1,2})/);
             if (isoMatch) {
                 let y = parseInt(isoMatch[1], 10);
                 let m = parseInt(isoMatch[2], 10);
                 let d = parseInt(isoMatch[3], 10);
-                return new Date(y, m - 1, d);
-            }
-
-            // Catches DD/MM/YYYY and DD-MM-YY
-            const ukMatch = s.match(/^([0-9]{1,2})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{2,4})/);
-            if (ukMatch) {
-                let p1 = parseInt(ukMatch[1], 10);
-                let p2 = parseInt(ukMatch[2], 10);
-                let y = parseInt(ukMatch[3], 10);
-                if (y < 100) y += 2000;
-                if (p2 > 12) return new Date(y, p1 - 1, p2); // MUST be US format if middle is > 12
-                else return new Date(y, p2 - 1, p1); // Assume DD/MM/YYYY primarily
+                return new Date(y, m - 1, d, 12, 0, 0);
             }
 
             let d2 = new Date(s);
-            if (!isNaN(d2.getTime())) return d2;
+            if (!isNaN(d2.getTime())) {
+                d2.setHours(12, 0, 0);
+                return d2;
+            }
 
             return null;
         }
@@ -541,7 +534,8 @@
 
         function parseExcelData(buffer) {
             try {
-                const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+                // Stripped "cellDates: true" to stop Javascript Date Objects from hijacking the Excel serial numbers
+                const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
                     const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
@@ -756,14 +750,8 @@
                     if (state.sub === 'agent' && toTitleCase(row[COL_AGENT]) !== state.selectedName) return false;
                     if (state.sub === 'manager' && toTitleCase(row[COL_MANAGER]) !== state.selectedName) return false;
 
-                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                    if (tType.includes('endorsement')) return false;
-
-                    const isCancel = tType.includes('cancel');
-                    // MUTUALLY EXCLUSIVE FRESH FILTER: Must be "fresh", "roll over", or "new" AND CANNOT contain "renewal"
-                    const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
-                    
-                    return isFreshBaseTx || isCancel;
+                    const tx = parseTransactionType(row[COL_TRANSACTION]);
+                    return tx.isFresh || tx.isCancel;
                 });
 
                 policies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
@@ -776,8 +764,7 @@
                         const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
                         const prem = parseNumber(p[COL_PREM]);
                         const siStr = formatSumInsured(p[COL_SUM_INSURED]);
-                        const type = (p[COL_TRANSACTION] || '').toLowerCase();
-                        const isCancel = type.includes('cancel');
+                        const tx = parseTransactionType(p[COL_TRANSACTION]);
 
                         return `
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
@@ -789,8 +776,8 @@
                             <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[11px] font-bold ${isCancel ? 'text-rose-500' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
-                                    ${isCancel ? `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold">Cancelled</span>` : ''}
+                                    <span class="text-[11px] font-bold ${tx.isCancel ? 'text-rose-500' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
+                                    ${tx.isCancel ? `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold">Cancelled</span>` : ''}
                                 </div>
                             </td>
                         </tr>`;
@@ -839,14 +826,10 @@
                     if (state.sub === 'agent' && agent !== state.selectedName) return;
                     if (state.sub === 'manager' && manager !== state.selectedName) return;
 
-                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                    if (tType.includes('endorsement') || tType.includes('cancel')) return;
+                    const tx = parseTransactionType(row[COL_TRANSACTION]);
 
-                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
-                    const isRen = tType.includes('our renewal');
-
-                    if (expFY === state.selectedYear && isBase && expFyMonthIndex === monthIndex) baseDue.push(row);
-                    if (rowFY === state.selectedYear && isRen) currentYearRenewals.push(row);
+                    if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(row);
+                    if (rowFY === state.selectedYear && tx.isRenewal) currentYearRenewals.push(row);
                 });
 
                 let renPool = currentYearRenewals.map(r => ({ 
@@ -947,13 +930,9 @@
                 if (state.sub === 'agent' && agent !== state.selectedName) return;
                 if (state.sub === 'manager' && manager !== state.selectedName) return;
 
-                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                if (tType.includes('endorsement') || tType.includes('cancel')) return;
-
-                const isCancel = tType.includes('cancel');
-                const isFresh = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
+                const tx = parseTransactionType(row[COL_TRANSACTION]);
                 
-                if (isFresh && agent) {
+                if (tx.isFresh && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
                     agentMap[agent].gwp += parseNumber(row[COL_PREM]);
                     agentMap[agent].nop += 1;
@@ -1031,19 +1010,16 @@
                 if (!d) return;
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
-                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
+                    const tx = parseTransactionType(row[COL_TRANSACTION]);
                     
-                    const isCancelTx = tType.includes('cancel'); 
-                    const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancelTx;
-                    
-                    if (isFreshBaseTx || isCancelTx) {
+                    if (tx.isFresh || tx.isCancel) {
                         const agent = toTitleCase(row[COL_AGENT]);
                         const manager = toTitleCase(row[COL_MANAGER]);
                         
                         if (agent) {
                             if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager };
                             const prem = parseNumber(row[COL_PREM]);
-                            if (isFreshBaseTx) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
+                            if (tx.isFresh) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
                             else { agents[agent].nop -= 1; agents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
                         }
                     }
@@ -1103,21 +1079,19 @@
                     const date = parseExcelDate(row[COL_DATE]);
                     if (!date) return;
                     if (date.getFullYear() === calYear && date.getMonth() === calMonth) {
-                        const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                        if (tType.includes('endorsement')) return;
-                        
-                        const isCancel = tType.includes('cancel');
-                        const isFresh = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
+                        const tx = parseTransactionType(row[COL_TRANSACTION]);
 
-                        const agent = toTitleCase(row[COL_AGENT] || '');
-                        const manager = toTitleCase(row[COL_MANAGER] || '');
+                        if (tx.isFresh || tx.isCancel) {
+                            const agent = toTitleCase(row[COL_AGENT] || '');
+                            const manager = toTitleCase(row[COL_MANAGER] || '');
 
-                        const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
-                        if (passes && agent) {
-                            if (!monthlyAgents[agent]) monthlyAgents[agent] = { gwp: 0, nop: 0 };
-                            const prem = parseNumber(row[COL_PREM]);
-                            if (isFresh) { monthlyAgents[agent].gwp += prem; monthlyAgents[agent].nop += 1; }
-                            else if (isCancel) { monthlyAgents[agent].gwp -= Math.abs(prem); monthlyAgents[agent].nop -= 1; }
+                            const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
+                            if (passes && agent) {
+                                if (!monthlyAgents[agent]) monthlyAgents[agent] = { gwp: 0, nop: 0 };
+                                const prem = parseNumber(row[COL_PREM]);
+                                if (tx.isFresh) { monthlyAgents[agent].gwp += prem; monthlyAgents[agent].nop += 1; }
+                                else if (tx.isCancel) { monthlyAgents[agent].gwp -= Math.abs(prem); monthlyAgents[agent].nop -= 1; }
+                            }
                         }
                     }
                 });
@@ -1160,16 +1134,12 @@
                     const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
                     if (!passes || !agent) return;
 
-                    const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                    if (tType.includes('endorsement') || tType.includes('cancel')) return;
+                    const tx = parseTransactionType(row[COL_TRANSACTION]);
 
-                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
-                    const isRen = tType.includes('our renewal');
-
-                    if (expFY === state.selectedYear && isBase && expFyMonthIndex === mIdx) {
+                    if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === mIdx) {
                         mtdBase.push({agent, ...row});
                     }
-                    if (rowFY === state.selectedYear && isRen) {
+                    if (rowFY === state.selectedYear && tx.isRenewal) {
                         currYrRen.push(row);
                     }
                 });
@@ -1245,9 +1215,6 @@
                 const endDate = parseExcelDate(row[COL_END_DATE]);
                 if (!date) return;
 
-                const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                if (tType.includes('endorsement')) return;
-
                 const month = date.getMonth(); 
                 const year = date.getFullYear();
                 const rowFY = month >= 3 ? year : year - 1;
@@ -1270,13 +1237,7 @@
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
                 const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
 
-                const isCancelTx = tType.includes('cancel'); 
-                
-                // MUTUALLY EXCLUSIVE FILTER: Finds "fresh/roll over/new" while strictly ignoring "renewal" and "cancel"
-                const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancelTx;
-                
-                const isRenewalTx = tType.includes('our renewal');
-                const isRetentionBaseTx = isFreshBaseTx || isRenewalTx || tType.includes('renewal');
+                const tx = parseTransactionType(row[COL_TRANSACTION]);
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, ytdBase:0, ytdRen:0, basePolicies: [], renewals: [] };
@@ -1291,15 +1252,15 @@
                 if (state.main === 'fresh') {
                     if (rowFY === state.selectedYear) {
                         let finalPrem = 0, finalNop = 0;
-                        if (isFreshBaseTx) { finalNop = 1; finalPrem = premium; } 
-                        else if (isCancelTx) { finalNop = -1; finalPrem = premium > 0 ? -Math.abs(premium) : premium; }
+                        if (tx.isFresh) { finalNop = 1; finalPrem = premium; } 
+                        else if (tx.isCancel) { finalNop = -1; finalPrem = premium > 0 ? -Math.abs(premium) : premium; }
                         
                         if (passesLBFilter && finalNop !== 0) {
                             agentLB[agent].ytdGWP += finalPrem;
                             agentLB[agent].ytdNOP += finalNop;
                         }
 
-                        if (passesFilter && isFreshBaseTx) {
+                        if (passesFilter && tx.isFresh) {
                             if (!agentMonthlyPureGWP[agent]) agentMonthlyPureGWP[agent] = {};
                             if (!agentMonthlyPureGWP[agent][fyMonthIndex]) agentMonthlyPureGWP[agent][fyMonthIndex] = 0;
                             agentMonthlyPureGWP[agent][fyMonthIndex] += premium;
@@ -1312,7 +1273,7 @@
                             totalFreshAmt += finalPrem;
                         }
 
-                        if (passesFilter && isFreshBaseTx) {
+                        if (passesFilter && tx.isFresh) {
                             let prod = row[COL_PRODUCT] || 'Unspecified';
                             let si = row[COL_SUM_INSURED] || 'Unspecified';
                             
@@ -1326,20 +1287,20 @@
                         }
                     }
                     else if (rowFY === (state.selectedYear - 1) && passesFilter) {
-                        if (isFreshBaseTx) { prevFreshNOP += 1; prevFreshAmt += premium; }
-                        else if (isCancelTx) { prevFreshNOP -= 1; prevFreshAmt += (premium > 0 ? -Math.abs(premium) : premium); }
+                        if (tx.isFresh) { prevFreshNOP += 1; prevFreshAmt += premium; }
+                        else if (tx.isCancel) { prevFreshNOP -= 1; prevFreshAmt += (premium > 0 ? -Math.abs(premium) : premium); }
                     }
                 } 
                 else if (state.main === 'renewal') {
                     if (passesFilter) {
-                        if (expFY === state.selectedYear && isRetentionBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                        if (rowFY === state.selectedYear && isRenewalTx) renPool.push(row);
-                        if (expFY === state.selectedYear - 1 && isRetentionBaseTx && !isCancelTx) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                        if (rowFY === state.selectedYear - 1 && isRenewalTx) yr2RenPool.push(row);
+                        if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                        if (rowFY === state.selectedYear && tx.isRenewal) renPool.push(row);
+                        if (expFY === state.selectedYear - 1 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                        if (rowFY === state.selectedYear - 1 && tx.isRenewal) yr2RenPool.push(row);
                     }
-                    if (passesLBFilter && !isCancelTx) {
-                        if (expFY === state.selectedYear && isRetentionBaseTx) agentLB[agent].basePolicies.push({...row});
-                        if (rowFY === state.selectedYear && isRenewalTx) agentLB[agent].renewals.push({...row});
+                    if (passesLBFilter && !tx.isCancel) {
+                        if (expFY === state.selectedYear && tx.isRetentionBase) agentLB[agent].basePolicies.push({...row});
+                        if (rowFY === state.selectedYear && tx.isRenewal) agentLB[agent].renewals.push({...row});
                     }
                 }
             });
