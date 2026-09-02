@@ -427,42 +427,67 @@
         let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
         let cachedLeaderboardData = { fresh: {}, renewal: {} };
 
+        // IMPROVEMENT 2: Hardened Number Parser. (Strips out currency signs like ₹/INR if they were added mid-year)
         function parseNumber(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return val;
-            const str = val.toString().replace(/,/g, '').trim();
+            const str = val.toString().replace(/[^0-9.\-]/g, ''); // Remves EVERYTHING except digits, dots, minus
             const num = parseFloat(str);
             return isNaN(num) ? 0 : num;
         }
 
-        // Improved date parsing to prevent September data issues (handles excel numeric formats natively)
+        // IMPROVEMENT 1: Bulletproof Date Parser. Prevents Javascript from silently skipping/swapping dates
         function parseExcelDate(val) {
             if (!val) return null;
-            if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
             
-            // Handle native Excel numeric serial dates (e.g. 45180 for Sept 1)
+            // 1. If it's already a JS Date object (Excel parsed by XLSX)
+            if (val instanceof Date) {
+                if (isNaN(val.getTime())) return null;
+                // Force it to use the exact UTC parameters locally to prevent midnight shifts jumping a day backward
+                return new Date(val.getUTCFullYear(), val.getUTCMonth(), val.getUTCDate());
+            }
+            
+            // 2. If it's a native Excel numeric serial (e.g., 44075)
             if (typeof val === 'number') {
                 const date = new Date(Math.round((val - 25569) * 86400 * 1000));
-                // Fix timezone offset shift which causes the date to be the day prior
                 date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
                 return date;
             }
             
-            let d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-            
+            // 3. If it is a string formatted date (e.g. 01.09.2026 or 1 Sep 26)
             if (typeof val === 'string') {
                 let s = val.trim();
-                const parts = s.split(/[-/]/);
-                if (parts.length === 3) {
-                    if (isNaN(parts[1])) {
-                        let d2 = new Date(s);
-                        if (!isNaN(d2.getTime())) return d2;
+                if (!s) return null;
+
+                // Split by dash, slash, dot, or space
+                const parts = s.split(/[-/.\s+]/).filter(p => p);
+                
+                if (parts.length >= 3) {
+                    let p0 = parseInt(parts[0], 10);
+                    let p1 = parseInt(parts[1], 10);
+                    let p2 = parseInt(parts[2], 10);
+                    
+                    if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
+                        let y, m, d;
+                        if (p2 >= 1000) { 
+                            y = p2; 
+                            // DD/MM/YYYY priority for India
+                            if (p1 <= 12 && p0 <= 31) { m = p1; d = p0; } 
+                            else { m = p0; d = p1; }
+                        } 
+                        else if (p0 >= 1000) { 
+                            y = p0; m = p1; d = p2; // YYYY/MM/DD
+                        }
+                        
+                        if (y && m && d) return new Date(y, m - 1, d);
                     }
-                    const fallback = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                    if (!isNaN(fallback.getTime())) return fallback;
                 }
+                
+                // Final fallback for string format like "1-Sep-2026"
+                let d2 = new Date(s);
+                if (!isNaN(d2.getTime())) return d2;
             }
+            
             return null;
         }
 
@@ -620,7 +645,7 @@
 
             if (state.main === 'ranking') {
                 const monthSelect = document.getElementById('month-select');
-                monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+                monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${m}">${m}</option>`).join(''); // Fixed mapping for month selector strings
                 resetDashboard();
             } else {
                 if (state.sub === 'cluster') {
@@ -718,7 +743,7 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement')) return false;
 
-                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new'); // Added fallback for "new"
                     return isFreshBaseTx || tType.includes('cancel');
                 });
 
@@ -800,7 +825,7 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
+                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
                     const isRen = tType.includes('our renewal');
 
                     if (expFY === state.selectedYear && isBase && expFyMonthIndex === monthIndex) baseDue.push(row);
@@ -909,7 +934,7 @@
                 const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                 if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                const isFresh = tType.includes('fresh') || tType.includes('roll over');
+                const isFresh = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
                 if (isFresh && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
                     agentMap[agent].gwp += parseNumber(row[COL_PREM]);
@@ -991,7 +1016,7 @@
 
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
-                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                    const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
                     const isCancelTx = tType.includes('cancel'); 
                     
                     if (isFreshBaseTx || isCancelTx) {
@@ -1065,7 +1090,7 @@
                         const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                         if (tType.includes('endorsement')) return;
                         
-                        const isFresh = tType.includes('fresh') || tType.includes('roll over');
+                        const isFresh = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
                         const isCancel = tType.includes('cancel');
                         const agent = toTitleCase(row[COL_AGENT] || '');
                         const manager = toTitleCase(row[COL_MANAGER] || '');
@@ -1121,7 +1146,7 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
+                    const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
                     const isRen = tType.includes('our renewal');
 
                     if (expFY === state.selectedYear && isBase && expFyMonthIndex === mIdx) {
@@ -1228,7 +1253,7 @@
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
                 const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
 
-                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over');
+                const isFreshBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new');
                 const isRenewalTx = tType.includes('our renewal');
                 const isBaseTx = isFreshBaseTx || isRenewalTx;
                 const isCancelTx = tType.includes('cancel'); 
