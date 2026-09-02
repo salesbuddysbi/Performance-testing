@@ -374,7 +374,7 @@
                     <div id="persistency-tracker" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                         <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                             Historical Retention Tracker
-                            <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Proxy</span>
+                            <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Validated via Policy No</span>
                         </h2>
                         <div class="grid grid-cols-2 gap-4" id="persistency-stats"></div>
                     </div>
@@ -406,12 +406,15 @@
 
     <script>
         const COL_POLICY = "Policy No";
+        const COL_PREV_POLICY = "Previous Policy No";
+        const COL_ALT_POLICY = "Alternate Policy No";
         const COL_INSURED = "Insured Name";
         const COL_AGENT = "Intermediary Name";
         const COL_MANAGER = "SSM Name";
         const COL_IMD_CODE = "Intermediary Code";
         const COL_AGR_CODE = "Agreement Code";
         const COL_DATE = "Policy Start Date";
+        const COL_END_DATE = "Policy End Date";
         const COL_PREM = "GWP";
         const COL_TRANSACTION = "Transaction Type";
         const COL_PRODUCT = "Product Name";
@@ -432,15 +435,30 @@
             return isNaN(num) ? 0 : num;
         }
 
+        // Improved date parsing to prevent September data issues (handles excel numeric formats natively)
         function parseExcelDate(val) {
             if (!val) return null;
             if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+            
+            // Handle native Excel numeric serial dates (e.g. 45180 for Sept 1)
+            if (typeof val === 'number') {
+                const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+                // Fix timezone offset shift which causes the date to be the day prior
+                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+                return date;
+            }
+            
             let d = new Date(val);
             if (!isNaN(d.getTime())) return d;
             
             if (typeof val === 'string') {
-                const parts = val.trim().split(/[-/]/);
+                let s = val.trim();
+                const parts = s.split(/[-/]/);
                 if (parts.length === 3) {
+                    if (isNaN(parts[1])) {
+                        let d2 = new Date(s);
+                        if (!isNaN(d2.getTime())) return d2;
+                    }
                     const fallback = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                     if (!isNaN(fallback.getTime())) return fallback;
                 }
@@ -755,10 +773,23 @@
                 
                 rawData.forEach(row => {
                     const date = parseExcelDate(row[COL_DATE]);
+                    const endDate = parseExcelDate(row[COL_END_DATE]);
                     if(!date) return;
 
                     const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
-                    const rowFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
+                    
+                    let expFY, expFyMonthIndex;
+                    if (endDate) {
+                        const expMonth = endDate.getMonth();
+                        const expYear = endDate.getFullYear();
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    } else {
+                        const expMonth = date.getMonth();
+                        const expYear = date.getFullYear() + 1;
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    }
                     
                     const agent = toTitleCase(row[COL_AGENT] || '');
                     const manager = toTitleCase(row[COL_MANAGER] || '');
@@ -772,15 +803,27 @@
                     const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
                     const isRen = tType.includes('our renewal');
 
-                    if (rowFY === state.selectedYear - 1 && isBase && rowFyMonthIndex === monthIndex) baseDue.push(row);
+                    if (expFY === state.selectedYear && isBase && expFyMonthIndex === monthIndex) baseDue.push(row);
                     if (rowFY === state.selectedYear && isRen) currentYearRenewals.push(row);
                 });
 
-                let renPool = currentYearRenewals.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                let renPool = currentYearRenewals.map(r => ({ 
+                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), 
+                    used: false 
+                }));
                 
                 let mappedPolicies = baseDue.map(p => {
+                    const basePolicyNo = (p[COL_POLICY] || '').toString().trim().toLowerCase();
                     const sig = (toTitleCase(p[COL_INSURED]) + "|" + toTitleCase(p[COL_PRODUCT])).toLowerCase();
-                    let matchIdx = renPool.findIndex(r => !r.used && r.sig === sig);
+
+                    let matchIdx = renPool.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (sig && r.sig === sig)
+                    ));
+                    
                     let isRenewed = false;
                     if (matchIdx !== -1) {
                         renPool[matchIdx].used = true;
@@ -1047,13 +1090,28 @@
                 document.getElementById('lb-mtd-ren-title').innerText = `Top 3 MTD Retention (${mName})`;
                 
                 let monthlyAgents = {};
+                let mtdBase = [];
+                let currYrRen = [];
+
                 rawData.forEach(row => {
                     const date = parseExcelDate(row[COL_DATE]);
+                    const endDate = parseExcelDate(row[COL_END_DATE]);
                     if (!date) return;
 
                     const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
-                    const rowFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
-                    if (rowFyMonthIndex !== mIdx) return;
+                    
+                    let expFY, expFyMonthIndex;
+                    if (endDate) {
+                        const expMonth = endDate.getMonth();
+                        const expYear = endDate.getFullYear();
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    } else {
+                        const expMonth = date.getMonth();
+                        const expYear = date.getFullYear() + 1;
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    }
 
                     const agent = toTitleCase(row[COL_AGENT] || '');
                     const manager = toTitleCase(row[COL_MANAGER] || '');
@@ -1066,9 +1124,39 @@
                     const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal');
                     const isRen = tType.includes('our renewal');
 
+                    if (expFY === state.selectedYear && isBase && expFyMonthIndex === mIdx) {
+                        mtdBase.push({agent, ...row});
+                    }
+                    if (rowFY === state.selectedYear && isRen) {
+                        currYrRen.push(row);
+                    }
+                });
+
+                let renUsage = currYrRen.map(r => ({
+                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    used: false
+                }));
+
+                mtdBase.forEach(b => {
+                    const agent = b.agent;
                     if (!monthlyAgents[agent]) monthlyAgents[agent] = { base: 0, ren: 0 };
-                    if (rowFY === state.selectedYear - 1 && isBase) monthlyAgents[agent].base += 1;
-                    if (rowFY === state.selectedYear && isRen) monthlyAgents[agent].ren += 1;
+                    monthlyAgents[agent].base += 1;
+
+                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+
+                    let matchIdx = renUsage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
+
+                    if (matchIdx !== -1) {
+                        renUsage[matchIdx].used = true;
+                        monthlyAgents[agent].ren += 1;
+                    }
                 });
 
                 const tMtdRen = Object.keys(monthlyAgents).filter(a => monthlyAgents[a].base >= 1).sort((a,b) => (monthlyAgents[b].ren/monthlyAgents[b].base) - (monthlyAgents[a].ren/monthlyAgents[a].base)).slice(0, 3);
@@ -1112,6 +1200,7 @@
 
             rawData.forEach(row => {
                 const date = parseExcelDate(row[COL_DATE]);
+                const endDate = parseExcelDate(row[COL_END_DATE]);
                 if (!date) return;
 
                 const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
@@ -1121,6 +1210,19 @@
                 const year = date.getFullYear();
                 const rowFY = month >= 3 ? year : year - 1;
                 const fyMonthIndex = month >= 3 ? month - 3 : month + 9;
+                
+                let expFY, expFyMonthIndex;
+                if (endDate) {
+                    const expMonth = endDate.getMonth();
+                    const expYear = endDate.getFullYear();
+                    expFY = expMonth >= 3 ? expYear : expYear - 1;
+                    expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                } else {
+                    const expMonth = date.getMonth();
+                    const expYear = date.getFullYear() + 1;
+                    expFY = expMonth >= 3 ? expYear : expYear - 1;
+                    expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                }
                 
                 const premium = parseNumber(row[COL_PREM]);
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
@@ -1185,13 +1287,13 @@
                 } 
                 else if (state.main === 'renewal') {
                     if (passesFilter) {
-                        if (rowFY === state.selectedYear - 1 && isBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex});
+                        if (expFY === state.selectedYear && isBaseTx && !isCancelTx) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
                         if (rowFY === state.selectedYear && isRenewalTx) renPool.push(row);
-                        if (rowFY === state.selectedYear - 2 && isBaseTx && !isCancelTx) yr2BasePool.push(row);
+                        if (expFY === state.selectedYear - 1 && isBaseTx && !isCancelTx) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
                         if (rowFY === state.selectedYear - 1 && isRenewalTx) yr2RenPool.push(row);
                     }
                     if (passesLBFilter && !isCancelTx) {
-                        if (rowFY === state.selectedYear - 1 && isBaseTx) agentLB[agent].basePolicies.push({...row});
+                        if (expFY === state.selectedYear && isBaseTx) agentLB[agent].basePolicies.push({...row});
                         if (rowFY === state.selectedYear && isRenewalTx) agentLB[agent].renewals.push({...row});
                     }
                 }
@@ -1225,18 +1327,28 @@
                     d.isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
                 });
 
-                let renUsage = renPool.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                let renUsage = renPool.map(r => ({ 
+                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    used: false 
+                }));
                 
                 basePool.forEach(b => {
                     const mIdx = b.fyMonthIndex;
-                    const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
                     
                     fyData[mIdx].baseNOP += 1;
                     totalBaseNOP += 1;
                     
-                    let matchIdx = renUsage.findIndex(r => !r.used && r.sig === sig);
+                    let matchIdx = renUsage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
+
                     let isRenewed = false;
-                    
                     if (matchIdx !== -1) {
                         renUsage[matchIdx].used = true;
                         isRenewed = true;
@@ -1254,21 +1366,43 @@
                 retentionYr1Ren = totalRenewed;
 
                 retentionYr2Base = yr2BasePool.length;
-                let yr2Usage = yr2RenPool.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                let yr2Usage = yr2RenPool.map(r => ({ 
+                    policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
+                    prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
+                    altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
+                    sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(),
+                    used: false 
+                }));
                 yr2BasePool.forEach(b => {
-                    const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
-                    let matchIdx = yr2Usage.findIndex(r => !r.used && r.sig === sig);
+                    const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
+                    const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+
+                    let matchIdx = yr2Usage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
                     if (matchIdx !== -1) { yr2Usage[matchIdx].used = true; retentionYr2Ren += 1; }
                 });
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     Object.keys(agentLB).forEach(agent => {
                         let ag = agentLB[agent];
-                        let agRenUsage = ag.renewals.map(r => ({ sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), used: false }));
+                        let agRenUsage = ag.renewals.map(r => ({ 
+                            policyNo: (r[COL_POLICY] || '').toString().trim().toLowerCase(),
+                            prevPolicyNo: (r[COL_PREV_POLICY] || '').toString().trim().toLowerCase(),
+                            altPolicyNo: (r[COL_ALT_POLICY] || '').toString().trim().toLowerCase(),
+                            sig: (toTitleCase(r[COL_INSURED]) + "|" + toTitleCase(r[COL_PRODUCT])).toLowerCase(), 
+                            used: false 
+                        }));
                         ag.basePolicies.forEach(b => {
                             ag.ytdBase += 1;
-                            const sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
-                            let matchIdx = agRenUsage.findIndex(r => !r.used && r.sig === sig);
+                            const basePolicyNo = (b[COL_POLICY] || '').toString().trim().toLowerCase();
+                            const b_sig = (toTitleCase(b[COL_INSURED]) + "|" + toTitleCase(b[COL_PRODUCT])).toLowerCase();
+                            
+                            let matchIdx = agRenUsage.findIndex(r => !r.used && (
+                                (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                                (b_sig && r.sig === b_sig)
+                            ));
                             if (matchIdx !== -1) {
                                 agRenUsage[matchIdx].used = true;
                                 ag.ytdRen += 1;
@@ -1300,7 +1434,6 @@
             if (state.sub === 'cluster' || state.sub === 'manager') {
                 leaderboardWrapper.classList.remove('hidden');
                 
-                // Populate the MTD switcher dropdown
                 const lbSelect = document.getElementById('leaderboard-month-select');
                 const prevMVal = lbSelect.value;
                 lbSelect.innerHTML = FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
