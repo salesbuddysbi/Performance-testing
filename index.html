@@ -434,57 +434,77 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // AGGRESSIVE DATE PARSER TO FIX SEPTEMBER: Forces Javascript to correctly identify and evaluate manual text dates
+        // ULTRA-ROBUST DATE PARSER
         function parseExcelDate(val) {
             if (!val) return null;
             
-            // 1. If it's already a native UTC JS Date object (Excel parsed by XLSX library)
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return null;
                 return new Date(val.getUTCFullYear(), val.getUTCMonth(), val.getUTCDate());
             }
             
-            // 2. If it's a native Excel numeric serial (e.g., 44075)
             if (typeof val === 'number') {
                 const date = new Date(Math.round((val - 25569) * 86400 * 1000));
                 date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
                 return date;
             }
             
-            // 3. Fallback: Aggressively parse string dates (e.g. "01.09.2026", "1-Sep-26") 
-            if (typeof val === 'string') {
-                let s = val.trim();
-                if (!s) return null;
+            let s = val.toString().trim();
+            if (!s) return null;
 
-                const monthMap = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-                
-                const parts = s.split(/[-/.\s+]/).filter(p => p);
-                if (parts.length >= 3) {
-                    let d = parseInt(parts[0], 10);
-                    let m;
-                    let mStr = parts[1].toLowerCase().substring(0,3);
-                    
-                    if (monthMap[mStr] !== undefined) {
-                        m = monthMap[mStr] + 1; // 1-indexed
-                    } else {
-                        m = parseInt(parts[1], 10);
-                    }
-                    
-                    let y = parseInt(parts[2], 10);
-                    if (y < 100) y += 2000;
-                    
-                    if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-                        if (m > 12 && d <= 12) { 
-                            // Handles MM/DD/YYYY to DD/MM/YYYY swap natively
-                            let temp = m; m = d; d = temp;
-                        }
-                        return new Date(y, m - 1, d);
-                    }
-                }
-                
-                let d2 = new Date(s);
-                if (!isNaN(d2.getTime())) return d2;
+            // Catches formatted serial text (e.g. "45180")
+            if (/^\d{5}(\.\d+)?$/.test(s)) {
+                const serial = parseFloat(s);
+                const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+                date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+                return date;
             }
+
+            const monthMap = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+            
+            // Catches "1 Sep 2026", "01-September-2026"
+            const alphaMatch = s.match(/([0-9]{1,2})[ \-\./]+([A-Za-z]{3,})[ \-\./]+([0-9]{2,4})/);
+            if (alphaMatch) {
+                let d = parseInt(alphaMatch[1], 10);
+                let mStr = alphaMatch[2].toLowerCase().substring(0,3);
+                let y = parseInt(alphaMatch[3], 10);
+                if (y < 100) y += 2000;
+                if (monthMap[mStr] !== undefined) return new Date(y, monthMap[mStr], d);
+            }
+
+            // Catches "Sep 1, 2026"
+            const alphaMatch2 = s.match(/([A-Za-z]{3,})[ \-\./]+([0-9]{1,2})[ \-\./,]+([0-9]{2,4})/);
+            if (alphaMatch2) {
+                let mStr = alphaMatch2[1].toLowerCase().substring(0,3);
+                let d = parseInt(alphaMatch2[2], 10);
+                let y = parseInt(alphaMatch2[3], 10);
+                if (y < 100) y += 2000;
+                if (monthMap[mStr] !== undefined) return new Date(y, monthMap[mStr], d);
+            }
+
+            // Catches ISO "2026-09-01"
+            const isoMatch = s.match(/^([0-9]{4})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{1,2})/);
+            if (isoMatch) {
+                let y = parseInt(isoMatch[1], 10);
+                let m = parseInt(isoMatch[2], 10);
+                let d = parseInt(isoMatch[3], 10);
+                return new Date(y, m - 1, d);
+            }
+
+            // Catches DD/MM/YYYY and DD-MM-YY
+            const ukMatch = s.match(/^([0-9]{1,2})[ \-\./]([0-9]{1,2})[ \-\./]([0-9]{2,4})/);
+            if (ukMatch) {
+                let p1 = parseInt(ukMatch[1], 10);
+                let p2 = parseInt(ukMatch[2], 10);
+                let y = parseInt(ukMatch[3], 10);
+                if (y < 100) y += 2000;
+                if (p2 > 12) return new Date(y, p1 - 1, p2); // MUST be US format if middle is > 12
+                else return new Date(y, p2 - 1, p1); // Assume DD/MM/YYYY primarily
+            }
+
+            let d2 = new Date(s);
+            if (!isNaN(d2.getTime())) return d2;
+
             return null;
         }
 
@@ -739,9 +759,11 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement')) return false;
 
-                    // STRICT FILTER: Only specifically labeled "fresh" transactions
-                    const isFreshBaseTx = tType.includes('fresh');
-                    return isFreshBaseTx || tType.includes('cancel');
+                    const isCancel = tType.includes('cancel');
+                    // MUTUALLY EXCLUSIVE FRESH FILTER: Must be "fresh", "roll over", or "new" AND CANNOT contain "renewal"
+                    const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
+                    
+                    return isFreshBaseTx || isCancel;
                 });
 
                 policies.sort((a, b) => (parseExcelDate(a[COL_DATE]) || new Date(0)) - (parseExcelDate(b[COL_DATE]) || new Date(0)));
@@ -820,7 +842,6 @@
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                    // Renewal module considers any base business
                     const isBase = tType.includes('fresh') || tType.includes('roll over') || tType.includes('our renewal') || tType.includes('new');
                     const isRen = tType.includes('our renewal');
 
@@ -929,8 +950,8 @@
                 const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                 if (tType.includes('endorsement') || tType.includes('cancel')) return;
 
-                // STRICT FILTER for Agent Activation (Pure Fresh Only)
-                const isFresh = tType.includes('fresh');
+                const isCancel = tType.includes('cancel');
+                const isFresh = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
                 
                 if (isFresh && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
@@ -1012,9 +1033,8 @@
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
                     const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                     
-                    // STRICT FILTER: Pure Fresh only for Rankings 
-                    const isFreshBaseTx = tType.includes('fresh');
                     const isCancelTx = tType.includes('cancel'); 
+                    const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancelTx;
                     
                     if (isFreshBaseTx || isCancelTx) {
                         const agent = toTitleCase(row[COL_AGENT]);
@@ -1086,9 +1106,9 @@
                         const tType = (row[COL_TRANSACTION] || '').toString().toLowerCase();
                         if (tType.includes('endorsement')) return;
                         
-                        // STRICT FILTER: Pure fresh
-                        const isFresh = tType.includes('fresh');
                         const isCancel = tType.includes('cancel');
+                        const isFresh = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancel;
+
                         const agent = toTitleCase(row[COL_AGENT] || '');
                         const manager = toTitleCase(row[COL_MANAGER] || '');
 
@@ -1250,14 +1270,13 @@
                 const agent = toTitleCase(row[COL_AGENT] || 'Unknown');
                 const manager = toTitleCase(row[COL_MANAGER] || 'Unknown');
 
-                // STRICT FILTER applied exclusively here
-                const isFreshBaseTx = tType.includes('fresh');
                 const isCancelTx = tType.includes('cancel'); 
                 
-                // Keep the broad filter exclusively for calculating the retention base 
-                const isRetentionBaseTx = tType.includes('fresh') || tType.includes('roll over') || tType.includes('new') || tType.includes('our renewal');
+                // MUTUALLY EXCLUSIVE FILTER: Finds "fresh/roll over/new" while strictly ignoring "renewal" and "cancel"
+                const isFreshBaseTx = (tType.includes('fresh') || tType.includes('roll over') || tType.includes('new')) && !tType.includes('renewal') && !isCancelTx;
+                
                 const isRenewalTx = tType.includes('our renewal');
-
+                const isRetentionBaseTx = isFreshBaseTx || isRenewalTx || tType.includes('renewal');
 
                 if (state.sub === 'cluster' || state.sub === 'manager') {
                     if(!agentLB[agent]) agentLB[agent] = { ytdGWP:0, ytdNOP:0, ytdBase:0, ytdRen:0, basePolicies: [], renewals: [] };
