@@ -322,7 +322,7 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution (YTD Summary)</h2>
-                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Fresh & Rollover GWP &ge; &#8377;15,000 / month per agent</p>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Pure Fresh GWP &ge; &#8377;15,000 / month per agent</p>
                             </div>
                             <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-inner" id="act-total">Total Activations: 0</div>
                         </div>
@@ -357,14 +357,14 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Product Wise Performance
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Fresh + Rollover</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
                             </h2>
                             <div id="product-list" class="space-y-3"></div>
                         </div>
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
                                 Sum Insured Wise
-                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Fresh + Rollover</span>
+                                <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold border border-blue-100">Pure Fresh</span>
                             </h2>
                             <div id="si-list" class="space-y-3"></div>
                         </div>
@@ -438,7 +438,7 @@
             return "";
         }
 
-        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC (Rollover is now BOTH Fresh and Renewal)
+        // 1. MUTUALLY EXCLUSIVE TRANSACTION LOGIC ("Rollover means renewal")
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
@@ -446,12 +446,10 @@
             
             if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
 
-            const isRollover = tType.includes('roll');
-            const isRenewal = tType.includes('renewal') || tType.includes('rnw') || isRollover;
+            const isRenewal = tType.includes('renewal') || tType.includes('roll') || tType.includes('rnw');
             
-            // Fresh includes "fresh", "new", "nb", AND "rollover". 
-            // It explicitly blocks pure "renewal" UNLESS it also happens to be a "rollover".
-            const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb' || isRollover) && !isCancel && !(tType.includes('renewal') && !isRollover);
+            // STRICT FRESH: Blocks "roll over" and "renewal" completely
+            const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb') && !isRenewal && !isCancel;
             
             const isRetentionBase = isFresh || isRenewal;
             return { isCancel, isRenewal, isFresh, isRetentionBase };
@@ -472,9 +470,9 @@
             let y, m, d;
 
             if (typeof val === 'number') {
-                let utcDays = Math.floor(val - 25569);
-                if (utcDays > 59) utcDays -= 1;
-                let tempDate = new Date(utcDays * 86400000);
+                // Read numeric date explicitly (Excel epoch starts 1900)
+                // Mathematical conversion that bypasses the javascript Date timezone engine
+                let tempDate = new Date(Math.round((val - 25569) * 86400000));
                 y = tempDate.getUTCFullYear();
                 m = tempDate.getUTCMonth() + 1;
                 d = tempDate.getUTCDate();
@@ -486,12 +484,14 @@
             } else {
                 let s = val.toString().trim().split(/[\sT]+/)[0];
                 
+                // Matches ISO YYYY-MM-DD
                 let match = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
                 if (match) {
                     y = parseInt(match[1], 10);
                     m = parseInt(match[2], 10);
                     d = parseInt(match[3], 10);
                 } else {
+                    // Strictly prioritize DD/MM/YYYY text formatting
                     match = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
                     if (match) {
                         d = parseInt(match[1], 10);
@@ -500,6 +500,7 @@
                         if (y < 100) y += 2000;
                         if (m > 12) { let temp = m; m = d; d = temp; }
                     } else {
+                        // Matches 1-Sep-2026
                         const monthMap = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
                         match = s.match(/^(\d{1,2})[-\/.\s]+([a-zA-Z]{3,})[-\/.\s]+(\d{2,4})/);
                         if (match) {
@@ -521,6 +522,7 @@
             }
 
             if (y && m && d) {
+                // Initialize explicitly at 12:00 PM NOON to mathematically prevent midnight timezone boundaries
                 return new Date(y, m - 1, d, 12, 0, 0);
             }
             return null;
@@ -559,10 +561,11 @@
 
         function parseExcelData(buffer) {
             try {
+                // Cleanest read configuration. No formatting forced on strings.
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
-                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "", raw: false, dateNF: "dd/mm/yyyy" });
+                    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                     
                     if (sheet.length > 0) {
                         const cleanedSheet = sheet.map(row => {
@@ -747,7 +750,7 @@
             const tbody = document.getElementById('modal-table-body');
             
             if (state.main === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Fresh Business)";
+                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Pure Fresh Business)";
                 
                 thead.innerHTML = `
                     <tr>
@@ -781,7 +784,7 @@
                 policies.sort((a, b) => (parseExcelDate(getColValue(a, COL_DATE_KEYS)) || new Date(0)) - (parseExcelDate(getColValue(b, COL_DATE_KEYS)) || new Date(0)));
 
                 if (policies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No fresh business policies recorded for this month.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No pure fresh business policies recorded for this month.</td></tr>`;
                 } else {
                     tbody.innerHTML = policies.map(p => {
                         const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
@@ -932,7 +935,7 @@
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Manager</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Activation Slab</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Fresh NOP</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Fresh GWP</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Pure Fresh GWP</th>
                 </tr>`;
 
             let agentMap = {};
@@ -1023,7 +1026,7 @@
             const calYear = state.selectedMonth < 9 ? state.selectedYear : state.selectedYear + 1;
             const calMonth = (state.selectedMonth + 3) % 12;
 
-            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Fresh Ranking' : 'Top NOP Ranking';
+            document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Pure Fresh Ranking' : 'Top Pure NOP Ranking';
             document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1}`;
             document.getElementById('rb-metric-label').innerText = state.sub === 'gwp_rank' ? 'GWP Premium' : 'NOP Count';
 
@@ -1543,7 +1546,7 @@
                     <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white col-span-1 md:col-span-2 relative overflow-hidden">
                         <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-2xl opacity-20"></div>
                         <div class="flex items-center mb-1 relative z-10">
-                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Fresh & Rollover Premium (GWP)</span>
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pure Fresh Premium (GWP)</span>
                             ${getYoYBadge(tFreshAmt, pFreshAmt)}
                         </div>
                         <div class="text-3xl font-black relative tracking-tight z-10">₹${tFreshAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
