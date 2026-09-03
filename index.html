@@ -837,10 +837,12 @@
                     
                     const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
                     const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
+                    
                     if (state.sub === 'agent' && agent !== state.selectedName) return;
                     if (state.sub === 'manager' && manager !== state.selectedName) return;
 
                     const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+
                     if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(row);
                     if (rowFY === state.selectedYear && tx.isRenewal) currentYearRenewals.push(row);
                 });
@@ -971,6 +973,13 @@
             document.getElementById('drilldown-modal').classList.remove('hidden');
         }
 
+        // ==========================================
+        // THIS IS THE RESTORED CLOSE MODAL FUNCTION
+        // ==========================================
+        function closeModal() { 
+            document.getElementById('drilldown-modal').classList.add('hidden'); 
+        }
+
         function renderRanking() {
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('dashboard-content').classList.add('hidden');
@@ -1077,7 +1086,82 @@
                 document.getElementById('lb-mtd-gwp').innerHTML = tMtdGwp.length ? tMtdGwp.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-blue-600">₹${monthlyAgents[a].gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
                 document.getElementById('lb-mtd-nop').innerHTML = tMtdNop.length ? tMtdNop.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-amber-500">${monthlyAgents[a].nop}</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
             } else {
-                // ... Renewal leaderboard rendering (Unchanged)
+                document.getElementById('lb-mtd-ren-title').innerText = `Top 3 MTD Retention (${mName})`;
+                
+                let monthlyAgents = {};
+                let mtdBase = [];
+                let currYrRen = [];
+
+                rawData.forEach(row => {
+                    const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                    const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
+                    if (!date) return;
+
+                    const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+                    
+                    let expFY, expFyMonthIndex;
+                    if (endDate) {
+                        const expMonth = endDate.getMonth();
+                        const expYear = endDate.getFullYear();
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    } else {
+                        const expMonth = date.getMonth();
+                        const expYear = date.getFullYear() + 1;
+                        expFY = expMonth >= 3 ? expYear : expYear - 1;
+                        expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
+                    }
+
+                    const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
+                    const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
+                    const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
+                    if (!passes || !agent) return;
+
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+
+                    if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === mIdx) {
+                        mtdBase.push({agent, ...row});
+                    }
+                    if (rowFY === state.selectedYear && tx.isRenewal) {
+                        currYrRen.push(row);
+                    }
+                });
+
+                let renUsage = currYrRen.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return {
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false
+                    };
+                });
+
+                mtdBase.forEach(b => {
+                    const agent = b.agent;
+                    if (!monthlyAgents[agent]) monthlyAgents[agent] = { base: 0, ren: 0 };
+                    monthlyAgents[agent].base += 1;
+
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+
+                    let matchIdx = renUsage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
+
+                    if (matchIdx !== -1) {
+                        renUsage[matchIdx].used = true;
+                        monthlyAgents[agent].ren += 1;
+                    }
+                });
+
+                const tMtdRen = Object.keys(monthlyAgents).filter(a => monthlyAgents[a].base >= 1).sort((a,b) => (monthlyAgents[b].ren/monthlyAgents[b].base) - (monthlyAgents[a].ren/monthlyAgents[a].base)).slice(0, 3);
+                document.getElementById('lb-mtd-ren').innerHTML = tMtdRen.length ? tMtdRen.map((a, i) => `<div class="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate"><span class="text-slate-400 mr-1">#${i+1}</span>${a}</span><span class="font-bold text-emerald-600">${Math.round((monthlyAgents[a].ren/monthlyAgents[a].base)*100)}%</span></div>`).join('') : '<p class="text-[10px] text-slate-400">No data</p>';
             }
         }
 
@@ -1226,8 +1310,130 @@
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
             
             if (state.main === 'renewal') {
-                // Unchanged renewal parsing
-            }
+                fyData.forEach((d, mIdx) => {
+                    const calMonth = (mIdx + 3) % 12;
+                    const calYear = mIdx < 9 ? state.selectedYear : state.selectedYear + 1;
+                    d.isFuture = (calYear > currentYear) || (calYear === currentYear && calMonth > currentMonth);
+                });
+
+                let renUsage = renPool.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return { 
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false 
+                    };
+                });
+                
+                basePool.forEach(b => {
+                    const mIdx = b.fyMonthIndex;
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                    
+                    fyData[mIdx].baseNOP += 1;
+                    totalBaseNOP += 1;
+                    
+                    let matchIdx = renUsage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
+
+                    let isRenewed = false;
+                    if (matchIdx !== -1) {
+                        renUsage[matchIdx].used = true;
+                        isRenewed = true;
+                        fyData[mIdx].renRenewed += 1;
+                        totalRenewed += 1;
+                    }
+
+                    if (!isRenewed) {
+                        if (fyData[mIdx].isFuture) { fyData[mIdx].yetToRenew += 1; totalYet += 1; } 
+                        else { fyData[mIdx].renMissed += 1; totalMissed += 1; }
+                    }
+                });
+
+                retentionYr1Base = totalBaseNOP;
+                retentionYr1Ren = totalRenewed;
+
+                retentionYr2Base = yr2BasePool.length;
+                let yr2Usage = yr2RenPool.map(r => {
+                    const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                    return { 
+                        policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        used: false 
+                    };
+                });
+
+                yr2BasePool.forEach(b => {
+                    const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                    const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                    const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                    const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+
+                    let matchIdx = yr2Usage.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (b_sig && r.sig === b_sig)
+                    ));
+                    if (matchIdx !== -1) { yr2Usage[matchIdx].used = true; retentionYr2Ren += 1; }
+                });
+
+                if (state.sub === 'cluster' || state.sub === 'manager') {
+                    Object.keys(agentLB).forEach(agent => {
+                        let ag = agentLB[agent];
+                        let agRenUsage = ag.renewals.map(r => {
+                            const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
+                            const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
+                            return { 
+                                policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                                sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
+                                used: false 
+                            };
+                        });
+
+                        ag.basePolicies.forEach(b => {
+                            ag.ytdBase += 1;
+                            const basePolicyNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                            const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
+                            const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
+                            const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                            
+                            let matchIdx = agRenUsage.findIndex(r => !r.used && (
+                                (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                                (b_sig && r.sig === b_sig)
+                            ));
+                            if (matchIdx !== -1) {
+                                agRenUsage[matchIdx].used = true;
+                                ag.ytdRen += 1;
+                            }
+                        });
+                    });
+                }
+                
+                document.getElementById('persistency-tracker').classList.remove('hidden');
+                const yr1Pct = retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0;
+                const yr2Pct = retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0;
+                document.getElementById('persistency-stats').innerHTML = `
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div><div class="text-[10px] font-bold text-slate-400 uppercase">1st Yr Retention (13M Proxy)</div><div class="text-xl font-black text-slate-800">${yr1Pct}%</div></div>
+                        <div class="text-right"><div class="text-[10px] text-slate-500 font-medium">Base: ${retentionYr1Base}</div><div class="text-[10px] text-emerald-600 font-bold">Renewed: ${retentionYr1Ren}</div></div>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div><div class="text-[10px] font-bold text-slate-400 uppercase">2nd Yr Retention (25M Proxy)</div><div class="text-xl font-black text-slate-800">${yr2Pct}%</div></div>
+                        <div class="text-right"><div class="text-[10px] text-slate-500 font-medium">Base: ${retentionYr2Base}</div><div class="text-[10px] text-emerald-600 font-bold">Renewed: ${retentionYr2Ren}</div></div>
+                    </div>
+                `;
+            } else { document.getElementById('persistency-tracker').classList.add('hidden'); }
 
             const leaderboardWrapper = document.getElementById('leaderboard-section-wrapper');
             const freshLB = document.getElementById('cluster-leaderboard-fresh');
@@ -1324,7 +1530,28 @@
                     </div>
                 `;
             } else {
-                // Unchanged renewal summary
+                const renewPercent = tBase > 0 ? Math.round((tRenewed / tBase) * 100) : 0;
+                summaryDiv.innerHTML = `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                        <div class="flex items-center mb-1"><span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Base Policies</span></div>
+                        <div class="text-2xl font-black text-slate-800 tracking-tight">${tBase}</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-200">
+                        <div class="flex items-center mb-1"><span class="text-emerald-700 text-[10px] font-bold uppercase tracking-widest">Renewed</span></div>
+                        <div class="text-2xl font-black text-emerald-600 tracking-tight">${tRenewed}</div>
+                    </div>
+                    <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200">
+                        <div class="text-rose-700 text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div>
+                        <div class="text-2xl font-black text-rose-600 tracking-tight">${tMissed}</div>
+                    </div>
+                    <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white">
+                        <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center"><span>Pending</span></div>
+                        <div class="flex items-end justify-between">
+                            <div class="text-2xl font-black text-amber-400 tracking-tight">${tYet}</div>
+                            <div class="text-[10px] font-bold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-lg">Rt: ${renewPercent}%</div>
+                        </div>
+                    </div>
+                `;
             }
         }
 
@@ -1380,7 +1607,21 @@
                         </div>
                     </div>`;
                 } else {
-                    // Renewal Grid Html (Unchanged)
+                    const badge = data.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded">Future</span>` : ``;
+                    html += `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card group relative cursor-pointer" onclick="openPolicyDrillDown(${index})">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-black text-slate-400 uppercase group-hover:text-slate-600 transition-colors">${monthName}</span>
+                                ${badge}
+                            </div>
+                            <div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${data.baseNOP}</span></div>
+                            <div class="space-y-1 mt-2 pt-2 border-t border-slate-100">
+                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-emerald-600 font-bold">${data.renRenewed}</span></div>
+                                ${data.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${data.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-rose-500 font-bold">${data.renMissed}</span></div>`}
+                            </div>
+                        </div>
+                    </div>`;
                 }
             });
             grid.innerHTML = html;
