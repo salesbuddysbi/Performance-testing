@@ -363,8 +363,8 @@
                                     </h2>
                                     <p class="text-[10px] text-slate-400 font-medium mt-0.5">Month-on-Month % contribution of Key Agents to Net Fresh GWP</p>
                                 </div>
-                                <div class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl border border-indigo-100 flex flex-col text-right">
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-400">YTD Key Agent GWP</span>
+                                <div id="key-agent-wrapper" class="px-4 py-2 rounded-xl border flex flex-col text-right transition-colors">
+                                    <span id="key-agent-label" class="text-[9px] font-bold uppercase tracking-wider">YTD Key Agent GWP</span>
                                     <span class="text-sm font-black" id="key-agent-overall">0%</span>
                                 </div>
                             </div>
@@ -459,7 +459,6 @@
             return "";
         }
 
-        // KEY AGENT DETECTOR
         function isKeyAgent(name) {
             if (!name) return false;
             const n = name.toString().toLowerCase();
@@ -471,14 +470,38 @@
                    n.includes('ltd');
         }
 
+        // Color and Icon Logic Helper for Key Agent Traffic Lights
+        function getKeyAgentStyles(pct) {
+            if (pct < 15) {
+                return {
+                    bg: 'bg-emerald-50 border-emerald-200',
+                    text: 'text-emerald-700',
+                    subText: 'text-emerald-500',
+                    bar: 'bg-emerald-500',
+                    icon: `<svg class="w-3.5 h-3.5 inline -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`
+                };
+            } else if (pct < 25) {
+                return {
+                    bg: 'bg-amber-50 border-amber-200',
+                    text: 'text-amber-700',
+                    subText: 'text-amber-500',
+                    bar: 'bg-amber-400',
+                    icon: `<svg class="w-3.5 h-3.5 inline -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`
+                };
+            } else {
+                return {
+                    bg: 'bg-rose-50 border-rose-200',
+                    text: 'text-rose-700',
+                    subText: 'text-rose-500',
+                    bar: 'bg-rose-500',
+                    icon: `<svg class="w-3.5 h-3.5 inline -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`
+                };
+            }
+        }
+
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
-            
-            const isCancel = tType.includes('cancel') || 
-                             tType.includes('reversal') || 
-                             tType.includes('dishonor') || 
-                             tType.includes('dishonour');
-
+            const isCancel = tType.includes('cancel') || tType.includes('reversal') || tType.includes('dishonor') || tType.includes('dishonour');
             const isRefund = tType.includes('refund');
             const isRenewal = (tType.includes('renewal') || tType.includes('rnw')) && !tType.includes('roll');
             const isFresh = (tType.includes('fresh') || tType.includes('new') || tType === 'nb' || tType.includes('roll')) && !isRenewal && !isCancel && !isRefund;
@@ -1305,6 +1328,7 @@
                 }
             });
 
+            // Calculate Activations
             let act = { total: 0, below15k: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
             if (state.main === 'fresh') {
                 Object.keys(agentMonthlyPureGWP).forEach(a => {
@@ -1483,9 +1507,14 @@
                     document.getElementById('act-2l').innerText = act.b2L;
                     document.getElementById('act-3l').innerText = act.b3L;
 
+                    // KEY AGENT LOGIC
                     keyAgentSection.classList.remove('hidden');
                     let overallPct = totalFreshAmt > 0 ? Math.round((totalKeyAgentGWP / totalFreshAmt) * 100) : 0;
-                    document.getElementById('key-agent-overall').innerHTML = `${overallPct}% <span class="text-[10px] font-bold text-indigo-500 ml-0.5">(₹${totalKeyAgentGWP.toLocaleString('en-IN', {maximumFractionDigits:0})})</span>`;
+                    let overallStyle = getKeyAgentStyles(overallPct);
+
+                    document.getElementById('key-agent-wrapper').className = `${overallStyle.bg} px-4 py-2 rounded-xl border flex flex-col text-right transition-colors`;
+                    document.getElementById('key-agent-label').className = `text-[9px] font-bold uppercase tracking-wider ${overallStyle.subText}`;
+                    document.getElementById('key-agent-overall').innerHTML = `<span class="${overallStyle.text}">${overallStyle.icon} ${overallPct}%</span> <span class="text-[10px] font-bold ${overallStyle.subText} ml-0.5">(₹${totalKeyAgentGWP.toLocaleString('en-IN', {maximumFractionDigits:0})})</span>`;
                     
                     let momHtml = '';
                     fyData.forEach((d, i) => {
@@ -1494,21 +1523,21 @@
                         if (d.freshAmount > 0) monthPct = Math.round((d.keyAgentGWP / d.freshAmount) * 100);
                         else if (d.freshAmount < 0 && d.keyAgentGWP < 0) monthPct = Math.round((d.keyAgentGWP / d.freshAmount) * 100);
                         
+                        let style = getKeyAgentStyles(monthPct);
                         let barWidth = Math.min(100, Math.max(0, monthPct));
-                        let bgClass = monthPct > 50 ? 'bg-indigo-500' : (monthPct > 25 ? 'bg-indigo-400' : 'bg-indigo-300');
                         
                         momHtml += `
-                        <div class="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <div class="flex justify-between items-end mb-1.5">
-                                <span class="text-[10px] font-bold text-slate-500">${monthName}</span>
-                                <span class="text-[11px] font-black ${monthPct > 0 ? 'text-indigo-600' : 'text-slate-400'}">${monthPct}%</span>
+                        <div class="flex flex-col bg-white p-3 rounded-xl border ${style.bg} shadow-sm">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[10px] font-bold text-slate-600">${monthName}</span>
+                                <span class="text-[11px] font-black ${style.text} flex items-center gap-1">${style.icon} ${monthPct}%</span>
                             </div>
-                            <div class="w-full bg-slate-200 rounded-full h-1.5 mb-2 overflow-hidden">
-                                <div class="${bgClass} h-1.5 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                            <div class="w-full bg-white/60 rounded-full h-1.5 mb-2 overflow-hidden shadow-inner">
+                                <div class="${style.bar} h-1.5 rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
                             </div>
-                            <div class="text-[9px] text-slate-500 font-bold flex justify-between">
+                            <div class="text-[9px] ${style.subText} font-bold flex justify-between">
                                 <span>Key:</span>
-                                <span class="text-slate-700">₹${d.keyAgentGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
+                                <span>₹${d.keyAgentGWP.toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
                             </div>
                         </div>`;
                     });
