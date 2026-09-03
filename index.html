@@ -413,7 +413,7 @@
         const COL_MANAGER_KEYS = ["ssm name", "manager name"];
         const COL_IMD_CODE_KEYS = ["intermediary code", "imd code"];
         const COL_AGR_CODE_KEYS = ["agreement code"];
-        const COL_DATE_KEYS = ["policy start date", "start date"];
+        const COL_DATE_KEYS = ["policy start date", "start date", "transaction date"];
         const COL_END_DATE_KEYS = ["policy end date", "end date"];
         const COL_PREM_KEYS = ["gwp", "premium"];
         const COL_TRANSACTION_KEYS = ["transaction type", "type"];
@@ -439,11 +439,16 @@
             return "";
         }
 
-        // ROLLOVER IS CLASSIFIED AS FRESH BUSINESS
+        // ROLLOVER IS FRESH | CANCEL AND REFUNDS ARE CAUGHT
         function parseTransactionType(typeStr) {
             const tType = (typeStr || '').toString().toLowerCase().trim();
             const isEndorsement = tType.includes('endorsement');
-            const isCancel = tType.includes('cancel');
+            
+            const isCancel = tType.includes('cancel') || 
+                             tType.includes('refund') || 
+                             tType.includes('reversal') || 
+                             tType.includes('dishonor') || 
+                             tType.includes('dishonour');
             
             if (isEndorsement) return { isCancel: false, isRenewal: false, isFresh: false, isRetentionBase: false };
 
@@ -806,7 +811,7 @@
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
                                     <span class="text-[11px] font-bold ${tx.isCancel ? 'text-rose-500' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
-                                    ${tx.isCancel ? `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold">Cancelled</span>` : ''}
+                                    ${tx.isCancel ? `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[9px] font-bold">Refunded/Cancelled</span>` : ''}
                                 </div>
                             </td>
                         </tr>`;
@@ -942,8 +947,8 @@
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Manager</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Activation Slab</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Fresh NOP</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Fresh GWP</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Net NOP</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Net GWP</th>
                 </tr>`;
 
             let agentMap = {};
@@ -967,10 +972,17 @@
 
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                 
-                if (tx.isFresh && agent) {
+                if ((tx.isFresh || tx.isCancel) && agent) {
                     if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
-                    agentMap[agent].gwp += parseNumber(getColValue(row, COL_PREM_KEYS));
-                    agentMap[agent].nop += 1;
+                    const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
+                    
+                    if (tx.isFresh) {
+                        agentMap[agent].gwp += prem;
+                        agentMap[agent].nop += 1;
+                    } else if (tx.isCancel) {
+                        agentMap[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem);
+                        agentMap[agent].nop -= 1;
+                    }
                 }
             });
 
@@ -1016,7 +1028,7 @@
                         <td class="p-3 text-[11px] font-medium text-slate-500">${item.manager || 'N/A'}</td>
                         <td class="p-3 text-[11px]">${slabBadge}</td>
                         <td class="p-3 text-[11px] font-bold text-slate-700 text-center">${item.nop}</td>
-                        <td class="p-3 text-[11px] font-black text-blue-600 text-right">₹${item.gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                        <td class="p-3 text-[11px] font-black ${item.gwp < 0 ? 'text-rose-600' : 'text-blue-600'} text-right">₹${item.gwp.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
                     </tr>`;
                 }).join('');
             }
@@ -1125,7 +1137,7 @@
                                 if (!monthlyAgents[agent]) monthlyAgents[agent] = { gwp: 0, nop: 0 };
                                 const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
                                 if (tx.isFresh) { monthlyAgents[agent].gwp += prem; monthlyAgents[agent].nop += 1; }
-                                else if (tx.isCancel) { monthlyAgents[agent].gwp -= Math.abs(prem); monthlyAgents[agent].nop -= 1; }
+                                else if (tx.isCancel) { monthlyAgents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); monthlyAgents[agent].nop -= 1; }
                             }
                         }
                     }
@@ -1296,17 +1308,20 @@
                         if (tx.isFresh) { finalNop = 1; finalPrem = premium; } 
                         else if (tx.isCancel) { finalNop = -1; finalPrem = premium > 0 ? -Math.abs(premium) : premium; }
                         
+                        // YTD Leaderboards (Factoring Cancellations)
                         if (passesLBFilter && finalNop !== 0) {
                             agentLB[agent].ytdGWP += finalPrem;
                             agentLB[agent].ytdNOP += finalNop;
                         }
 
-                        if (passesFilter && tx.isFresh) {
+                        // Agent Activations Tracking (Factoring Cancellations)
+                        if (passesFilter && finalNop !== 0) {
                             if (!agentMonthlyPureGWP[agent]) agentMonthlyPureGWP[agent] = {};
                             if (!agentMonthlyPureGWP[agent][fyMonthIndex]) agentMonthlyPureGWP[agent][fyMonthIndex] = 0;
-                            agentMonthlyPureGWP[agent][fyMonthIndex] += premium;
+                            agentMonthlyPureGWP[agent][fyMonthIndex] += finalPrem;
                         }
 
+                        // Monthly Summary Cards
                         if(passesFilter && finalNop !== 0) {
                             fyData[fyMonthIndex].freshNOP += finalNop;
                             fyData[fyMonthIndex].freshAmount += finalPrem;
@@ -1314,17 +1329,18 @@
                             totalFreshAmt += finalPrem;
                         }
 
-                        if (passesFilter && tx.isFresh) {
+                        // Breakdowns (Factoring Cancellations)
+                        if (passesFilter && finalNop !== 0) {
                             let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
                             let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
                             
                             if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
-                            productBreakdown[prod].nop += 1;
-                            productBreakdown[prod].prem += premium;
+                            productBreakdown[prod].nop += finalNop;
+                            productBreakdown[prod].prem += finalPrem;
 
                             if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
-                            siBreakdown[si].nop += 1;
-                            siBreakdown[si].prem += premium;
+                            siBreakdown[si].nop += finalNop;
+                            siBreakdown[si].prem += finalPrem;
                         }
                     }
                     else if (rowFY === (state.selectedYear - 1) && passesFilter) {
@@ -1352,6 +1368,7 @@
                 Object.keys(agentMonthlyPureGWP).forEach(a => {
                     Object.keys(agentMonthlyPureGWP[a]).forEach(mIdx => {
                         let pureGWP = agentMonthlyPureGWP[a][mIdx];
+                        
                         if (pureGWP >= 15000) fyData[mIdx].activations++;
                         
                         if (pureGWP >= 300000) { act.b3L++; act.total++; fyData[mIdx].actDistribution.b3L++; }
@@ -1643,7 +1660,7 @@
                     const nopBadge = `<button onclick="event.stopPropagation(); openPolicyDrillDown(${index})" class="text-blue-600 text-[11px] font-extrabold bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Policies">${data.freshNOP} NOP</button>`;
 
                     let distributionHtml = '';
-                    if ((state.sub === 'cluster' || state.sub === 'manager') && (data.freshNOP > 0 || data.activations > 0)) {
+                    if ((state.sub === 'cluster' || state.sub === 'manager') && (data.freshNOP > 0 || data.activations > 0 || data.actDistribution.below15k > 0)) {
                         distributionHtml = `
                         <div class="grid grid-cols-6 gap-1 mt-3 pt-2.5 border-t border-slate-100 text-center">
                             <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, 'below15k')" class="flex flex-col bg-slate-100/70 hover:bg-slate-200/70 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Inactive Agents (<15K)">
@@ -1683,7 +1700,7 @@
                                     ${nopBadge}
                                 </div>
                             </div>
-                            <div class="text-base font-black text-slate-800 truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
+                            <div class="text-base font-black ${data.freshAmount < 0 ? 'text-rose-600' : 'text-slate-800'} truncate tracking-tight">₹${data.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
                             ${distributionHtml}
                         </div>
                     </div>`;
@@ -1720,8 +1737,8 @@
 
             if (state.main === 'fresh') {
                 datasets = [
-                    { label: 'GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#3b82f6', borderRadius: 6, type: 'bar', yAxisID: 'y' },
-                    { label: 'NOP', data: fyData.map(d => d.freshNOP), borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#fff', type: 'line', tension: 0.3, yAxisID: 'y1' }
+                    { label: 'Net GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#3b82f6', borderRadius: 6, type: 'bar', yAxisID: 'y' },
+                    { label: 'Net NOP', data: fyData.map(d => d.freshNOP), borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#fff', type: 'line', tension: 0.3, yAxisID: 'y1' }
                 ];
                 chartOptions.scales = { x: { grid: { display: false } }, y: { display: false }, y1: { display: false } };
             } else {
