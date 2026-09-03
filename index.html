@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Performance Portal</title>
+    <title>Business Performance & Renewal Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -37,19 +37,56 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden selection:bg-blue-100 selection:text-blue-900" id="main-body">
 
-    <!-- UPLOAD OVERLAY -->
+    <!-- UPLOAD OVERLAY (DUAL DATA & MAPPING) -->
     <div id="upload-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] hidden p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-md w-full slide-up border border-slate-100">
-            <div class="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-blue-600">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-xl w-full slide-up border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 tracking-tight">Data Management Portal</h2>
+                        <p class="text-slate-400 text-xs font-medium">Load performance sheet and latest IMD mapping</p>
+                    </div>
+                </div>
+                <button onclick="closeUploadOverlay()" id="btn-close-upload" class="hidden p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <h2 class="text-2xl font-bold mb-2 text-slate-800 tracking-tight">Upload Master Data</h2>
-            <p class="text-slate-500 mb-6 text-sm">Upload your performance Excel sheet (.xlsx, .xls) to initialize the portal.</p>
-            <input type="file" id="file-upload" accept=".xlsx, .xls" class="hidden">
-            <button onclick="document.getElementById('file-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-200 w-full text-sm flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                Browse Excel File
-            </button>
+
+            <div class="space-y-4">
+                <!-- 1. Master Performance File -->
+                <div class="p-4 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 hover:bg-blue-50/70 transition flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-center sm:text-left">
+                        <div class="text-xs font-bold text-blue-900 uppercase tracking-wider">1. Business Performance File</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5" id="tx-file-status">Policies, Start Dates, Renewals, GWP, Sum Insured</div>
+                    </div>
+                    <input type="file" id="file-performance" accept=".xlsx, .xls" class="hidden">
+                    <button onclick="document.getElementById('file-performance').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-xs whitespace-nowrap transition">
+                        Select Performance Excel
+                    </button>
+                </div>
+
+                <!-- 2. Agent Mapping Master File -->
+                <div class="p-4 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70 transition flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-center sm:text-left">
+                        <div class="text-xs font-bold text-emerald-900 uppercase tracking-wider">2. Latest Agent IMD Mapping File</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5" id="map-file-status">IMD Code, Advisor Name, Manager, Branch (Latest alignment)</div>
+                    </div>
+                    <input type="file" id="file-mapping" accept=".xlsx, .xls" class="hidden">
+                    <button onclick="document.getElementById('file-mapping').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-xs whitespace-nowrap transition">
+                        Select Mapping Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400" id="upload-summary-badge">No data loaded</span>
+                <button onclick="finalizeUploadAndProceed()" id="btn-proceed" disabled class="bg-slate-300 text-white font-extrabold py-2.5 px-6 rounded-xl text-xs transition cursor-not-allowed">
+                    Launch Dashboard →
+                </button>
+            </div>
         </div>
     </div>
 
@@ -94,7 +131,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </div>
                 <h2 class="text-lg font-bold text-slate-800">Renewal Performance</h2>
-                <p class="text-slate-400 text-xs mt-1">Retention & Persistency</p>
+                <p class="text-slate-400 text-xs mt-1">Retention & Persistency (IMD Mapped)</p>
             </button>
             <button onclick="navToRole('ranking')" class="bg-white p-7 rounded-3xl shadow-sm hover:shadow-xl transition-all transform hover:-translate-y-1.5 border border-amber-200 group flex flex-col items-center text-center relative overflow-hidden">
                 <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-500 group-hover:text-white transition-colors">
@@ -108,7 +145,6 @@
 
     <!-- VIEW 2: ROLE SELECTION -->
     <div id="view-role" class="hidden flex-1 flex flex-col bg-gradient-to-b from-slate-50 via-white to-slate-100 h-full w-full fade-in z-40 relative overflow-y-auto">
-        
         <div class="p-6 max-w-5xl mx-auto w-full flex items-center justify-between">
             <button onclick="showView('view-home')" class="inline-flex items-center gap-2 text-slate-700 hover:text-blue-600 bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-xl text-xs font-bold transition-all hover:border-blue-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -128,22 +164,22 @@
                     <div class="w-14 h-14 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
-                    <h2 class="text-base font-bold text-slate-800">Agent View</h2>
-                    <p class="text-slate-400 text-xs mt-1">Individual Performance</p>
+                    <h2 class="text-base font-bold text-slate-800">Advisor View</h2>
+                    <p class="text-slate-400 text-xs mt-1">All Advisors (Active & Inactive)</p>
                 </button>
                 <button onclick="navToDashboard('manager')" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-slate-200 group flex flex-col items-center">
                     <div class="w-14 h-14 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
                     <h2 class="text-base font-bold text-slate-800">Manager View</h2>
-                    <p class="text-slate-400 text-xs mt-1">Team & Agency Level</p>
+                    <p class="text-slate-400 text-xs mt-1">Active Fresh Managers / Agencies</p>
                 </button>
                 <button onclick="navToDashboard('cluster')" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-slate-200 group flex flex-col items-center">
                     <div class="w-14 h-14 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-slate-900 group-hover:text-white transition-colors">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     </div>
                     <h2 class="text-base font-bold text-slate-800">Branch View</h2>
-                    <p class="text-slate-400 text-xs mt-1">Overall Branch Total</p>
+                    <p class="text-slate-400 text-xs mt-1">Overall Branch / Cluster Total</p>
                 </button>
             </div>
 
@@ -157,7 +193,7 @@
                 </button>
                 <button onclick="navToDashboard('nop_rank')" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 border border-blue-200 group flex flex-col items-center">
                     <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
                     </div>
                     <h2 class="text-lg font-bold text-slate-800">NOP Ranking</h2>
                     <p class="text-slate-400 text-xs mt-1">Ranked by Policy Count</p>
@@ -171,7 +207,7 @@
         
         <!-- Header -->
         <header class="glass-panel sticky top-0 z-30 shadow-sm">
-            <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center gap-3">
                         <button onclick="showView('view-role')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all border border-slate-200">
@@ -185,13 +221,25 @@
                             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider" id="dashboard-subtitle">Role</span>
                         </div>
                     </div>
+
+                    <!-- Right Controls: Status & Re-upload Button -->
+                    <div class="flex items-center gap-2.5">
+                        <div id="mapping-status-pill" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400" id="mapping-dot"></span>
+                            <span id="mapping-status-text">No Mapping</span>
+                        </div>
+                        <button onclick="openUploadOverlay()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-blue-600 text-xs font-bold transition border border-blue-200 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Data Files
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
 
         <!-- PARAMETER CONTROLS BAR -->
         <div class="bg-white border-b border-slate-200 shadow-sm z-20">
-            <div class="max-w-[1280px] mx-auto px-4 py-3 sm:px-6 lg:px-8">
+            <div class="max-w-[1320px] mx-auto px-4 py-3 sm:px-6 lg:px-8">
                 <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
                     
                     <span class="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest shrink-0">Filters:</span>
@@ -260,23 +308,29 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                 </div>
                 <h3 class="text-base font-bold text-slate-700 mb-1">Parameters Required</h3>
-                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600" id="empty-parameter-hint">Financial Year, Branch & Target Name</span> from the filters above to view the dashboard.</p>
+                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600" id="empty-parameter-hint">Financial Year, Branch & Name</span> from the filters above.</p>
             </div>
 
-            <div id="export-container" class="w-full mx-auto max-w-[1280px]">
+            <div id="export-container" class="w-full mx-auto max-w-[1320px]">
                 
                 <!-- 1. STANDARD DASHBOARD UI -->
                 <div class="space-y-6 hidden slide-up pb-10" id="dashboard-content">
                     
+                    <!-- Advisor Header with Status Badge -->
                     <div id="agent-profile" class="hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-base shadow-inner border border-blue-100" id="agent-initials"></div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900" id="agent-name-display">Name</h3>
+                                <div class="flex items-center gap-2.5">
+                                    <h3 class="text-base font-extrabold text-slate-900" id="agent-name-display">Name</h3>
+                                    <span id="agent-status-tag" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border">Status</span>
+                                </div>
                                 <div class="flex items-center gap-3 mt-1 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                                     <span>IMD: <span class="text-slate-800 font-bold" id="agent-imd"></span></span>
                                     <span class="text-slate-300">|</span>
-                                    <span>Agreement: <span class="text-slate-800 font-bold" id="agent-agreement"></span></span>
+                                    <span>Mapped Manager: <span class="text-indigo-600 font-bold" id="agent-mapped-manager"></span></span>
+                                    <span class="text-slate-300">|</span>
+                                    <span>Branch: <span class="text-slate-800 font-bold" id="agent-branch-display"></span></span>
                                 </div>
                             </div>
                         </div>
@@ -303,7 +357,7 @@
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
                             <div>
                                 <h2 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Performance Leaderboards</h2>
-                                <p class="text-[11px] text-slate-400 font-medium">Top 3 performers for the chosen Month & YTD</p>
+                                <p class="text-[11px] text-slate-400 font-medium">Top 3 performers for the chosen Month & YTD (Mapped Branch)</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-bold text-slate-500 uppercase">Select Month:</span>
@@ -334,8 +388,8 @@
                     <div id="activation-bands" class="hidden grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-2">
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 col-span-2 md:col-span-3 lg:col-span-6 flex items-center justify-between">
                             <div>
-                                <h2 class="text-sm font-bold text-slate-800">Agent Monthly Activation Distribution (YTD Summary)</h2>
-                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Net Fresh GWP &ge; &#8377;15,000 / month per agent</p>
+                                <h2 class="text-sm font-bold text-slate-800">Advisor Monthly Activation Distribution (YTD Summary)</h2>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Net Fresh GWP &ge; &#8377;15,000 / month per advisor</p>
                             </div>
                             <div class="text-xs font-extrabold bg-blue-50 text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-inner" id="act-total">Total Activations: 0</div>
                         </div>
@@ -406,8 +460,8 @@
                     <!-- PERSISTENCY TRACKER (Renewal) -->
                     <div id="persistency-tracker" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                         <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between uppercase tracking-wider">
-                            Historical Retention Tracker
-                            <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Validated via Policy No</span>
+                            Historical Retention Tracker (Latest IMD Mapped)
+                            <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Validated via Policy No & IMD</span>
                         </h2>
                         <div class="grid grid-cols-2 gap-4" id="persistency-stats"></div>
                     </div>
@@ -425,7 +479,7 @@
                         
                         <div class="p-6 bg-slate-50">
                             <div class="flex justify-between items-center px-4 pb-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-200 mb-4">
-                                <span>Agent & Manager</span>
+                                <span>Advisor & Manager</span>
                                 <span id="rb-metric-label">Score</span>
                             </div>
                             <div id="rb-list" class="space-y-3"></div>
@@ -438,16 +492,17 @@
     </div>
 
     <script>
+        // Key definitions
         const COL_POLICY_KEYS = ["policy no", "policyno", "policy number"];
         const COL_PREV_POLICY_KEYS = ["previous policy", "prev policy"];
         const COL_ALT_POLICY_KEYS = ["alternate policy", "alt policy"];
         const COL_INSURED_KEYS = ["insured name", "customer name"];
-        const COL_AGENT_KEYS = ["intermediary name", "agent name", "agent"];
-        const COL_MANAGER_KEYS = ["ssm name", "manager name"];
-        const COL_IMD_CODE_KEYS = ["intermediary code", "imd code"];
-        const COL_AGR_CODE_KEYS = ["agreement code"];
+        const COL_AGENT_KEYS = ["intermediary name", "agent name", "agent", "advisor name", "advisor"];
+        const COL_MANAGER_KEYS = ["ssm name", "manager name", "reporting manager", "ssm"];
+        const COL_IMD_CODE_KEYS = ["intermediary code", "imd code", "imd", "agent code", "advisor code"];
+        const COL_AGR_CODE_KEYS = ["agreement code", "agr code"];
         const COL_DATE_KEYS = ["policy start date", "start date", "transaction date"];
-        const COL_END_DATE_KEYS = ["policy end date", "end date"];
+        const COL_END_DATE_KEYS = ["policy end date", "end date", "expiry date"];
         const COL_PREM_KEYS = ["gwp", "premium"];
         const COL_TRANSACTION_KEYS = ["transaction type", "type"];
         const COL_PRODUCT_KEYS = ["product name", "product"];
@@ -456,9 +511,19 @@
 
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
+        // State & Stores
         let rawData = [];
+        let agentMappingMap = {};   // Normalized IMD -> { imd, agentName, managerName, branchName, agrCode }
+        let allMappedAgents = [];   // Array of all mapped agent objects
         let chartInstance = null;
         let state = { main: null, sub: null, selectedYear: null, selectedBranch: null, selectedName: null, selectedMonth: null };
+
+        function normalizeIMD(val) {
+            if (val === undefined || val === null) return "";
+            let s = val.toString().trim();
+            if (s.endsWith('.0')) s = s.slice(0, -2);
+            return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
 
         function getColValue(row, possibleKeys) {
             if (!row || typeof row !== 'object') return "";
@@ -471,6 +536,11 @@
                 }
             }
             return "";
+        }
+
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
         function isKeyAgent(name) {
@@ -584,45 +654,152 @@
             return null;
         }
 
-        function toTitleCase(str) {
-            if (!str) return '';
-            return str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        // Re-align all row attributes against the latest Agent Master Mapping via IMD Code
+        function enrichRowWithLatestMapping(row) {
+            const rawImd = getColValue(row, COL_IMD_CODE_KEYS);
+            const normImd = normalizeIMD(rawImd);
+            
+            if (normImd && agentMappingMap[normImd]) {
+                const mapInfo = agentMappingMap[normImd];
+                row._agent = mapInfo.agentName;
+                row._manager = mapInfo.managerName;
+                row._branch = mapInfo.branchName;
+                row._imd = mapInfo.imd || rawImd;
+                row._agreement = mapInfo.agrCode || getColValue(row, COL_AGR_CODE_KEYS);
+                row._isMapped = true;
+            } else {
+                row._agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || 'Unknown');
+                row._manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || 'Unknown');
+                row._branch = toTitleCase(getColValue(row, COL_BRANCH_KEYS) || 'General');
+                row._imd = rawImd || 'N/A';
+                row._agreement = getColValue(row, COL_AGR_CODE_KEYS) || 'N/A';
+                row._isMapped = false;
+            }
+            return row;
+        }
+
+        function reapplyMappingToAllData() {
+            if (rawData.length > 0) {
+                rawData.forEach(r => enrichRowWithLatestMapping(r));
+            }
+            updateStatusPill();
+        }
+
+        function updateStatusPill() {
+            const pill = document.getElementById('mapping-status-pill');
+            const dot = document.getElementById('mapping-dot');
+            const txt = document.getElementById('mapping-status-text');
+            const count = Object.keys(agentMappingMap).length;
+            
+            if (count > 0) {
+                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+                txt.innerText = `${count} Advisors Mapped (IMD Validated)`;
+            } else {
+                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-slate-400";
+                txt.innerText = "No Agent Master Loaded";
+            }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            attemptFetchDefaultFile();
-            document.getElementById('file-upload').addEventListener('change', (e) => {
+            attemptFetchDefaultFiles();
+
+            document.getElementById('file-performance').addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (file) loadExcel(file);
+                if (file) handlePerformanceUpload(file);
             });
+
+            document.getElementById('file-mapping').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) handleMappingUpload(file);
+            });
+
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') closeModal();
             });
         });
 
-        async function attemptFetchDefaultFile() {
+        async function attemptFetchDefaultFiles() {
+            let perfLoaded = false;
             try {
                 let response = await fetch('Kollam Cluster.xlsx');
                 if (!response.ok) response = await fetch('data.xlsx');
-                if (!response.ok) throw new Error('File not found');
-                const arrayBuffer = await response.arrayBuffer();
-                parseExcelData(arrayBuffer);
-            } catch (error) {
-                document.getElementById('upload-overlay').classList.remove('hidden');
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    parsePerformanceBuffer(arrayBuffer);
+                    perfLoaded = true;
+                }
+            } catch (error) { /* Fallback to overlay */ }
+
+            try {
+                let mapResponse = await fetch('agent_mapping.xlsx');
+                if (!mapResponse.ok) mapResponse = await fetch('Agent Master.xlsx');
+                if (mapResponse.ok) {
+                    const mapBuffer = await mapResponse.arrayBuffer();
+                    parseMappingBuffer(mapBuffer);
+                }
+            } catch (err) { /* Optional */ }
+
+            if (perfLoaded) {
+                document.getElementById('upload-overlay').classList.add('hidden');
+                document.getElementById('btn-close-upload').classList.remove('hidden');
+                showView('view-home');
+            } else {
+                openUploadOverlay();
             }
         }
 
-        function loadExcel(file) {
+        function openUploadOverlay() {
+            document.getElementById('upload-overlay').classList.remove('hidden');
+            if (rawData.length > 0) {
+                document.getElementById('btn-close-upload').classList.remove('hidden');
+            }
+        }
+
+        function closeUploadOverlay() {
+            if (rawData.length > 0) {
+                document.getElementById('upload-overlay').classList.add('hidden');
+            }
+        }
+
+        function handlePerformanceUpload(file) {
             const reader = new FileReader();
-            reader.onload = (e) => parseExcelData(e.target.result);
+            reader.onload = (e) => {
+                parsePerformanceBuffer(e.target.result);
+                document.getElementById('tx-file-status').innerText = `✓ Loaded: ${file.name} (${rawData.length} records)`;
+                document.getElementById('tx-file-status').className = "text-[11px] text-emerald-600 font-bold mt-0.5";
+                checkUploadState();
+            };
             reader.readAsArrayBuffer(file);
         }
 
-        function parseExcelData(buffer) {
+        function handleMappingUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                parseMappingBuffer(e.target.result);
+                const count = Object.keys(agentMappingMap).length;
+                document.getElementById('map-file-status').innerText = `✓ Loaded: ${file.name} (${count} IMD mappings active)`;
+                document.getElementById('map-file-status').className = "text-[11px] text-emerald-600 font-bold mt-0.5";
+                reapplyMappingToAllData();
+                checkUploadState();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parsePerformanceBuffer(buffer) {
             try {
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 rawData = [];
                 workbook.SheetNames.forEach(sheetName => {
+                    const lowerSheet = sheetName.toLowerCase();
+                    // If file contains mapping sheet inside it, parse it too!
+                    if (lowerSheet.includes('mapping') || lowerSheet.includes('agent master') || lowerSheet.includes('advisor master')) {
+                        const mapRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+                        storeAgentMappingRows(mapRows);
+                        return;
+                    }
+
                     const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                     if (sheet.length > 0) {
                         const cleanedSheet = sheet.map(row => {
@@ -630,14 +807,73 @@
                             for (let key in row) {
                                 if (key) cleanRow[key.toString().trim()] = row[key];
                             }
-                            return cleanRow;
+                            return enrichRowWithLatestMapping(cleanRow);
                         });
                         rawData = rawData.concat(cleanedSheet);
                     }
                 });
-                document.getElementById('upload-overlay').classList.add('hidden');
+                reapplyMappingToAllData();
+                checkUploadState();
+            } catch (err) { alert("Error parsing Excel transactions. Ensure valid format."); }
+        }
+
+        function parseMappingBuffer(buffer) {
+            try {
+                const workbook = XLSX.read(buffer, { type: 'array' });
+                let mapRows = [];
+                workbook.SheetNames.forEach(name => {
+                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
+                    mapRows = mapRows.concat(sheetData);
+                });
+                storeAgentMappingRows(mapRows);
+            } catch (err) { alert("Error parsing Agent Mapping Excel file."); }
+        }
+
+        function storeAgentMappingRows(rows) {
+            rows.forEach(r => {
+                const rawImd = getColValue(r, COL_IMD_CODE_KEYS);
+                const normImd = normalizeIMD(rawImd);
+                const agentName = toTitleCase(getColValue(r, COL_AGENT_KEYS));
+                const managerName = toTitleCase(getColValue(r, COL_MANAGER_KEYS));
+                const branchName = toTitleCase(getColValue(r, COL_BRANCH_KEYS)) || "General";
+                const agrCode = getColValue(r, COL_AGR_CODE_KEYS);
+
+                if (normImd && agentName) {
+                    const obj = { imd: rawImd, agentName, managerName, branchName, agrCode };
+                    agentMappingMap[normImd] = obj;
+                    
+                    // Keep unique list of all mapped agents
+                    const existingIdx = allMappedAgents.findIndex(a => a.imd === rawImd || normalizeIMD(a.imd) === normImd);
+                    if (existingIdx !== -1) allMappedAgents[existingIdx] = obj;
+                    else allMappedAgents.push(obj);
+                }
+            });
+            reapplyMappingToAllData();
+        }
+
+        function checkUploadState() {
+            const btn = document.getElementById('btn-proceed');
+            const summary = document.getElementById('upload-summary-badge');
+            
+            if (rawData.length > 0) {
+                btn.disabled = false;
+                btn.className = "bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2.5 px-6 rounded-xl text-xs transition shadow-md cursor-pointer";
+                const mapCount = Object.keys(agentMappingMap).length;
+                summary.innerText = `Ready: ${rawData.length.toLocaleString()} Policies | ${mapCount} Advisors Mapped`;
+                summary.className = "text-[11px] font-bold text-emerald-600";
+            }
+        }
+
+        function finalizeUploadAndProceed() {
+            if (rawData.length === 0) return;
+            document.getElementById('upload-overlay').classList.add('hidden');
+            document.getElementById('btn-close-upload').classList.remove('hidden');
+            if (state.selectedYear) {
+                populateYears();
+                onYearChange();
+            } else {
                 showView('view-home');
-            } catch (err) { alert("Error parsing Excel file. Please ensure a valid format."); }
+            }
         }
 
         function showView(viewId) {
@@ -683,20 +919,18 @@
             const nameLabel = document.getElementById('name-select-label');
             const hint = document.getElementById('empty-parameter-hint');
 
-            // Reset containers visibility
             branchContainer.classList.add('hidden');
             nameContainer.classList.add('hidden');
             monthContainer.classList.add('hidden');
             
-            // Set dynamic hint and name label
             if (isRanking) {
                 hint.innerText = 'Financial Year, Branch & Ranking Month';
             } else {
                 if (subModule === 'cluster') {
                     hint.innerText = 'Financial Year & Branch';
                 } else {
-                    nameLabel.innerText = subModule === 'agent' ? 'Select Agent' : 'Select Manager';
-                    hint.innerText = 'Financial Year, Branch & Target Name';
+                    nameLabel.innerText = subModule === 'agent' ? 'Select Advisor' : 'Select Manager';
+                    hint.innerText = 'Financial Year, Branch & Name';
                 }
             }
 
@@ -746,15 +980,18 @@
                 return;
             }
 
-            // Extract unique branches for the selected Year
-            let branches = [...new Set(rawData.filter(row => {
+            // Extract branches from both performance transactions and agent mapping master
+            let branchSet = new Set();
+            rawData.forEach(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                if (!d) return false;
-                const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
-                return rowFY === state.selectedYear;
-            }).map(row => toTitleCase(getColValue(row, COL_BRANCH_KEYS))).filter(b => b))].sort();
+                if (d) {
+                    const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                    if (rowFY === state.selectedYear && row._branch) branchSet.add(row._branch);
+                }
+            });
+            allMappedAgents.forEach(a => { if (a.branchName) branchSet.add(a.branchName); });
 
-            // Fallback if no branch column exists in the Excel
+            let branches = [...branchSet].filter(b => b && b !== 'General').sort();
             if (branches.length === 0) branches = ["All Branches"];
 
             document.getElementById('branch-container').classList.remove('hidden');
@@ -796,27 +1033,50 @@
 
         function populateNames() {
             const nameSelect = document.getElementById('name-select');
-            const colKeys = state.sub === 'agent' ? COL_AGENT_KEYS : COL_MANAGER_KEYS;
+            let candidateNames = new Set();
             
-            const filtered = rawData.filter(row => {
-                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                if (!d) return false;
-                const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
-                if (rowFY !== state.selectedYear) return false;
-                
-                const branch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                if (branch && state.selectedBranch !== 'All Branches' && branch !== state.selectedBranch) return false;
-                
-                // Active User Filter: Only include names that generated relevant business in this module
-                const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-                if (state.main === 'fresh' && !(tx.isFresh || tx.isEndorsement)) return false; 
-                if (state.main === 'renewal' && (!tx.isRetentionBase && !tx.isRenewal)) return false;
-                
-                return true;
-            });
+            if (state.sub === 'agent') {
+                // RULE: FOR ADVISORS/AGENTS, ALWAYS INCLUDE ALL ADVISORS (ACTIVE & INACTIVE)
+                // 1. Pull from latest Agent Master Mapping
+                allMappedAgents.forEach(a => {
+                    if (state.selectedBranch === 'All Branches' || a.branchName === state.selectedBranch) {
+                        if (a.agentName) candidateNames.add(a.agentName);
+                    }
+                });
+
+                // 2. Also union any advisors appearing in transaction data for this branch & year
+                rawData.forEach(row => {
+                    const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                    if (!d) return;
+                    const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                    if (rowFY === state.selectedYear) {
+                        if (state.selectedBranch === 'All Branches' || row._branch === state.selectedBranch) {
+                            if (row._agent) candidateNames.add(row._agent);
+                        }
+                    }
+                });
+
+            } else {
+                // RULE: FOR MANAGERS IN FRESH BUSINESS, SHOW ONLY THOSE ACTIVE IN FY
+                rawData.forEach(row => {
+                    const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                    if (!d) return false;
+                    const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                    if (rowFY !== state.selectedYear) return;
+                    if (state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
+
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+                    if (state.main === 'fresh') {
+                        // Manager must have active fresh/endorsement production
+                        if ((tx.isFresh || tx.isEndorsement) && row._manager) candidateNames.add(row._manager);
+                    } else if (state.main === 'renewal') {
+                        if ((tx.isRetentionBase || tx.isRenewal) && row._manager) candidateNames.add(row._manager);
+                    }
+                });
+            }
             
-            const names = [...new Set(filtered.map(row => toTitleCase(getColValue(row, colKeys))).filter(n => n))].sort();
-            nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+            const names = [...candidateNames].sort();
+            nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Advisor' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
             
             document.getElementById('name-container').classList.remove('hidden');
             resetDashboard();
@@ -858,22 +1118,21 @@
             const tbody = document.getElementById('modal-table-body');
             
             if (state.main === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Net Fresh & Rollover Business)";
+                document.getElementById('modal-subtitle').innerText = "Policy-Level Details (Net Fresh & Rollover Business - Mapped IMD)";
                 
                 thead.innerHTML = `
                     <tr>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
-                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">IMD Code</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Advisor Name</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
-                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">GWP</th>
                     </tr>`;
 
                 let policies = rawData.filter(row => {
-                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return false;
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return false;
 
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if(!date) return false;
@@ -884,8 +1143,8 @@
 
                     if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return false;
                     
-                    if (state.sub === 'agent' && toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.selectedName) return false;
-                    if (state.sub === 'manager' && toTitleCase(getColValue(row, COL_MANAGER_KEYS)) !== state.selectedName) return false;
+                    if (state.sub === 'agent' && row._agent !== state.selectedName) return false;
+                    if (state.sub === 'manager' && row._manager !== state.selectedName) return false;
 
                     const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                     return tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement;
@@ -900,7 +1159,6 @@
                         const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                         const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
                         const prem = parseNumber(getColValue(p, COL_PREM_KEYS));
-                        const siStr = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
                         const tx = parseTransactionType(getColValue(p, COL_TRANSACTION_KEYS));
                         const isRed = tx.isCancel || tx.isRefund || prem < 0;
 
@@ -908,10 +1166,10 @@
                         <tr class="${isRed ? 'bg-rose-50/80 hover:bg-rose-100 border-b border-rose-100' : 'hover:bg-slate-50 border-b border-slate-50'} transition-colors last:border-0">
                             <td class="p-3 text-[11px] font-medium ${isRed ? 'text-rose-600' : 'text-slate-600'} whitespace-nowrap">${dateStr}</td>
                             <td class="p-3 text-[11px] font-bold ${isRed ? 'text-rose-700' : 'text-slate-800'} whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-bold ${isRed ? 'text-rose-600' : 'text-blue-600'} truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_AGENT_KEYS)) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-500 whitespace-nowrap">${p._imd}</td>
+                            <td class="p-3 text-[11px] font-bold ${isRed ? 'text-rose-600' : 'text-blue-600'} truncate max-w-[140px]">${p._agent}</td>
                             <td class="p-3 text-[11px] font-medium ${isRed ? 'text-rose-600' : 'text-slate-600'} truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
                             <td class="p-3 text-[11px] font-medium ${isRed ? 'text-rose-500' : 'text-slate-500'} truncate max-w-[120px]">${getColValue(p, COL_PRODUCT_KEYS) || '-'}</td>
-                            <td class="p-3 text-[11px] font-bold ${isRed ? 'text-rose-700' : 'text-slate-700'} whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1">
                                     <span class="text-[11px] font-bold ${isRed ? 'text-rose-700' : 'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>
@@ -924,22 +1182,21 @@
                     }).join('');
                 }
             } else {
-                document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
+                document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal (Mapped by Latest IMD)";
                 thead.innerHTML = `
                     <tr>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Start Date</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
-                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">IMD Code</th>
+                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Advisor Name</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product</th>
-                        <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
                         <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
                     </tr>`;
 
                 let baseDue = []; let currentYearRenewals = [];
                 rawData.forEach(row => {
-                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
@@ -955,11 +1212,8 @@
                         expFY = expMonth >= 3 ? expYear : expYear - 1; expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
                     }
                     
-                    const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
-                    const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
-                    
-                    if (state.sub === 'agent' && agent !== state.selectedName) return;
-                    if (state.sub === 'manager' && manager !== state.selectedName) return;
+                    if (state.sub === 'agent' && row._agent !== state.selectedName) return;
+                    if (state.sub === 'manager' && row._manager !== state.selectedName) return;
 
                     const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                     if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(row);
@@ -973,6 +1227,7 @@
                         policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                        normImd: normalizeIMD(r._imd),
                         sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
                         used: false 
                     };
@@ -982,8 +1237,14 @@
                     const basePolicyNo = (getColValue(p, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
                     const ins = toTitleCase(getColValue(p, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(p, COL_PRODUCT_KEYS));
                     const sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                    const bNormImd = normalizeIMD(p._imd);
 
-                    let matchIdx = renPool.findIndex(r => !r.used && ((basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) || (sig && r.sig === sig)));
+                    // Validate Match: Policy number correlation + IMD consistency check
+                    let matchIdx = renPool.findIndex(r => !r.used && (
+                        (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
+                        (sig && r.sig === sig && (!bNormImd || !r.normImd || bNormImd === r.normImd))
+                    ));
+                    
                     let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
                     return { ...p, _isRenewed: isRenewed };
                 });
@@ -997,17 +1258,16 @@
                         const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                         const dateStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
                         const prem = parseNumber(getColValue(p, COL_PREM_KEYS));
-                        const siStr = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
                         const statusBadge = p._isRenewed ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` : `<span class="bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Not Renewed</span>`;
 
                         return `
                         <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                             <td class="p-3 text-[11px] font-medium text-slate-600 whitespace-nowrap">${dateStr}</td>
                             <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                            <td class="p-3 text-[11px] font-bold text-indigo-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_AGENT_KEYS)) || 'N/A'}</td>
+                            <td class="p-3 text-[11px] font-bold text-slate-500 whitespace-nowrap">${p._imd}</td>
+                            <td class="p-3 text-[11px] font-bold text-indigo-600 truncate max-w-[140px]">${p._agent}</td>
                             <td class="p-3 text-[11px] font-medium text-slate-600 truncate max-w-[140px]">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
                             <td class="p-3 text-[11px] font-medium text-slate-500 truncate max-w-[120px]">${getColValue(p, COL_PRODUCT_KEYS) || '-'}</td>
-                            <td class="p-3 text-[11px] font-bold text-slate-700 whitespace-nowrap">${siStr}</td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex flex-col items-end gap-1"><span class="text-[11px] font-bold text-slate-800">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</span>${statusBadge}</div>
                             </td>
@@ -1020,14 +1280,15 @@
 
         function openActivationDrillDown(monthIndex, specificSlab = null) {
             const monthName = FY_MONTHS[monthIndex];
-            document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1} - Agent Activations`;
-            document.getElementById('modal-subtitle').innerText = specificSlab ? `Showing Agents in Slab: ${specificSlab}` : "Monthly Active Agents Summary";
+            document.getElementById('modal-title').innerText = `${monthName} FY${state.selectedYear}-${state.selectedYear+1} - Advisor Activations`;
+            document.getElementById('modal-subtitle').innerText = specificSlab ? `Showing Advisors in Slab: ${specificSlab}` : "Monthly Active Advisors Summary";
             const thead = document.getElementById('modal-table-head');
             const tbody = document.getElementById('modal-table-body');
             thead.innerHTML = `
                 <tr>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Rank</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Agent Name</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">IMD Code</th>
+                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Advisor Name</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Manager</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Activation Slab</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-center">Net NOP</th>
@@ -1036,8 +1297,7 @@
 
             let agentMap = {};
             rawData.forEach(row => {
-                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if(!date) return;
@@ -1046,19 +1306,17 @@
                 const rowFyMonthIndex = month >= 3 ? month - 3 : month + 9;
                 if (rowFyMonthIndex !== monthIndex || rowFY !== state.selectedYear) return;
                 
-                const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
-                const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
-                if (state.sub === 'agent' && agent !== state.selectedName) return;
-                if (state.sub === 'manager' && manager !== state.selectedName) return;
+                if (state.sub === 'agent' && row._agent !== state.selectedName) return;
+                if (state.sub === 'manager' && row._manager !== state.selectedName) return;
 
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-                if ((tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement) && agent) {
-                    if (!agentMap[agent]) agentMap[agent] = { gwp: 0, nop: 0, manager: manager };
+                if ((tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement) && row._agent) {
+                    if (!agentMap[row._agent]) agentMap[row._agent] = { gwp: 0, nop: 0, manager: row._manager, imd: row._imd };
                     const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
-                    if (tx.isFresh) { agentMap[agent].gwp += prem; agentMap[agent].nop += 1; }
-                    else if (tx.isCancel) { agentMap[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); agentMap[agent].nop -= 1; }
-                    else if (tx.isRefund) { agentMap[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
-                    else if (tx.isEndorsement) { agentMap[agent].gwp += prem; }
+                    if (tx.isFresh) { agentMap[row._agent].gwp += prem; agentMap[row._agent].nop += 1; }
+                    else if (tx.isCancel) { agentMap[row._agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); agentMap[row._agent].nop -= 1; }
+                    else if (tx.isRefund) { agentMap[row._agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
+                    else if (tx.isEndorsement) { agentMap[row._agent].gwp += prem; }
                 }
             });
 
@@ -1070,20 +1328,21 @@
                 else if (gwp >= 100000) { slab = "1 Lac - < 2 Lac"; slabCode = "1L"; isActivated = true; }
                 else if (gwp >= 50000) { slab = "50K - < 1 Lac"; slabCode = "50K"; isActivated = true; }
                 else if (gwp >= 15000) { slab = "15K - < 50K"; slabCode = "15K"; isActivated = true; }
-                return { agent, manager: agentMap[agent].manager, gwp, nop: agentMap[agent].nop, slab, slabCode, isActivated };
+                return { agent, manager: agentMap[agent].manager, imd: agentMap[agent].imd, gwp, nop: agentMap[agent].nop, slab, slabCode, isActivated };
             });
 
             if (specificSlab) list = list.filter(item => item.slabCode === specificSlab);
             list.sort((a, b) => b.gwp - a.gwp);
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500 font-medium">No agents found for this criteria.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-xs text-slate-500 font-medium">No advisors found for this criteria.</td></tr>`;
             } else {
                 tbody.innerHTML = list.map((item, i) => {
                     const slabBadge = item.isActivated ? `<span class="bg-blue-50 border border-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">${item.slab}</span>` : `<span class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">Below 15K (Inactive)</span>`;
                     return `
                     <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                         <td class="p-3 text-[11px] font-extrabold text-slate-400">#${i+1}</td>
+                        <td class="p-3 text-[11px] font-bold text-slate-500">${item.imd}</td>
                         <td class="p-3 text-[11px] font-bold text-slate-800">${item.agent}</td>
                         <td class="p-3 text-[11px] font-medium text-slate-500">${item.manager || 'N/A'}</td>
                         <td class="p-3 text-[11px]">${slabBadge}</td>
@@ -1108,13 +1367,12 @@
             const calMonth = (state.selectedMonth + 3) % 12;
 
             document.getElementById('rb-title').innerText = state.sub === 'gwp_rank' ? 'Top Net Fresh Ranking' : 'Top Net NOP Ranking';
-            document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1}`;
+            document.getElementById('rb-subtitle').innerText = `${FY_MONTHS[state.selectedMonth]} FY${state.selectedYear}-${state.selectedYear+1} (${state.selectedBranch})`;
             document.getElementById('rb-metric-label').innerText = state.sub === 'gwp_rank' ? 'GWP Premium' : 'NOP Count';
 
             let agents = {};
             rawData.forEach(row => {
-                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return;
@@ -1122,10 +1380,10 @@
                 if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
                     const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                     if (tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement) {
-                        const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS));
-                        const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS));
+                        const agent = row._agent;
+                        const manager = row._manager;
                         if (agent) {
-                            if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager };
+                            if (!agents[agent]) agents[agent] = { gwp: 0, nop: 0, manager: manager, imd: row._imd };
                             const prem = parseNumber(getColValue(row, COL_PREM_KEYS));
                             if (tx.isFresh) { agents[agent].nop += 1; agents[agent].gwp += prem; } 
                             else if (tx.isCancel) { agents[agent].nop -= 1; agents[agent].gwp += (prem > 0 ? -Math.abs(prem) : prem); }
@@ -1159,7 +1417,7 @@
                 <div class="flex items-center p-3.5 rounded-2xl shadow-sm border bg-white border-slate-100 mb-2.5">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${rankClass} shadow-sm shrink-0">${medal}</div>
                     <div class="ml-4 flex-1 truncate pr-4">
-                        <div class="font-extrabold text-slate-800 text-sm truncate">${agent}</div>
+                        <div class="font-extrabold text-slate-800 text-sm truncate">${agent} <span class="text-[10px] text-slate-400 font-bold">(${agents[agent].imd})</span></div>
                         <div class="text-[10px] font-bold text-slate-400 truncate mt-0.5">Manager: ${agents[agent].manager || 'N/A'}</div>
                     </div>
                     <div class="text-right shrink-0">
@@ -1181,16 +1439,15 @@
                 let monthlyAgents = {};
 
                 rawData.forEach(row => {
-                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if (!date) return;
                     if (date.getFullYear() === calYear && date.getMonth() === calMonth) {
                         const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                         if (tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement) {
-                            const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
-                            const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
+                            const agent = row._agent;
+                            const manager = row._manager;
                             const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
                             
                             if (passes && agent) {
@@ -1218,8 +1475,7 @@
                 let currYrRen = [];
 
                 rawData.forEach(row => {
-                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
@@ -1240,8 +1496,8 @@
                         expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
                     }
 
-                    const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || '');
-                    const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || '');
+                    const agent = row._agent;
+                    const manager = row._manager;
                     const passes = state.sub === 'cluster' || (state.sub === 'manager' && manager === state.selectedName);
                     if (!passes || !agent) return;
 
@@ -1298,14 +1554,19 @@
             document.getElementById('ranking-board-content').classList.add('hidden');
             document.getElementById('dashboard-content').classList.remove('hidden');
 
+            // Agent Profile & Activation Header Info
             if (state.sub === 'agent' && state.selectedName) {
-                const agentRow = rawData.find(r => toTitleCase(getColValue(r, COL_AGENT_KEYS)) === state.selectedName);
+                // Find latest mapped details or from data
+                let matchedMapping = allMappedAgents.find(a => a.agentName === state.selectedName);
+                let matchedRow = rawData.find(r => r._agent === state.selectedName);
+
                 document.getElementById('agent-profile').classList.remove('hidden');
                 document.getElementById('agent-profile').classList.add('flex');
                 document.getElementById('agent-name-display').innerText = state.selectedName;
                 document.getElementById('agent-initials').innerText = state.selectedName.substring(0, 2).toUpperCase();
-                document.getElementById('agent-imd').innerText = agentRow ? (getColValue(agentRow, COL_IMD_CODE_KEYS) || 'N/A') : 'N/A';
-                document.getElementById('agent-agreement').innerText = agentRow ? (getColValue(agentRow, COL_AGR_CODE_KEYS) || 'N/A') : 'N/A';
+                document.getElementById('agent-imd').innerText = (matchedMapping ? matchedMapping.imd : null) || (matchedRow ? matchedRow._imd : 'N/A');
+                document.getElementById('agent-mapped-manager').innerText = (matchedMapping ? matchedMapping.managerName : null) || (matchedRow ? matchedRow._manager : 'N/A');
+                document.getElementById('agent-branch-display').innerText = (matchedMapping ? matchedMapping.branchName : null) || (matchedRow ? matchedRow._branch : state.selectedBranch);
             } else {
                 document.getElementById('agent-profile').classList.add('hidden');
                 document.getElementById('agent-profile').classList.remove('flex');
@@ -1325,8 +1586,7 @@
             const now = new Date(); const currentYear = now.getFullYear(); const currentMonth = now.getMonth(); 
 
             rawData.forEach(row => {
-                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
-                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && row._branch !== state.selectedBranch) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
@@ -1346,8 +1606,8 @@
                 }
                 
                 const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
-                const agent = toTitleCase(getColValue(row, COL_AGENT_KEYS) || 'Unknown');
-                const manager = toTitleCase(getColValue(row, COL_MANAGER_KEYS) || 'Unknown');
+                const agent = row._agent;
+                const manager = row._manager;
 
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
 
@@ -1425,6 +1685,18 @@
                 }
             });
 
+            // Set Advisor Status Tag if Agent View is open
+            if (state.sub === 'agent' && state.selectedName) {
+                const tag = document.getElementById('agent-status-tag');
+                if (totalFreshAmt > 0 || totalFreshNOP > 0) {
+                    tag.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wide";
+                    tag.innerText = "Active (Has Fresh FY Business)";
+                } else {
+                    tag.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide";
+                    tag.innerText = "Inactive (0 Fresh in Selected FY)";
+                }
+            }
+
             // Calculate Activations
             let act = { total: 0, below15k: 0, b15k: 0, b50k: 0, b1L: 0, b2L: 0, b3L: 0 };
             if (state.main === 'fresh') {
@@ -1460,7 +1732,8 @@
                         policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        normImd: normalizeIMD(r._imd),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
                         used: false 
                     };
                 });
@@ -1471,13 +1744,15 @@
                     const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
                     const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
                     const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                    const bNormImd = normalizeIMD(b._imd);
                     
                     fyData[mIdx].baseNOP += 1;
                     totalBaseNOP += 1;
                     
+                    // Match validation with IMD & Policy keys
                     let matchIdx = renUsage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
-                        (b_sig && r.sig === b_sig)
+                        (b_sig && r.sig === b_sig && (!bNormImd || !r.normImd || bNormImd === r.normImd))
                     ));
 
                     let isRenewed = false;
@@ -1505,7 +1780,8 @@
                         policyNo: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         prevPolicyNo: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
                         altPolicyNo: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "",
+                        normImd: normalizeIMD(r._imd),
+                        sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
                         used: false 
                     };
                 });
@@ -1515,10 +1791,11 @@
                     const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS));
                     const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
                     const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                    const bNormImd = normalizeIMD(b._imd);
 
                     let matchIdx = yr2Usage.findIndex(r => !r.used && (
                         (basePolicyNo && (r.prevPolicyNo === basePolicyNo || r.altPolicyNo === basePolicyNo || r.policyNo === basePolicyNo)) ||
-                        (b_sig && r.sig === b_sig)
+                        (b_sig && r.sig === b_sig && (!bNormImd || !r.normImd || bNormImd === r.normImd))
                     ));
                     if (matchIdx !== -1) { yr2Usage[matchIdx].used = true; retentionYr2Ren += 1; }
                 });
@@ -1742,14 +2019,14 @@
             fyData.forEach((data, index) => {
                 const monthName = FY_MONTHS[index];
                 if (state.main === 'fresh') {
-                    const actBadge = data.activations > 0 ? `<button onclick="event.stopPropagation(); openActivationDrillDown(${index})" class="text-emerald-700 text-[11px] font-extrabold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Active Agents">${data.activations} Act.</button>` : '';
+                    const actBadge = data.activations > 0 ? `<button onclick="event.stopPropagation(); openActivationDrillDown(${index})" class="text-emerald-700 text-[11px] font-extrabold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Active Advisors">${data.activations} Act.</button>` : '';
                     const nopBadge = `<button onclick="event.stopPropagation(); openPolicyDrillDown(${index})" class="text-blue-600 text-[11px] font-extrabold bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-0.5 rounded-lg shrink-0 transition-colors shadow-sm" title="View Policies">${data.freshNOP} NOP</button>`;
                     let distributionHtml = '';
                     
                     if ((state.sub === 'cluster' || state.sub === 'manager') && (data.freshNOP > 0 || data.activations > 0 || data.actDistribution.below15k > 0)) {
                         distributionHtml = `
                         <div class="grid grid-cols-6 gap-1 mt-3 pt-2.5 border-t border-slate-100 text-center">
-                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, 'below15k')" class="flex flex-col bg-slate-100/70 hover:bg-slate-200/70 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Inactive Agents (<15K)">
+                            <div onclick="event.stopPropagation(); openActivationDrillDown(${index}, 'below15k')" class="flex flex-col bg-slate-100/70 hover:bg-slate-200/70 cursor-pointer rounded-lg py-1 transition-all border border-slate-200/60" title="Click to view Inactive Advisors (<15K)">
                                 <span class="text-[9px] text-slate-400 font-extrabold uppercase">&lt;15K</span>
                                 <span class="font-black text-slate-600 text-xs mt-0.5">${data.actDistribution.below15k}</span>
                             </div>
