@@ -142,7 +142,7 @@
                     <div class="w-14 h-14 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-slate-900 group-hover:text-white transition-colors">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     </div>
-                    <h2 class="text-base font-bold text-slate-800">Cluster View</h2>
+                    <h2 class="text-base font-bold text-slate-800">Branch View</h2>
                     <p class="text-slate-400 text-xs mt-1">Overall Branch Total</p>
                 </button>
             </div>
@@ -208,6 +208,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Branch / Cluster Dropdown -->
+                    <div id="branch-container" class="relative w-full sm:w-56 hidden">
+                        <label for="branch-select" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Branch / Cluster</label>
+                        <div class="relative">
+                            <select id="branch-select" class="block w-full pl-3 pr-8 py-2 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl transition-all" onchange="onBranchChange()">
+                                <option value="">Select Branch</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Target Name Dropdown (Agent / Manager) -->
                     <div id="name-container" class="relative w-full sm:w-80 hidden">
@@ -247,7 +260,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                 </div>
                 <h3 class="text-base font-bold text-slate-700 mb-1">Parameters Required</h3>
-                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600">Financial Year</span> and <span class="font-bold text-slate-600" id="empty-parameter-hint">Target Name</span> from the filters above to view the dashboard.</p>
+                <p class="text-slate-400 font-medium text-xs max-w-sm">Please select the <span class="font-bold text-slate-600" id="empty-parameter-hint">Financial Year, Branch & Target Name</span> from the filters above to view the dashboard.</p>
             </div>
 
             <div id="export-container" class="w-full mx-auto max-w-[1280px]">
@@ -439,12 +452,13 @@
         const COL_TRANSACTION_KEYS = ["transaction type", "type"];
         const COL_PRODUCT_KEYS = ["product name", "product"];
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
+        const COL_BRANCH_KEYS = ["branch name", "branch", "cluster name", "cluster", "location", "office"];
 
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
         let rawData = [];
         let chartInstance = null;
-        let state = { main: null, sub: null, selectedYear: null, selectedName: null, selectedMonth: null };
+        let state = { main: null, sub: null, selectedYear: null, selectedBranch: null, selectedName: null, selectedMonth: null };
 
         function getColValue(row, possibleKeys) {
             if (!row || typeof row !== 'object') return "";
@@ -470,7 +484,6 @@
                    n.includes('ltd');
         }
 
-        // Color and Icon Logic Helper for Key Agent Traffic Lights
         function getKeyAgentStyles(pct) {
             if (pct < 15) {
                 return {
@@ -656,31 +669,34 @@
         function navToDashboard(subModule) {
             state.sub = subModule;
             state.selectedYear = null;
+            state.selectedBranch = null;
             state.selectedName = null;
             state.selectedMonth = null;
             
             const isRanking = state.main === 'ranking';
             document.getElementById('dashboard-title').innerText = isRanking ? 'Agent Ranking' : (state.main === 'fresh' ? 'Fresh Business' : 'Renewal Performance');
-            document.getElementById('dashboard-subtitle').innerText = isRanking ? (subModule === 'gwp_rank' ? 'GWP Ranking' : 'NOP Ranking') : subModule.toUpperCase();
+            document.getElementById('dashboard-subtitle').innerText = isRanking ? (subModule === 'gwp_rank' ? 'GWP Ranking' : 'NOP Ranking') : (subModule === 'cluster' ? 'Branch View' : subModule.toUpperCase());
 
             const nameContainer = document.getElementById('name-container');
             const monthContainer = document.getElementById('month-container');
+            const branchContainer = document.getElementById('branch-container');
             const nameLabel = document.getElementById('name-select-label');
             const hint = document.getElementById('empty-parameter-hint');
 
+            // Reset containers visibility
+            branchContainer.classList.add('hidden');
+            nameContainer.classList.add('hidden');
+            monthContainer.classList.add('hidden');
+            
+            // Set dynamic hint and name label
             if (isRanking) {
-                nameContainer.classList.add('hidden');
-                monthContainer.classList.remove('hidden');
-                hint.innerText = 'Ranking Month';
+                hint.innerText = 'Financial Year, Branch & Ranking Month';
             } else {
-                monthContainer.classList.add('hidden');
                 if (subModule === 'cluster') {
-                    nameContainer.classList.add('hidden');
-                    hint.innerText = '(Ready on Year selection)';
+                    hint.innerText = 'Financial Year & Branch';
                 } else {
-                    nameContainer.classList.remove('hidden');
                     nameLabel.innerText = subModule === 'agent' ? 'Select Agent' : 'Select Manager';
-                    hint.innerText = subModule === 'agent' ? 'Agent Name' : 'Manager Name';
+                    hint.innerText = 'Financial Year, Branch & Target Name';
                 }
             }
 
@@ -706,6 +722,7 @@
             }).filter(y => y !== null))].sort((a, b) => b - a);
 
             yearSelect.innerHTML = '<option value="">Select Financial Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            document.getElementById('branch-select').innerHTML = '<option value="">Select Branch</option>';
             document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
             document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
         }
@@ -713,48 +730,107 @@
         function onYearChange() {
             const val = document.getElementById('year-select').value;
             state.selectedYear = val ? parseInt(val) : null;
+            state.selectedBranch = null;
             state.selectedName = null;
             state.selectedMonth = null;
             
+            document.getElementById('branch-select').innerHTML = '<option value="">Select Branch</option>';
+            document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
+            document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
+            
             if (!state.selectedYear) {
-                document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
-                document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
+                document.getElementById('branch-container').classList.add('hidden');
+                document.getElementById('name-container').classList.add('hidden');
+                document.getElementById('month-container').classList.add('hidden');
+                resetDashboard();
+                return;
+            }
+
+            // Extract unique branches for the selected Year
+            let branches = [...new Set(rawData.filter(row => {
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                if (!d) return false;
+                const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                return rowFY === state.selectedYear;
+            }).map(row => toTitleCase(getColValue(row, COL_BRANCH_KEYS))).filter(b => b))].sort();
+
+            // Fallback if no branch column exists in the Excel
+            if (branches.length === 0) branches = ["All Branches"];
+
+            document.getElementById('branch-container').classList.remove('hidden');
+            document.getElementById('branch-select').innerHTML = '<option value="">Select Branch</option>' + branches.map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            document.getElementById('name-container').classList.add('hidden');
+            document.getElementById('month-container').classList.add('hidden');
+            resetDashboard();
+        }
+
+        function onBranchChange() {
+            state.selectedBranch = document.getElementById('branch-select').value || null;
+            state.selectedName = null;
+            state.selectedMonth = null;
+            
+            document.getElementById('name-select').innerHTML = '<option value="">Choose...</option>';
+            document.getElementById('month-select').innerHTML = '<option value="">Select Month</option>';
+            
+            if (!state.selectedBranch) {
+                document.getElementById('name-container').classList.add('hidden');
+                document.getElementById('month-container').classList.add('hidden');
                 resetDashboard();
                 return;
             }
 
             if (state.main === 'ranking') {
+                document.getElementById('month-container').classList.remove('hidden');
+                document.getElementById('name-container').classList.add('hidden');
                 const monthSelect = document.getElementById('month-select');
                 monthSelect.innerHTML = '<option value="">Select Month</option>' + FY_MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
                 resetDashboard();
+            } else if (state.sub === 'cluster') {
+                document.getElementById('name-container').classList.add('hidden');
+                renderDashboard(); 
             } else {
-                if (state.sub === 'cluster') {
-                    renderDashboard();
-                } else {
-                    const nameSelect = document.getElementById('name-select');
-                    const colKeys = state.sub === 'agent' ? COL_AGENT_KEYS : COL_MANAGER_KEYS;
-                    const filtered = rawData.filter(row => {
-                        const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                        if (!d) return false;
-                        const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
-                        return rowFY === state.selectedYear;
-                    });
-                    const names = [...new Set(filtered.map(row => toTitleCase(getColValue(row, colKeys))).filter(n => n))].sort();
-                    nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
-                    resetDashboard();
-                }
+                populateNames(); 
             }
+        }
+
+        function populateNames() {
+            const nameSelect = document.getElementById('name-select');
+            const colKeys = state.sub === 'agent' ? COL_AGENT_KEYS : COL_MANAGER_KEYS;
+            
+            const filtered = rawData.filter(row => {
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                if (!d) return false;
+                const rowFY = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+                if (rowFY !== state.selectedYear) return false;
+                
+                const branch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                if (branch && state.selectedBranch !== 'All Branches' && branch !== state.selectedBranch) return false;
+                
+                // Active User Filter: Only include names that generated relevant business in this module
+                const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+                if (state.main === 'fresh' && !(tx.isFresh || tx.isEndorsement)) return false; 
+                if (state.main === 'renewal' && (!tx.isRetentionBase && !tx.isRenewal)) return false;
+                
+                return true;
+            });
+            
+            const names = [...new Set(filtered.map(row => toTitleCase(getColValue(row, colKeys))).filter(n => n))].sort();
+            nameSelect.innerHTML = '<option value="">Choose ' + (state.sub === 'agent' ? 'Agent' : 'Manager') + '</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+            
+            document.getElementById('name-container').classList.remove('hidden');
+            resetDashboard();
         }
 
         function onNameChange() {
             state.selectedName = document.getElementById('name-select').value || null;
-            if (state.selectedName && state.selectedYear) { renderDashboard(); } else { resetDashboard(); }
+            if (state.selectedName && state.selectedYear && state.selectedBranch) { renderDashboard(); } else { resetDashboard(); }
         }
 
         function onMonthChange() {
             const mVal = document.getElementById('month-select').value;
             state.selectedMonth = mVal !== "" ? parseInt(mVal) : null;
-            if (state.selectedMonth !== null && state.selectedYear) { renderRanking(); } else { resetDashboard(); }
+            if (state.selectedMonth !== null && state.selectedYear && state.selectedBranch) { renderRanking(); } else { resetDashboard(); }
         }
 
         function formatSumInsured(val) {
@@ -796,6 +872,9 @@
                     </tr>`;
 
                 let policies = rawData.filter(row => {
+                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return false;
+
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if(!date) return false;
                     const month = date.getMonth();
@@ -859,6 +938,9 @@
 
                 let baseDue = []; let currentYearRenewals = [];
                 rawData.forEach(row => {
+                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                     if(!date) return;
@@ -954,6 +1036,9 @@
 
             let agentMap = {};
             rawData.forEach(row => {
+                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if(!date) return;
                 const month = date.getMonth(); const year = date.getFullYear();
@@ -1028,6 +1113,9 @@
 
             let agents = {};
             rawData.forEach(row => {
+                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return;
 
@@ -1093,6 +1181,9 @@
                 let monthlyAgents = {};
 
                 rawData.forEach(row => {
+                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     if (!date) return;
                     if (date.getFullYear() === calYear && date.getMonth() === calMonth) {
@@ -1127,6 +1218,9 @@
                 let currYrRen = [];
 
                 rawData.forEach(row => {
+                    const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                    if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                     const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                     const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                     if (!date) return;
@@ -1231,6 +1325,9 @@
             const now = new Date(); const currentYear = now.getFullYear(); const currentMonth = now.getMonth(); 
 
             rawData.forEach(row => {
+                const rowBranch = toTitleCase(getColValue(row, COL_BRANCH_KEYS));
+                if (state.selectedBranch && state.selectedBranch !== 'All Branches' && rowBranch && rowBranch !== state.selectedBranch) return;
+
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                 if (!date) return;
