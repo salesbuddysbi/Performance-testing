@@ -2,15 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agent Productivity Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SBI General Agent Portal</title>
+    
+    <!-- Tailwind Script for Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sbi: {
+                            purple: '#3a1a5b',
+                            red: '#e40046',
+                            bg: '#f4f6f9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; margin: 0; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; color: #0f172a; -webkit-tap-highlight-color: transparent; margin: 0; overflow: hidden; }
         .hidden { display: none !important; }
         
         .fade-in { animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -35,49 +53,54 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* Toast Notifications */
-        #toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        #toast.show { visibility: visible; bottom: 50px; opacity: 1; }
-        #toast.success { background-color: #10b981; color: #fff; }
-        #toast.error { background-color: #ef4444; color: #fff; }
+        #toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: max(30px, env(safe-area-inset-bottom)); transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
+        #toast.show { visibility: visible; bottom: max(60px, calc(30px + env(safe-area-inset-bottom))); opacity: 1; }
+        #toast.success { background-color: #38a169; color: #fff; }
+        #toast.error { background-color: #e53e3e; color: #fff; }
 
-        .nav-item.active { background-color: #eff6ff; color: #2563eb; border-right: 3px solid #2563eb; font-weight: 700; }
-        @media (max-width: 768px) { .nav-item.active { border-right: none; border-bottom: 3px solid #2563eb; } }
+        /* Bottom Nav & Tablet Setup */
+        .nav-item.active { background-color: #f5f3f7; color: #3a1a5b; border-right: 3px solid #3a1a5b; font-weight: 700; }
+        @media (max-width: 1024px) { 
+            .nav-item.active { border-right: none; border-bottom: 3px solid #3a1a5b; } 
+            /* Push bottom nav up slightly to avoid OS gesture bars */
+            .mobile-nav-safe { padding-bottom: env(safe-area-inset-bottom); }
+            /* Give main scroll area breathing room above the nav */
+            .main-content-safe { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+        }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-100 selection:text-blue-900 text-sm">
+<body class="h-screen w-screen flex flex-col lg:flex-row overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm">
 
     <div id="toast">Message here</div>
 
-    <!-- EXCEL UPLOAD OVERLAY (Fallback if auto-load fails) -->
-    <div id="upload-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] hidden p-4">
+    <!-- EXCEL UPLOAD OVERLAY -->
+    <div id="upload-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[100] hidden p-4">
         <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-md w-full slide-up border border-slate-100">
-            <div class="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-blue-600">
+            <div class="bg-purple-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-sbi-purple">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
             <h2 class="text-2xl font-bold mb-2 text-slate-800">Data Required</h2>
             <p class="text-slate-500 mb-6 text-xs">Please upload the Master Excel file to initialize the performance module before logging in.</p>
             <input type="file" id="file-upload" accept=".xlsx, .xls" class="hidden">
-            <button onclick="document.getElementById('file-upload').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl w-full text-sm transition-all shadow-lg shadow-blue-500/30">Browse Excel File</button>
+            <button onclick="document.getElementById('file-upload').click()" class="bg-sbi-purple hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl w-full text-sm transition-all shadow-lg">Browse Excel File</button>
         </div>
     </div>
 
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center z-[90] p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100 slide-up">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                </div>
-                <h1 class="text-2xl font-black text-slate-900">Agent Access</h1>
+    <div id="login-screen" class="absolute inset-0 bg-sbi-bg flex items-center justify-center z-[90] p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200 slide-up relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-sbi-purple to-sbi-red"></div>
+            <div class="text-center mb-8 mt-2">
+                <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Agent Access</h1>
                 <p class="text-slate-500 text-xs mt-1">Enter your IMD code to access your portal</p>
             </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">IMD Code</label>
-                    <input type="text" id="loginIMD" placeholder="e.g. IMD12345" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 uppercase transition-all">
+                    <input type="text" id="loginIMD" placeholder="e.g. IMD12345" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-sbi-purple focus:ring-1 focus:ring-sbi-purple font-semibold text-slate-800 uppercase transition-all">
                 </div>
-                <div id="loginError" class="text-rose-500 text-xs font-bold text-center hidden">Invalid IMD Code. Please try again.</div>
-                <button id="loginBtn" onclick="loginAgent()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 btn">
+                <div id="loginError" class="text-sbi-red text-xs font-bold text-center hidden">Invalid IMD Code. Please try again.</div>
+                <button id="loginBtn" onclick="loginAgent()" class="w-full bg-sbi-purple text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:opacity-90 flex justify-center items-center gap-2 btn">
                     <span>Secure Login</span><div class="spinner"></div>
                 </button>
             </div>
@@ -85,71 +108,71 @@
     </div>
 
     <!-- MAIN PORTAL LAYOUT (Sidebar + Content) -->
-    <div id="portal-layout" class="hidden w-full h-full flex flex-col md:flex-row">
+    <div id="portal-layout" class="hidden w-full h-full flex flex-col lg:flex-row">
         
-        <!-- Navigation Sidebar -->
-        <nav class="bg-white border-r border-slate-200 w-full md:w-64 shrink-0 flex flex-col justify-between md:h-full z-30 shadow-sm md:shadow-none order-2 md:order-1 border-t md:border-t-0">
+        <!-- Navigation Sidebar / Bottom Bar -->
+        <nav class="bg-white border-r border-slate-200 w-full lg:w-64 shrink-0 flex flex-col justify-between lg:h-full z-30 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] lg:shadow-none order-2 lg:order-1 border-t lg:border-t-0 mobile-nav-safe">
             <div>
-                <div class="p-5 border-b border-slate-100 hidden md:block">
-                    <h2 class="text-lg font-black text-slate-900 tracking-tight">Agent<span class="text-blue-600">Portal</span></h2>
+                <div class="p-5 border-b border-slate-100 hidden lg:block bg-gradient-to-r from-sbi-purple to-sbi-red">
+                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
                 </div>
                 
-                <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-3 hidden md:flex">
-                    <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="nav-avatar">A</div>
+                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden lg:flex">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="nav-avatar">A</div>
                     <div class="overflow-hidden">
                         <div class="text-sm font-bold text-slate-800 truncate" id="nav-name">Agent Name</div>
                         <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd">IMD: --</div>
                     </div>
                 </div>
 
-                <div class="flex md:flex-col p-2 md:p-3 gap-1 overflow-x-auto md:overflow-visible">
-                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 md:flex-none flex md:justify-start justify-center items-center gap-3 px-4 py-3 rounded-xl md:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                <div class="flex lg:flex-col p-2 lg:p-3 gap-1 overflow-x-auto lg:overflow-visible">
+                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-3 py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span class="text-xs md:text-sm">Attendance</span>
+                        <span class="text-[11px] lg:text-sm font-semibold">Attendance</span>
                     </button>
-                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 md:flex-none flex md:justify-start justify-center items-center gap-3 px-4 py-3 rounded-xl md:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-3 py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <span class="text-xs md:text-sm">Fresh Biz</span>
+                        <span class="text-[11px] lg:text-sm font-semibold">Fresh Biz</span>
                     </button>
-                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 md:flex-none flex md:justify-start justify-center items-center gap-3 px-4 py-3 rounded-xl md:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-3 py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span class="text-xs md:text-sm">Renewals</span>
+                        <span class="text-[11px] lg:text-sm font-semibold">Renewals</span>
                     </button>
                 </div>
             </div>
             
-            <div class="p-4 hidden md:block">
-                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtn">
+            <div class="p-4 hidden lg:block">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtn">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span>Log Out</span><div class="spinner border-slate-400 border-t-slate-700"></div>
+                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red"></div>
                 </button>
             </div>
         </nav>
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-slate-50 order-1 md:order-2 h-full relative scroll-smooth">
+        <main class="flex-1 overflow-y-auto bg-sbi-bg order-1 lg:order-2 h-full relative scroll-smooth main-content-safe lg:pb-8">
             
-            <!-- Mobile Header (Visible only on small screens) -->
-            <div class="md:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-20">
+            <!-- Mobile Header -->
+            <div class="lg:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs" id="mobile-avatar">A</div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-xs" id="mobile-avatar">A</div>
                     <div>
                         <div class="text-xs font-bold text-slate-800" id="mobile-name">Agent Name</div>
                         <div class="text-[9px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
                     </div>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-slate-700">
+                <button onclick="logout()" class="text-slate-400 hover:text-sbi-red transition-colors p-1" title="Log Out">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
                 </button>
             </div>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto w-full pb-24 md:pb-8">
+            <div class="p-4 lg:p-8 max-w-6xl mx-auto w-full">
                 
                 <!-- MODULE 1: ATTENDANCE -->
                 <div id="module-attendance" class="fade-in space-y-6">
                     <div class="flex justify-between items-end border-b border-slate-200 pb-4">
                         <div>
-                            <h1 class="text-2xl font-black text-slate-900 tracking-tight" id="greetText">Good Day</h1>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
                         </div>
                         <button onclick="loadAgentDashboard()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
@@ -165,28 +188,27 @@
                     <div class="pt-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
-                            <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-blue-500 shadow-sm" onchange="loadAgentDashboard()">
+                            <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
                         </div>
                         <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
 
-                <!-- MODULE 2: PERFORMANCE (Used for both Fresh & Renewal) -->
+                <!-- MODULE 2: PERFORMANCE -->
                 <div id="module-performance" class="hidden fade-in space-y-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
                         <div>
-                            <h1 class="text-2xl font-black text-slate-900 tracking-tight" id="perf-title">Fresh Business</h1>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="perf-title">Fresh Business</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1" id="perf-subtitle">Track your individual production and targets.</p>
                         </div>
                         <div class="w-full md:w-auto flex items-center gap-3">
                             <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
-                            <select id="year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm flex-1 md:flex-none" onchange="onYearChange()">
+                            <select id="year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="onYearChange()">
                                 <option value="">Select Year</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Performance Content -->
                     <div id="perf-content" class="hidden space-y-6 slide-up">
                         <div id="summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
@@ -202,26 +224,26 @@
                             </div>
                         </div>
 
-                        <!-- Fresh Breakdowns (Only visible in Fresh module) -->
+                        <!-- Fresh Breakdowns -->
                         <div id="fresh-breakdowns" class="hidden grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Product Mix <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">Net</span></h2>
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Product Mix <span class="text-[9px] bg-purple-50 text-sbi-purple px-2 py-0.5 rounded font-bold">Net</span></h2>
                                 <div id="product-list" class="space-y-3"></div>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Sum Insured Mix <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">Net</span></h2>
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Sum Insured Mix <span class="text-[9px] bg-purple-50 text-sbi-purple px-2 py-0.5 rounded font-bold">Net</span></h2>
                                 <div id="si-list" class="space-y-3"></div>
                             </div>
                         </div>
                         
-                        <!-- Persistency Tracker (Only visible in Renewal module) -->
+                        <!-- Persistency Tracker -->
                         <div id="persistency-tracker" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
                         </div>
                     </div>
 
-                    <!-- Empty State for Performance -->
+                    <!-- Empty State -->
                     <div id="perf-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -235,9 +257,9 @@
         </main>
     </div>
 
-    <!-- DRILL-DOWN MODAL FOR PERFORMANCE POLICIES -->
+    <!-- DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[95] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div><h2 class="text-lg font-bold text-slate-800" id="modal-title">Details</h2><p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Breakdown</p></div>
                 <button onclick="document.getElementById('drilldown-modal').classList.add('hidden')" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
@@ -255,12 +277,8 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // ==========================================
-        // APPS SCRIPT URL FOR ATTENDANCE
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxKwF13TVYU5BcA4sHdOJMWe8Mf9L_Jpn-ltc6FPQjKS2_ntkiCA1o_wQktk4Al_gb2/exec';
-        // ==========================================
 
-        // EXCEL PARSING CONSTANTS
         const COL_POLICY_KEYS = ["policy no", "policyno", "policy number"];
         const COL_PREV_POLICY_KEYS = ["previous policy", "prev policy"];
         const COL_ALT_POLICY_KEYS = ["alternate policy", "alt policy"];
@@ -275,32 +293,18 @@
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
-        // STATE MANAGEMENT
         let rawData = [];
         let chartInstance = null;
         let agentCountdownIntervals = [];
-        let state = {
-            mainModule: 'attendance', // 'attendance', 'fresh', 'renewal'
-            selectedYear: null,
-            agentProfile: { imd: null, name: null }
-        };
+        let state = { mainModule: 'attendance', selectedYear: null, agentProfile: { imd: null, name: null } };
 
-        // --- INITIALIZATION ---
         window.onload = () => {
             const now = new Date();
             let m = (now.getMonth() + 1).toString().padStart(2, '0');
             document.getElementById('monthPicker').value = `${now.getFullYear()}-${m}`;
             
-            // Try to load excel data automatically in background
-            attemptFetchDefaultFile().then(() => {
-                checkAuth();
-            }).catch(() => {
-                document.getElementById('upload-overlay').classList.remove('hidden');
-            });
-
-            document.getElementById('file-upload').addEventListener('change', (e) => {
-                if (e.target.files[0]) loadExcel(e.target.files[0]);
-            });
+            attemptFetchDefaultFile().then(() => { checkAuth(); }).catch(() => { document.getElementById('upload-overlay').classList.remove('hidden'); });
+            document.getElementById('file-upload').addEventListener('change', (e) => { if (e.target.files[0]) loadExcel(e.target.files[0]); });
         };
 
         function showToast(msg, type = 'success') {
@@ -309,7 +313,6 @@
             setTimeout(() => { toast.className = toast.className.replace(`show ${type}`, ""); }, 4000);
         }
 
-        // --- EXCEL DATA LOADING ---
         async function attemptFetchDefaultFile() {
             let response = await fetch('Kollam Cluster.xlsx');
             if (!response.ok) response = await fetch('data.xlsx');
@@ -345,7 +348,6 @@
             populateYears();
         }
 
-        // --- AUTHENTICATION ---
         function checkAuth() {
             if(localStorage.getItem('agentIMD')) {
                 state.agentProfile.imd = localStorage.getItem('agentIMD');
@@ -367,7 +369,6 @@
             err.classList.add('hidden');
 
             if(!imd) { err.classList.remove('hidden'); return; }
-            
             btn.classList.add('loading');
             
             try {
@@ -377,8 +378,6 @@
                 if(agent && !agent.error) {
                     localStorage.setItem('agentIMD', agent.imd);
                     localStorage.setItem('agentName', agent.name);
-                    
-                    // Cross-check name in Excel if exists to map perfectly to performance data
                     const exactExcelName = findExactNameInExcel(agent.imd);
                     if(exactExcelName) localStorage.setItem('agentName', exactExcelName);
 
@@ -404,7 +403,6 @@
             }, 600);
         }
 
-        // --- UI & NAVIGATION ---
         function setupPortalUI() {
             const name = state.agentProfile.name || 'Agent';
             const imd = state.agentProfile.imd;
@@ -424,11 +422,7 @@
 
         function switchModule(moduleName) {
             state.mainModule = moduleName;
-            
-            // Update Nav styling
-            ['attendance', 'fresh', 'renewal'].forEach(id => {
-                document.getElementById(`nav-${id}`).classList.remove('active');
-            });
+            ['attendance', 'fresh', 'renewal'].forEach(id => { document.getElementById(`nav-${id}`).classList.remove('active'); });
             document.getElementById(`nav-${moduleName}`).classList.add('active');
 
             if (moduleName === 'attendance') {
@@ -438,7 +432,6 @@
             } else {
                 document.getElementById('module-attendance').classList.add('hidden');
                 document.getElementById('module-performance').classList.remove('hidden');
-                
                 document.getElementById('perf-title').innerText = moduleName === 'fresh' ? 'Fresh Business' : 'Renewal Performance';
                 document.getElementById('perf-subtitle').innerText = moduleName === 'fresh' ? 'Track your Net Fresh & Rollover production.' : 'Track your base policies and retention rate.';
                 
@@ -450,14 +443,11 @@
             }
         }
 
-        // ==========================================
-        // ATTENDANCE MODULE LOGIC (Adapted from Code 2)
-        // ==========================================
+        // --- ATTENDANCE LOGIC ---
         async function loadAgentDashboard() {
-            agentCountdownIntervals.forEach(clearInterval); 
-            agentCountdownIntervals = [];
+            agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
             const container = document.getElementById('agentMeetingsContainer');
-            container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-blue-600 !block"></div> Fetching active sessions...</div>`;
+            container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
             
             const month = document.getElementById('monthPicker').value;
             try {
@@ -467,7 +457,7 @@
                 renderAgentMeetings(data.todayMeetings, data.todayAttendances);
                 renderAttendanceStats(data.stats);
             } catch(e) {
-                container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-rose-600 text-sm font-bold">Failed to load attendance data.</div>`;
+                container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`;
             }
         }
 
@@ -491,13 +481,13 @@
                     html += `
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span>
+                            <span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span>
                         </div>
                         <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4">
-                            <div class="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-1">Time to Check-In</div>
-                            <div class="text-3xl font-black text-rose-600 tracking-tight" id="timer_${index}">15:00</div>
+                            <div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div>
+                            <div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div>
                         </div>
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-all btn" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>
+                        <button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>
                     `;
                     startAgentTimer(index, m.expiryTime);
                 } 
@@ -506,19 +496,19 @@
                     html += `
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span>
+                            <span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span>
                         </div>
                         <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4">
                             <div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div>
                         </div>
-                        <button class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl transition-all btn" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>
+                        <button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>
                     `;
                 }
                 else if (att && att.checkOut) {
                     html += `
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="bg-blue-50 border border-blue-100 text-blue-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span>
+                            <span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span>
                         </div>
                         <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center">
                             <div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div>
@@ -577,25 +567,19 @@
                 return `
                 <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                     <h4 class="text-xs font-bold text-slate-800 mb-2">${type}</h4>
-                    <div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-blue-600">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div>
-                    <div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div>
+                    <div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-sbi-purple">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div>
+                    <div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-sbi-purple h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div>
                 </div>`;
             }).join('');
         }
 
-        // ==========================================
-        // PERFORMANCE MODULE LOGIC (Adapted from Code 1)
-        // ==========================================
-        
-        // Data Extraction Helpers
+        // --- PERFORMANCE LOGIC ---
         function getColValue(row, possibleKeys) {
             if (!row || typeof row !== 'object') return "";
             const rowKeys = Object.keys(row);
             for (let pk of possibleKeys) {
                 const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
-                for (let k of rowKeys) {
-                    if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
-                }
+                for (let k of rowKeys) if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
             }
             return "";
         }
@@ -611,8 +595,7 @@
                 let temp = new Date(Math.round((val - 25569) * 86400000));
                 return new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate(), 12, 0, 0);
             }
-            let s = val.toString().trim();
-            let d = new Date(s);
+            let s = val.toString().trim(); let d = new Date(s);
             if(!isNaN(d.getTime())) return d;
             return null;
         }
@@ -623,8 +606,7 @@
             const isRefund = t.includes('refund');
             const isRenewal = (t.includes('renewal') || t.includes('rnw')) && !t.includes('roll');
             const isFresh = (t.includes('fresh') || t.includes('new') || t === 'nb' || t.includes('roll')) && !isRenewal && !isCancel && !isRefund;
-            const isEndorsement = t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh;
-            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement };
+            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement: t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh };
         }
         function formatSumInsured(val) {
             const n = parseNumber(val);
@@ -650,7 +632,6 @@
                 if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
-
             yearSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
         }
 
@@ -668,7 +649,7 @@
         }
 
         function renderDashboard() {
-            if(!state.agentProfile.name) return; // Prevent rendering if not fully logged in/mapped
+            if(!state.agentProfile.name) return;
             
             const agentName = state.agentProfile.name;
             const fyData = Array.from({ length: 12 }, () => ({ freshNOP: 0, freshAmount: 0, baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false }));
@@ -678,11 +659,8 @@
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
-            // Main Data Loop
             rawData.forEach(row => {
-                // Securely lock to the logged in Agent's exact name extracted via IMD
-                const rowAgent = toTitleCase(getColValue(row, COL_AGENT_KEYS));
-                if(rowAgent !== agentName) return;
+                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== agentName) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
@@ -713,8 +691,7 @@
                         else if (tx.isEndorsement) { fPrem = premium; }
                         
                         if (fNop !== 0 || fPrem !== 0) {
-                            fyData[fyMonthIndex].freshNOP += fNop;
-                            fyData[fyMonthIndex].freshAmount += fPrem;
+                            fyData[fyMonthIndex].freshNOP += fNop; fyData[fyMonthIndex].freshAmount += fPrem;
                             totalFreshNOP += fNop; totalFreshAmt += fPrem;
 
                             let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
@@ -739,7 +716,6 @@
                 }
             });
 
-            // Renewal Logic Processing
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
             
@@ -750,17 +726,13 @@
                 });
 
                 let renUsage = renPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
-                
                 basePool.forEach(b => {
                     fyData[b.fyMonthIndex].baseNOP += 1; totalBaseNOP += 1;
                     const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
                     let mIdx = renUsage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
                     
                     if (mIdx !== -1) { renUsage[mIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
-                    else {
-                        if (fyData[b.fyMonthIndex].isFuture) { fyData[b.fyMonthIndex].yetToRenew += 1; totalYet += 1; } 
-                        else { fyData[b.fyMonthIndex].renMissed += 1; totalMissed += 1; }
-                    }
+                    else { if (fyData[b.fyMonthIndex].isFuture) { fyData[b.fyMonthIndex].yetToRenew += 1; totalYet += 1; } else { fyData[b.fyMonthIndex].renMissed += 1; totalMissed += 1; } }
                 });
 
                 retentionYr1Base = totalBaseNOP; retentionYr1Ren = totalRenewed;
@@ -774,57 +746,40 @@
 
                 document.getElementById('persistency-tracker').classList.remove('hidden');
                 document.getElementById('persistency-stats').innerHTML = `
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">1st Yr Retention (13M Proxy)</div>
-                        <div class="text-2xl font-black text-slate-800">${retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0}%</div>
-                        <div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr1Base} | <span class="text-emerald-600 font-bold">Renewed: ${retentionYr1Ren}</span></div>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Yr Retention (25M Proxy)</div>
-                        <div class="text-2xl font-black text-slate-800">${retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0}%</div>
-                        <div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr2Base} | <span class="text-emerald-600 font-bold">Renewed: ${retentionYr2Ren}</span></div>
-                    </div>`;
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">1st Yr Retention (13M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr1Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr1Ren}</span></div></div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Yr Retention (25M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr2Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr2Ren}</span></div></div>`;
             } else { document.getElementById('persistency-tracker').classList.add('hidden'); }
 
-            // Render Views
             renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet);
             renderGrid(fyData);
             renderChart(fyData);
 
             if (state.mainModule === 'fresh') {
-                document.getElementById('fresh-breakdowns').classList.remove('hidden');
-                document.getElementById('fresh-breakdowns').classList.add('grid');
-                
-                const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `
-                    <div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-rose-600' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-blue-600 font-bold">${productBreakdown[p].nop} Pol</div></div></div>`).join('');
+                document.getElementById('fresh-breakdowns').classList.remove('hidden'); document.getElementById('fresh-breakdowns').classList.add('grid');
+                const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Pol</div></div></div>`).join('');
                 document.getElementById('product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No data</div>';
-
-                const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `
-                    <div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-rose-600' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-blue-600 font-bold">${siBreakdown[s].nop} Pol</div></div></div>`).join('');
+                const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `<div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${siBreakdown[s].nop} Pol</div></div></div>`).join('');
                 document.getElementById('si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No data</div>';
-            } else {
-                document.getElementById('fresh-breakdowns').classList.add('hidden');
-                document.getElementById('fresh-breakdowns').classList.remove('grid');
-            }
+            } else { document.getElementById('fresh-breakdowns').classList.add('hidden'); document.getElementById('fresh-breakdowns').classList.remove('grid'); }
         }
 
         function renderSummary(tFAmt, tFNOP, pFAmt, pFNOP, tBase, tRen, tMissed, tYet) {
             const div = document.getElementById('summary-section');
             if (state.mainModule === 'fresh') {
                 const diff = pFAmt ? ((tFAmt - pFAmt) / pFAmt) * 100 : 0;
-                const badge = pFAmt ? `<span class="${diff>=0?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'} text-[9px] px-1.5 py-0.5 rounded font-extrabold ml-2">${diff>=0?'↑':'↓'} ${Math.abs(diff).toFixed(0)}%</span>` : '';
+                const badge = pFAmt ? `<span class="${diff>=0?'bg-green-100 text-green-700':'bg-rose-100 text-sbi-red'} text-[9px] px-1.5 py-0.5 rounded font-extrabold ml-2">${diff>=0?'↑':'↓'} ${Math.abs(diff).toFixed(0)}%</span>` : '';
                 div.innerHTML = `
-                    <div class="bg-blue-600 rounded-2xl p-5 shadow-lg text-white col-span-1 sm:col-span-2"><div class="flex items-center mb-1"><span class="text-blue-100 text-[10px] font-bold uppercase tracking-widest">Net Fresh GWP</span>${badge}</div><div class="text-3xl font-black tracking-tight">₹${tFAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Net Policies</div><div class="text-2xl font-black text-blue-600 tracking-tight">${tFNOP}</div></div>
+                    <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white col-span-1 sm:col-span-2"><div class="flex items-center mb-1"><span class="text-white/80 text-[10px] font-bold uppercase tracking-widest">Net Fresh GWP</span>${badge}</div><div class="text-3xl font-black tracking-tight">₹${tFAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Net Policies</div><div class="text-2xl font-black text-sbi-purple tracking-tight">${tFNOP}</div></div>
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div><div class="text-2xl font-black text-slate-800 tracking-tight">₹${tFNOP > 0 ? Math.round(tFAmt/tFNOP).toLocaleString('en-IN') : 0}</div></div>
                 `;
             } else {
                 const rt = tBase > 0 ? Math.round((tRen / tBase) * 100) : 0;
                 div.innerHTML = `
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${tBase}</div></div>
-                    <div class="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-200"><div class="text-emerald-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-emerald-600 tracking-tight">${tRen}</div></div>
-                    <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-rose-700 text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-rose-600 tracking-tight">${tMissed}</div></div>
-                    <div class="bg-slate-900 rounded-2xl p-5 shadow-lg text-white"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${tYet}</div><div class="text-[10px] font-bold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
+                    <div class="bg-green-50 rounded-2xl p-5 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${tRen}</div></div>
+                    <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${tMissed}</div></div>
+                    <div class="bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${tYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
                 `;
             }
         }
@@ -832,10 +787,10 @@
         function renderGrid(fyData) {
             document.getElementById('fy-grid').innerHTML = fyData.map((d, i) => {
                 if (state.mainModule === 'fresh') {
-                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span><span class="text-blue-600 text-[10px] font-extrabold bg-blue-50 px-2 py-0.5 rounded-lg">${d.freshNOP} NOP</span></div><div class="text-base font-black ${d.freshAmount < 0 ? 'text-rose-600' : 'text-slate-800'} truncate">₹${d.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>`;
+                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span><span class="text-sbi-purple text-[10px] font-extrabold bg-purple-50 px-2 py-0.5 rounded-lg">${d.freshNOP} NOP</span></div><div class="text-base font-black ${d.freshAmount < 0 ? 'text-sbi-red' : 'text-slate-800'} truncate">₹${d.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>`;
                 } else {
                     const badge = d.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded">Future</span>` : '';
-                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span>${badge}</div><div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${d.baseNOP}</span></div><div class="space-y-1 mt-2 pt-2 border-t border-slate-100"><div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-emerald-600 font-bold">${d.renRenewed}</span></div>${d.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${d.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-rose-500 font-bold">${d.renMissed}</span></div>`}</div></div>`;
+                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span>${badge}</div><div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${d.baseNOP}</span></div><div class="space-y-1 mt-2 pt-2 border-t border-slate-100"><div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-green-600 font-bold">${d.renRenewed}</span></div>${d.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${d.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-sbi-red font-bold">${d.renMissed}</span></div>`}</div></div>`;
                 }
             }).join('');
         }
@@ -848,14 +803,14 @@
 
             if (state.mainModule === 'fresh') {
                 datasets = [
-                    { label: 'Net GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#2563eb', borderRadius: 4, type: 'bar', yAxisID: 'y' },
-                    { label: 'Net NOP', data: fyData.map(d => d.freshNOP), borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, pointRadius: 2, type: 'line', tension: 0.3, yAxisID: 'y1' }
+                    { label: 'Net GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#3a1a5b', borderRadius: 4, type: 'bar', yAxisID: 'y' },
+                    { label: 'Net NOP', data: fyData.map(d => d.freshNOP), borderColor: '#e40046', backgroundColor: '#e40046', borderWidth: 2, pointRadius: 2, type: 'line', tension: 0.3, yAxisID: 'y1' }
                 ];
                 chartOptions.scales = { x: { grid: { display: false } }, y: { display: false }, y1: { display: false } };
             } else {
                 datasets = [
                     { label: 'Renewed', data: fyData.map(d => d.renRenewed), backgroundColor: '#10b981', borderRadius: 4, type: 'bar' },
-                    { label: 'Missed', data: fyData.map(d => d.renMissed), backgroundColor: '#f43f5e', borderRadius: 4, type: 'bar' },
+                    { label: 'Missed', data: fyData.map(d => d.renMissed), backgroundColor: '#e40046', borderRadius: 4, type: 'bar' },
                     { label: 'Pending', data: fyData.map(d => d.yetToRenew), backgroundColor: '#fbbf24', borderRadius: 4, type: 'bar' }
                 ];
                 chartOptions.scales = { x: { stacked: true, grid: { display: false } }, y: { stacked: true, display: false } };
@@ -864,15 +819,19 @@
         }
 
         function openDrillDown(monthIndex) {
-            // Simplified drill down just for the logged in agent's policies
             document.getElementById('modal-title').innerText = `${FY_MONTHS[monthIndex]} FY${state.selectedYear}-${state.selectedYear+1}`;
             document.getElementById('modal-subtitle').innerText = "Policy Breakdown";
             const thead = document.getElementById('modal-table-head');
             const tbody = document.getElementById('modal-table-body');
             
-            // Logic similar to Code 1 but strictly filtered by `state.agentProfile.name`.
-            // Due to space constraints, displaying simple table headers:
-            thead.innerHTML = `<tr><th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th><th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th><th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured</th><th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium</th></tr>`;
+            // Added Product & Insured combined, and Sum Insured Columns
+            thead.innerHTML = `<tr>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product & Insured</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium</th>
+            </tr>`;
             
             let policies = rawData.filter(r => {
                 if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return false;
@@ -880,15 +839,13 @@
                 if(!d) return false;
                 const m = d.getMonth(); const y = d.getFullYear();
                 const fy = m >= 3 ? y : y - 1; const mIdx = m >= 3 ? m - 3 : m + 9;
-                
                 if (fy !== state.selectedYear || mIdx !== monthIndex) return false;
-                
                 const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
                 if(state.mainModule === 'fresh') return tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement;
-                return tx.isRetentionBase; // Base policies due
+                return tx.isRetentionBase; 
             });
 
-            if (policies.length === 0) tbody.innerHTML = `<tr><td colspan="4" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+            if (policies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
             else tbody.innerHTML = policies.map(p => {
                 const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                 const dStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
@@ -896,7 +853,23 @@
                 const tx = parseTransactionType(getColValue(p, COL_TRANSACTION_KEYS));
                 const isRed = tx.isCancel || tx.isRefund || prem < 0;
                 
-                return `<tr class="${isRed?'bg-rose-50':'hover:bg-slate-50'} border-b border-slate-50"><td class="p-3 text-[11px]">${dStr}</td><td class="p-3 text-[11px] font-bold">${getColValue(p, COL_POLICY_KEYS)}</td><td class="p-3 text-[11px] truncate max-w-[150px]">${toTitleCase(getColValue(p, COL_INSURED_KEYS))}</td><td class="p-3 text-right font-bold ${isRed?'text-rose-600':'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</td></tr>`;
+                const product = getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified';
+                const insured = toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown';
+                const sumInsured = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
+                
+                return `
+                <tr class="${isRed?'bg-rose-50':'hover:bg-slate-50'} border-b border-slate-50 transition-colors">
+                    <td class="p-3 text-[11px] whitespace-nowrap">${dStr}</td>
+                    <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
+                    <td class="p-3 text-[11px] truncate max-w-[200px]">
+                        <div class="font-bold text-sbi-purple truncate">${product}</div>
+                        <div class="text-[10px] text-slate-500 truncate">${insured}</div>
+                    </td>
+                    <td class="p-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">${sumInsured}</td>
+                    <td class="p-3 text-right whitespace-nowrap">
+                        <div class="font-bold ${isRed?'text-sbi-red':'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
+                    </td>
+                </tr>`;
             }).join('');
             
             document.getElementById('drilldown-modal').classList.remove('hidden');
