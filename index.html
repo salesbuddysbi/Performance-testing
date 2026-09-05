@@ -603,18 +603,28 @@
             populateYears();
         }
 
-        // --- ADDED: processAgentData to isolate the logged-in agent's rows ---
+        // --- UPDATED: processAgentData to isolate by IMD safely ---
         function processAgentData() {
-            if (!state.agentProfile.name || rawData.length === 0) return;
+            // Rely on IMD code primarily, as it is a unique identifier
+            if (!state.agentProfile.imd || rawData.length === 0) return;
             
-            const targetName = state.agentProfile.name.toLowerCase().trim();
+            const targetIMD = state.agentProfile.imd.toUpperCase().trim();
+            const targetName = state.agentProfile.name ? toTitleCase(state.agentProfile.name) : "";
             
             state.agentData = rawData.filter(row => {
-                const rowAgentName = getColValue(row, COL_AGENT_KEYS).toString().toLowerCase().trim();
-                return rowAgentName === targetName;
+                const rowIMD = getColValue(row, COL_IMD_CODE_KEYS).toString().toUpperCase().trim();
+                const rowName = toTitleCase(getColValue(row, COL_AGENT_KEYS));
+                
+                // 1. Try matching by IMD code first (Safest)
+                if (rowIMD && rowIMD === targetIMD) return true;
+                
+                // 2. Fallback to Name matching if IMD is missing in that Excel row
+                if (targetName && rowName === targetName) return true;
+                
+                return false;
             });
 
-            console.log(`Performance Optimization: Extracted ${state.agentData.length} records for ${state.agentProfile.name}`);
+            console.log(`Data Ready: Found ${state.agentData.length} records for IMD: ${targetIMD}`);
         }
 
         // --- UPDATED: checkAuth calls processAgentData before rendering UI ---
@@ -1024,7 +1034,7 @@
 
         // --- MTD LOGIC (UPDATED FOR PERFORMANCE) ---
         function renderMtdDashboard() {
-            if(!state.agentProfile.name || state.agentData.length === 0) return;
+            if(!state.agentProfile.imd) return;
             const dateVal = document.getElementById('mtdMonthPicker').value; 
             if(!dateVal) return;
             const [yStr, mStr] = dateVal.split('-');
@@ -1081,7 +1091,7 @@
         function renderYtdDashboard() {
             const val = document.getElementById('ytd-year-select').value;
             state.selectedYtdYear = val ? parseInt(val) : null;
-            if (!state.selectedYtdYear || !state.agentProfile.name || state.agentData.length === 0) {
+            if (!state.selectedYtdYear || !state.agentProfile.imd) {
                 document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); return;
             }
             document.getElementById('ytd-empty-state').classList.add('hidden'); document.getElementById('ytd-content').classList.remove('hidden');
@@ -1151,7 +1161,7 @@
         function renderRenewalDashboard() {
             const val = document.getElementById('renewal-year-select').value;
             state.selectedRenewalYear = val ? parseInt(val) : null;
-            if (!state.selectedRenewalYear || !state.agentProfile.name || state.agentData.length === 0) {
+            if (!state.selectedRenewalYear || !state.agentProfile.imd) {
                 document.getElementById('renewal-empty-state').classList.remove('hidden'); document.getElementById('renewal-content').classList.add('hidden'); return;
             }
             document.getElementById('renewal-empty-state').classList.add('hidden'); document.getElementById('renewal-content').classList.remove('hidden');
