@@ -53,19 +53,17 @@
 
         /* Toast Notifications */
         #toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: max(30px, env(safe-area-inset-bottom)); transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
-        #toast.show { visibility: visible; bottom: max(80px, calc(40px + env(safe-area-inset-bottom))); opacity: 1; }
+        #toast.show { visibility: visible; bottom: max(90px, calc(50px + env(safe-area-inset-bottom))); opacity: 1; }
         #toast.success { background-color: #38a169; color: #fff; }
         #toast.error { background-color: #e53e3e; color: #fff; }
 
-        /* Bottom Nav & Tablet Setup */
         .nav-item.active { background-color: #f5f3f7; color: #3a1a5b; border-right: 3px solid #3a1a5b; font-weight: 700; }
-        @media (max-width: 1024px) { 
+        @media (max-width: 1280px) { 
             .nav-item.active { border-right: none; border-bottom: 3px solid #3a1a5b; } 
-            .mobile-nav-safe { padding-bottom: env(safe-area-inset-bottom); }
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm">
+<body class="h-[100dvh] w-screen overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm bg-sbi-bg">
 
     <div id="toast">Message here</div>
 
@@ -103,11 +101,11 @@
         </div>
     </div>
 
-    <!-- MAIN PORTAL LAYOUT (Strict Flex Structure ensures no overlapping) -->
-    <div id="portal-layout" class="hidden w-full h-full flex-col lg:flex-row">
+    <!-- MAIN PORTAL LAYOUT (Strict Flex Structure ensures no overlapping on tablets/phones) -->
+    <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
         
-        <!-- Mobile/Tablet Header (Always Visible on Small Screens) -->
-        <header class="lg:hidden flex-none bg-white border-b border-slate-200 p-4 flex justify-between items-center z-40 shadow-sm shrink-0">
+        <!-- Mobile/Tablet Header (Visible up to iPad Pro Landscape) -->
+        <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
                 <div>
@@ -115,54 +113,17 @@
                     <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
                 </div>
             </div>
-            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors" title="Log Out">
+            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out" id="logoutBtnMob">
                 <span>Logout</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
+                <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
             </button>
         </header>
 
-        <!-- Navigation Sidebar / Bottom Bar -->
-        <nav class="bg-white border-t lg:border-t-0 lg:border-r border-slate-200 w-full lg:w-64 flex-none flex flex-row lg:flex-col justify-between lg:h-full z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] lg:shadow-none order-last lg:order-first shrink-0 mobile-nav-safe">
-            <div>
-                <div class="p-5 border-b border-slate-100 hidden lg:block bg-gradient-to-r from-sbi-purple to-sbi-red">
-                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
-                </div>
-                
-                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden lg:flex">
-                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar">A</div>
-                    <div class="overflow-hidden">
-                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name">Agent Name</div>
-                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd">IMD: --</div>
-                    </div>
-                </div>
-
-                <div class="flex lg:flex-col p-2 lg:p-3 gap-1 overflow-x-auto lg:overflow-visible w-full">
-                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-2 py-3.5 lg:py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span class="text-[12px] lg:text-sm font-semibold">Attendance</span>
-                    </button>
-                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-2 py-3.5 lg:py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <span class="text-[12px] lg:text-sm font-semibold">Fresh Biz</span>
-                    </button>
-                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 lg:flex-none flex lg:justify-start justify-center items-center gap-2 lg:gap-3 px-2 py-3.5 lg:py-3 rounded-xl lg:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span class="text-[12px] lg:text-sm font-semibold">Renewals</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="p-4 hidden lg:block">
-                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtn">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red"></div>
-                </button>
-            </div>
-        </nav>
-
-        <!-- Main Content Area (Takes remaining vertical space) -->
-        <main class="flex-1 overflow-y-auto bg-sbi-bg relative scroll-smooth order-2 h-full">
-            <div class="p-4 lg:p-8 max-w-6xl mx-auto w-full">
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-sbi-bg relative scroll-smooth w-full pb-[env(safe-area-inset-bottom)]">
+            <!-- Wrapper with padding to clear the floating bottom nav on mobile/tablets -->
+            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] xl:pb-8">
                 
                 <!-- MODULE 1: ATTENDANCE -->
                 <div id="module-attendance" class="fade-in space-y-6">
@@ -181,7 +142,7 @@
                         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
                     </div>
 
-                    <div class="pt-6 pb-6">
+                    <div class="pt-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
                             <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
@@ -205,14 +166,14 @@
                         </div>
                     </div>
 
-                    <div id="perf-content" class="hidden space-y-6 pb-6 slide-up">
+                    <div id="perf-content" class="hidden space-y-6 slide-up">
                         <div id="summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
-                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                            <div class="xl:col-span-2">
-                                <div id="fy-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2">
+                                <div id="fy-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
                             </div>
-                            <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
+                            <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] lg:h-auto chart-container">
                                 <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Annual Trend</h2>
                                 <div class="relative flex-1 w-full min-h-[220px]">
                                     <canvas id="performanceChart"></canvas>
@@ -220,7 +181,6 @@
                             </div>
                         </div>
 
-                        <!-- Fresh Breakdowns -->
                         <div id="fresh-breakdowns" class="hidden grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                                 <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Product Mix <span class="text-[9px] bg-purple-50 text-sbi-purple px-2 py-0.5 rounded font-bold">Net</span></h2>
@@ -232,14 +192,12 @@
                             </div>
                         </div>
                         
-                        <!-- Persistency Tracker -->
                         <div id="persistency-tracker" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
                         </div>
                     </div>
 
-                    <!-- Empty State -->
                     <div id="perf-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -248,14 +206,52 @@
                         <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view your data.</p>
                     </div>
                 </div>
-
             </div>
         </main>
+
+        <!-- Navigation Sidebar / Bottom Bar (Fixed to bottom on Mobile/Tablets, Static on Desktop) -->
+        <nav class="fixed bottom-0 left-0 w-full xl:static xl:w-64 bg-white border-t xl:border-t-0 xl:border-r border-slate-200 z-50 flex flex-row xl:flex-col justify-between pb-[env(safe-area-inset-bottom)] xl:pb-0 order-first shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] xl:shadow-none transition-transform">
+            <div>
+                <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
+                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
+                </div>
+                
+                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
+                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar">A</div>
+                    <div class="overflow-hidden">
+                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name">Agent Name</div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd">IMD: --</div>
+                    </div>
+                </div>
+
+                <div class="flex xl:flex-col p-2 md:p-3 xl:p-3 gap-1 overflow-x-auto xl:overflow-visible w-full">
+                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[12px] md:text-sm font-semibold">Attendance</span>
+                    </button>
+                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        <span class="text-[12px] md:text-sm font-semibold">Fresh Biz</span>
+                    </button>
+                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span class="text-[12px] md:text-sm font-semibold">Renewals</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 hidden xl:block">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+                </button>
+            </div>
+        </nav>
     </div>
 
     <!-- DRILL-DOWN MODAL -->
-    <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[95] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
+    <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div><h2 class="text-lg font-bold text-slate-800" id="modal-title">Details</h2><p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Breakdown</p></div>
                 <button onclick="document.getElementById('drilldown-modal').classList.add('hidden')" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
@@ -392,11 +388,11 @@
         }
 
         function logout() {
-            document.querySelectorAll('#logoutBtn').forEach(b => b.classList.add('loading'));
+            document.querySelectorAll('.btn').forEach(b => { if(b.innerText.includes('Logout') || b.innerText.includes('Log Out')) b.classList.add('loading'); });
             setTimeout(() => {
                 localStorage.clear();
                 agentCountdownIntervals.forEach(clearInterval);
-                document.querySelectorAll('#logoutBtn').forEach(b => b.classList.remove('loading'));
+                document.querySelectorAll('.btn').forEach(b => b.classList.remove('loading'));
                 checkAuth();
             }, 600);
         }
@@ -828,7 +824,6 @@
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium</th>
                 </tr>`;
                 
@@ -843,7 +838,7 @@
                     return tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement;
                 });
 
-                if (policies.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+                if (policies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
                 else tbody.innerHTML = policies.map(p => {
                     const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
                     const dStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
@@ -855,9 +850,8 @@
                     <tr class="${isRed?'bg-rose-50':'hover:bg-slate-50'} border-b border-slate-50 transition-colors">
                         <td class="p-3 text-[11px] whitespace-nowrap">${dStr}</td>
                         <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[150px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[150px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
-                        <td class="p-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">${formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS))}</td>
+                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
+                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
                         <td class="p-3 text-right whitespace-nowrap">
                             <div class="font-bold ${isRed?'text-sbi-red':'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
                         </td>
@@ -866,7 +860,6 @@
             } else {
                 document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
                 thead.innerHTML = `<tr>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Start Date</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                     <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
@@ -906,33 +899,54 @@
                     used: false
                 }));
 
+                const now = new Date();
+                
                 let mappedPolicies = baseDue.map(p => {
                     const bNo = (getColValue(p, COL_POLICY_KEYS)||'').toString().trim().toLowerCase();
                     let matchIdx = renPool.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
                     let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
-                    return { ...p, _isRenewed: isRenewed };
+                    
+                    let edStr = getColValue(p, COL_END_DATE_KEYS);
+                    let ed = parseExcelDate(edStr);
+                    if (!ed) {
+                        let sd = parseExcelDate(getColValue(p, COL_DATE_KEYS));
+                        if(sd) { ed = new Date(sd); ed.setFullYear(ed.getFullYear() + 1); }
+                    }
+
+                    let statusBadge = '';
+                    if (isRenewed) {
+                        statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>`;
+                    } else {
+                        if (!ed) {
+                            statusBadge = `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Unknown</span>`;
+                        } else if (ed > now) {
+                            statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Pending</span>`;
+                        } else {
+                            const diffDays = (now - ed) / (1000 * 60 * 60 * 24);
+                            if (diffDays <= 30) {
+                                statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Grace Period</span>`;
+                            } else {
+                                statusBadge = `<span class="bg-rose-100 text-sbi-red px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Expired</span>`;
+                            }
+                        }
+                    }
+
+                    return { ...p, _statusBadge: statusBadge };
                 });
 
-                if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+                if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
                 else tbody.innerHTML = mappedPolicies.map(p => {
-                    const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
-                    const dStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
                     const lyPrem = parseNumber(getColValue(p, COL_PREM_KEYS));
-                    
-                    const statusBadge = p._isRenewed 
-                        ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>` 
-                        : `<span class="bg-rose-100 text-sbi-red px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Not Renewed</span>`;
 
                     return `
                     <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
-                        <td class="p-3 text-[11px] whitespace-nowrap text-slate-600">${dStr}</td>
                         <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[150px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[150px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
+                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
+                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
                         <td class="p-3 text-right whitespace-nowrap">
                             <div class="font-bold text-slate-800">₹${Math.abs(lyPrem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
                         </td>
-                        <td class="p-3 text-right whitespace-nowrap">${statusBadge}</td>
+                        <td class="p-3 text-right whitespace-nowrap">${p._statusBadge}</td>
                     </tr>`;
                 }).join('');
             }
