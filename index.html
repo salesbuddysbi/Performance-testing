@@ -75,7 +75,11 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
             <h2 class="text-2xl font-bold mb-2 text-slate-800">Data Required</h2>
-            <p class="text-slate-500 mb-6 text-xs">Please upload the Master Excel file to initialize the performance module before logging in.</p>
+            <p class="text-slate-500 mb-4 text-xs">Please upload the Master Excel file to initialize the performance module before logging in.</p>
+            
+            <!-- Error Message Display -->
+            <div id="upload-error-msg" class="text-[10px] font-bold text-sbi-red bg-rose-50 border border-rose-100 p-3 rounded-xl mb-5 hidden break-words"></div>
+
             <input type="file" id="file-upload" accept=".xlsx, .xls" class="hidden">
             <button onclick="document.getElementById('file-upload').click()" class="bg-sbi-purple hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl w-full text-sm transition-all shadow-lg">Browse Excel File</button>
         </div>
@@ -349,7 +353,6 @@
             </button>
         </div>
     </nav>
-    </div>
 
     <!-- DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
@@ -387,7 +390,6 @@
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
         
-        // Cleanse policy strings to guarantee match
         const cleanNo = (val) => val ? val.toString().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
 
         let rawData = [];
@@ -404,8 +406,12 @@
             
             attemptFetchDefaultFile().then(() => { checkAuth(); }).catch((err) => { 
                 console.log("Auto-load failed: ", err);
+                const errDiv = document.getElementById('upload-error-msg');
+                errDiv.innerText = "Error: " + err.message;
+                errDiv.classList.remove('hidden');
                 document.getElementById('upload-overlay').classList.remove('hidden'); 
             });
+            
             document.getElementById('file-upload').addEventListener('change', (e) => { if (e.target.files[0]) loadExcel(e.target.files[0]); });
         };
 
@@ -415,25 +421,40 @@
             setTimeout(() => { toast.className = toast.className.replace(`show ${type}`, ""); }, 4000);
         }
 
-        // Extremely robust fetch mechanism for GitHub Pages and Local Hosting
+        // Bypasses caching and checks multiple potential absolute/relative URL paths
         async function attemptFetchDefaultFile() {
+            let basePath = window.location.pathname;
+            basePath = basePath.substring(0, basePath.lastIndexOf('/'));
+            if (basePath === '') basePath = '.';
+
             const filePathsToTry = [
-                'data.xlsx', 'Data.xlsx',
-                'Kollam%20Cluster.xlsx', 'Kollam Cluster.xlsx', 
-                './data.xlsx', './Kollam%20Cluster.xlsx'
+                'data.xlsx',
+                'Data.xlsx',
+                './data.xlsx',
+                basePath + '/data.xlsx'
             ];
             
+            let lastError = "File not found.";
+
             for(let path of filePathsToTry) {
                 try {
-                    let response = await fetch(path);
+                    let response = await fetch(path, { cache: 'no-store' });
                     if (response.ok) {
                         const arrayBuffer = await response.arrayBuffer();
-                        parseExcelData(arrayBuffer);
-                        return; // Found it!
+                        try {
+                            parseExcelData(arrayBuffer);
+                            return; 
+                        } catch (parseErr) {
+                            throw new Error("File found, but could not be parsed. Is it uploaded via Git LFS instead of standard upload?");
+                        }
+                    } else {
+                        lastError = `Server returned ${response.status} for ${path}`;
                     }
-                } catch(e) { } // Ignore and try next
+                } catch(e) {
+                    if (e.message.includes("could not be parsed")) throw e; 
+                }
             }
-            throw new Error('No master files found on server.');
+            throw new Error(lastError);
         }
 
         function loadExcel(file) {
@@ -803,30 +824,22 @@
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
-            // EXACLTY Code 1 logic for sorting base vs ren
             rawData.forEach(row => {
                 if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
-                if(!date) return;
+                if (!date) return;
                 
-                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+                const m = date.getMonth(); const y = date.getFullYear();
+                const startFY = m >= 3 ? y : y - 1; 
+                const startFyMonthIndex = m >= 3 ? m - 3 : m + 9;
                 
-                let expFY, expFyMonthIndex;
-                if (endDate) {
-                    const expMonth = endDate.getMonth(); const expYear = endDate.getFullYear();
-                    expFY = expMonth >= 3 ? expYear : expYear - 1; expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
-                } else {
-                    const expMonth = date.getMonth(); const expYear = date.getFullYear() + 1;
-                    expFY = expMonth >= 3 ? expYear : expYear - 1; expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
-                }
-
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                if (rowFY === state.selectedRenewalYear && tx.isRenewal) renPool.push(row);
-                if (expFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                if (rowFY === state.selectedRenewalYear - 1 && tx.isRenewal) yr2RenPool.push(row);
+                
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: startFyMonthIndex});
+                if (startFY === state.selectedRenewalYear && tx.isRenewal) renPool.push(row);
+                if (startFY === state.selectedRenewalYear - 2 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push(row);
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRenewal) yr2RenPool.push(row);
             });
 
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
@@ -837,54 +850,29 @@
                 d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
             });
 
-            // EXACTLY Code 1 mapping logic with sig
-            let renUsage = renPool.map(r => {
-                const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
-                const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
-                return { 
-                    no: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prev: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    alt: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
-                    used: false 
-                };
-            });
+            let renUsage = renPool.map(r => ({ no: cleanNo(getColValue(r, COL_POLICY_KEYS)), prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)), alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)), used: false }));
             
             basePool.forEach(b => {
                 fyData[b.fyMonthIndex].baseNOP += 1; totalBaseNOP += 1;
-                const bNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                const bNo = cleanNo(getColValue(b, COL_POLICY_KEYS));
                 const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
-                const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                const bSig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+
+                let mIdx = renUsage.findIndex(r => !r.used && ((bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (bSig && r.sig === bSig)));
                 
-                let matchIdx = renUsage.findIndex(r => !r.used && (
-                    (bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (b_sig && r.sig === b_sig)
-                ));
-                
-                if (matchIdx !== -1) { renUsage[matchIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
+                if (mIdx !== -1) { renUsage[mIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
                 else { if (fyData[b.fyMonthIndex].isFuture) { fyData[b.fyMonthIndex].yetToRenew += 1; totalYet += 1; } else { fyData[b.fyMonthIndex].renMissed += 1; totalMissed += 1; } }
             });
 
             retentionYr1Base = totalBaseNOP; retentionYr1Ren = totalRenewed;
             retentionYr2Base = yr2BasePool.length;
-            
-            let yr2Usage = yr2RenPool.map(r => {
-                const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
-                return { 
-                    no: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prev: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    alt: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
-                    used: false 
-                };
-            });
+            let yr2Usage = yr2RenPool.map(r => ({ no: cleanNo(getColValue(r, COL_POLICY_KEYS)), prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)), alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)), used: false }));
             yr2BasePool.forEach(b => {
-                const bNo = (getColValue(b, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                const bNo = cleanNo(getColValue(b, COL_POLICY_KEYS));
                 const ins = toTitleCase(getColValue(b, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(b, COL_PRODUCT_KEYS));
-                const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
-                let matchIdx = yr2Usage.findIndex(r => !r.used && (
-                    (bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (b_sig && r.sig === b_sig)
-                ));
-                if (matchIdx !== -1) { yr2Usage[matchIdx].used = true; retentionYr2Ren += 1; }
+                const bSig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                let mIdx = yr2Usage.findIndex(r => !r.used && ((bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (bSig && r.sig === bSig)));
+                if (mIdx !== -1) { yr2Usage[mIdx].used = true; retentionYr2Ren += 1; }
             });
 
             document.getElementById('persistency-stats').innerHTML = `
@@ -933,30 +921,23 @@
             rawData.forEach(r => {
                 if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
                 const date = parseExcelDate(getColValue(r, COL_DATE_KEYS));
-                const endDate = parseExcelDate(getColValue(r, COL_END_DATE_KEYS));
                 if(!date) return;
                 
-                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
-                let expFY, expFyMonthIndex;
-                if (endDate) {
-                    const expMonth = endDate.getMonth(); const expYear = endDate.getFullYear();
-                    expFY = expMonth >= 3 ? expYear : expYear - 1; expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
-                } else {
-                    const expMonth = date.getMonth(); const expYear = date.getFullYear() + 1;
-                    expFY = expMonth >= 3 ? expYear : expYear - 1; expFyMonthIndex = expMonth >= 3 ? expMonth - 3 : expMonth + 9;
-                }
+                const m = date.getMonth(); const y = date.getFullYear();
+                const startFY = m >= 3 ? y : y - 1; 
+                const startFyMonthIndex = m >= 3 ? m - 3 : m + 9;
 
                 const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
-                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(r);
-                if (rowFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel && startFyMonthIndex === monthIndex) baseDue.push(r);
+                if (startFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
             });
 
             let renPool = currentYearRenewals.map(r => {
                 const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
                 return { 
-                    no: (getColValue(r, COL_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    prev: (getColValue(r, COL_PREV_POLICY_KEYS) || '').toString().trim().toLowerCase(),
-                    alt: (getColValue(r, COL_ALT_POLICY_KEYS) || '').toString().trim().toLowerCase(),
+                    no: cleanNo(getColValue(r, COL_POLICY_KEYS)),
+                    prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)),
+                    alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)),
                     sig: (ins && prd) ? (ins + "|" + prd).toLowerCase() : "", 
                     used: false 
                 };
@@ -964,14 +945,11 @@
             const now = new Date(); now.setHours(0,0,0,0);
             
             let mappedPolicies = baseDue.map(p => {
-                const bNo = (getColValue(p, COL_POLICY_KEYS) || '').toString().trim().toLowerCase();
+                const bNo = cleanNo(getColValue(p, COL_POLICY_KEYS));
                 const ins = toTitleCase(getColValue(p, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(p, COL_PRODUCT_KEYS));
-                const b_sig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
+                const bSig = (ins && prd) ? (ins + "|" + prd).toLowerCase() : "";
                 
-                let matchIdx = renPool.findIndex(r => !r.used && (
-                    (bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (b_sig && r.sig === b_sig)
-                ));
-                
+                let matchIdx = renPool.findIndex(r => !r.used && ((bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo)) || (bSig && r.sig === bSig)));
                 let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
                 
                 let edStr = getColValue(p, COL_END_DATE_KEYS);
