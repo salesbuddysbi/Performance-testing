@@ -5,18 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SBI General Agent Portal</title>
     
-    <!-- Tailwind Script for Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        sbi: {
-                            purple: '#3a1a5b',
-                            red: '#e40046',
-                            bg: '#f4f6f9'
-                        }
+                        sbi: { purple: '#3a1a5b', red: '#e40046', bg: '#f4f6f9' }
                     }
                 }
             }
@@ -51,7 +46,6 @@
         .btn.loading span { display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Toast Notifications */
         #toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: max(30px, env(safe-area-inset-bottom)); transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
         #toast.show { visibility: visible; bottom: max(90px, calc(50px + env(safe-area-inset-bottom))); opacity: 1; }
         #toast.success { background-color: #38a169; color: #fff; }
@@ -101,10 +95,10 @@
         </div>
     </div>
 
-    <!-- MAIN PORTAL LAYOUT (Strict Flex Structure ensures no overlapping on tablets/phones) -->
+    <!-- MAIN PORTAL LAYOUT -->
     <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
         
-        <!-- Mobile/Tablet Header (Visible up to iPad Pro Landscape) -->
+        <!-- Mobile/Tablet Header -->
         <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
@@ -113,17 +107,55 @@
                     <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
                 </div>
             </div>
-            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out" id="logoutBtnMob">
+            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out">
                 <span>Logout</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
                 <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
             </button>
         </header>
 
+        <!-- Navigation Sidebar / Bottom Bar -->
+        <nav class="bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex-none flex flex-row xl:flex-col justify-between xl:h-full z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first shrink-0 pb-[env(safe-area-inset-bottom)] xl:pb-0">
+            <div>
+                <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
+                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
+                </div>
+                
+                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
+                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar-desk">A</div>
+                    <div class="overflow-hidden">
+                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name-desk">Agent Name</div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd-desk">IMD: --</div>
+                    </div>
+                </div>
+
+                <div class="flex xl:flex-col p-2 xl:p-3 gap-1 overflow-x-auto xl:overflow-visible w-full">
+                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[12px] xl:text-sm font-semibold">Attendance</span>
+                    </button>
+                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        <span class="text-[12px] xl:text-sm font-semibold">Fresh Biz</span>
+                    </button>
+                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span class="text-[12px] xl:text-sm font-semibold">Renewals</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 hidden xl:block">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+                </button>
+            </div>
+        </nav>
+
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-sbi-bg relative scroll-smooth w-full pb-[env(safe-area-inset-bottom)]">
-            <!-- Wrapper with padding to clear the floating bottom nav on mobile/tablets -->
-            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] xl:pb-8">
+        <main class="flex-1 overflow-y-auto bg-sbi-bg relative scroll-smooth order-1 h-full">
+            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full pb-8">
                 
                 <!-- MODULE 1: ATTENDANCE -->
                 <div id="module-attendance" class="fade-in space-y-6">
@@ -151,107 +183,113 @@
                     </div>
                 </div>
 
-                <!-- MODULE 2: PERFORMANCE -->
-                <div id="module-performance" class="hidden fade-in space-y-6">
+                <!-- MODULE 2: FRESH BUSINESS -->
+                <div id="module-fresh" class="hidden fade-in space-y-6">
+                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Fresh Business</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Live monthly performance dashboard.</p>
+                        </div>
+                        <div class="flex flex-col text-right gap-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Select Month</span>
+                            <input type="month" id="freshMonthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="renderFreshDashboard()">
+                        </div>
+                    </div>
+
+                    <div id="fresh-content" class="space-y-6 slide-up">
+                        <!-- Top KPI Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Premium</div>
+                                <div class="text-3xl font-black tracking-tight" id="fresh-gwp">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">NOP Policies</div>
+                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="fresh-nop">0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="fresh-ticket">₹0</div>
+                            </div>
+                            <!-- Payout Estimation Card -->
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
+                                    <div class="text-xl font-black text-slate-800 tracking-tight" id="fresh-payout-total">₹0</div>
+                                </div>
+                                <div class="border-t border-slate-100 pt-2 mt-auto">
+                                    <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="fresh-payout-base">₹0</span></div>
+                                    <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="fresh-payout-inc">₹0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breakdowns -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                                <div id="fresh-product-list" class="space-y-3"></div>
+                            </div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                                <div id="fresh-si-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODULE 3: RENEWALS -->
+                <div id="module-renewal" class="hidden fade-in space-y-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
                         <div>
-                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="perf-title">Fresh Business</h1>
-                            <p class="text-slate-500 text-xs font-medium mt-1" id="perf-subtitle">Track your individual production and targets.</p>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
                         </div>
                         <div class="w-full md:w-auto flex items-center gap-3">
                             <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
-                            <select id="year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="onYearChange()">
+                            <select id="renewal-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderRenewalDashboard()">
                                 <option value="">Select Year</option>
                             </select>
                         </div>
                     </div>
 
-                    <div id="perf-content" class="hidden space-y-6 slide-up">
-                        <div id="summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                    <div id="renewal-content" class="hidden space-y-6 slide-up">
+                        <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-2">
-                                <div id="fy-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <div class="xl:col-span-2">
+                                <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                             </div>
-                            <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] lg:h-auto chart-container">
-                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Annual Trend</h2>
+                            <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
+                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
                                 <div class="relative flex-1 w-full min-h-[220px]">
-                                    <canvas id="performanceChart"></canvas>
+                                    <canvas id="renewalChart"></canvas>
                                 </div>
                             </div>
                         </div>
-
-                        <div id="fresh-breakdowns" class="hidden grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Product Mix <span class="text-[9px] bg-purple-50 text-sbi-purple px-2 py-0.5 rounded font-bold">Net</span></h2>
-                                <div id="product-list" class="space-y-3"></div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex justify-between uppercase tracking-wider">Sum Insured Mix <span class="text-[9px] bg-purple-50 text-sbi-purple px-2 py-0.5 rounded font-bold">Net</span></h2>
-                                <div id="si-list" class="space-y-3"></div>
-                            </div>
-                        </div>
                         
-                        <div id="persistency-tracker" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
                         </div>
                     </div>
 
-                    <div id="perf-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
+                    <div id="renewal-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
-                        <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view your data.</p>
+                        <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view retention data.</p>
                     </div>
                 </div>
+
             </div>
         </main>
-
-        <!-- Navigation Sidebar / Bottom Bar (Fixed to bottom on Mobile/Tablets, Static on Desktop) -->
-        <nav class="fixed bottom-0 left-0 w-full xl:static xl:w-64 bg-white border-t xl:border-t-0 xl:border-r border-slate-200 z-50 flex flex-row xl:flex-col justify-between pb-[env(safe-area-inset-bottom)] xl:pb-0 order-first shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] xl:shadow-none transition-transform">
-            <div>
-                <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
-                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
-                </div>
-                
-                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
-                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar">A</div>
-                    <div class="overflow-hidden">
-                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name">Agent Name</div>
-                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd">IMD: --</div>
-                    </div>
-                </div>
-
-                <div class="flex xl:flex-col p-2 md:p-3 xl:p-3 gap-1 overflow-x-auto xl:overflow-visible w-full">
-                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span class="text-[12px] md:text-sm font-semibold">Attendance</span>
-                    </button>
-                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <span class="text-[12px] md:text-sm font-semibold">Fresh Biz</span>
-                    </button>
-                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span class="text-[12px] md:text-sm font-semibold">Renewals</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="p-4 hidden xl:block">
-                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
-                </button>
-            </div>
-        </nav>
     </div>
 
     <!-- DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div><h2 class="text-lg font-bold text-slate-800" id="modal-title">Details</h2><p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Breakdown</p></div>
                 <button onclick="document.getElementById('drilldown-modal').classList.add('hidden')" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
@@ -284,16 +322,18 @@
         const COL_PRODUCT_KEYS = ["product name", "product"];
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-
+        
         let rawData = [];
-        let chartInstance = null;
+        let renewalChartInstance = null;
         let agentCountdownIntervals = [];
-        let state = { mainModule: 'attendance', selectedYear: null, agentProfile: { imd: null, name: null } };
+        let state = { mainModule: 'attendance', selectedRenewalYear: null, agentProfile: { imd: null, name: null } };
 
         window.onload = () => {
             const now = new Date();
+            let y = now.getFullYear();
             let m = (now.getMonth() + 1).toString().padStart(2, '0');
-            document.getElementById('monthPicker').value = `${now.getFullYear()}-${m}`;
+            document.getElementById('monthPicker').value = `${y}-${m}`;
+            document.getElementById('freshMonthPicker').value = `${y}-${m}`;
             
             attemptFetchDefaultFile().then(() => { checkAuth(); }).catch(() => { document.getElementById('upload-overlay').classList.remove('hidden'); });
             document.getElementById('file-upload').addEventListener('change', (e) => { if (e.target.files[0]) loadExcel(e.target.files[0]); });
@@ -337,7 +377,7 @@
                     rawData = rawData.concat(cleanedSheet);
                 }
             });
-            populateYears();
+            populateRenewalYears();
         }
 
         function checkAuth() {
@@ -402,11 +442,11 @@
             const imd = state.agentProfile.imd;
             const init = name.charAt(0).toUpperCase();
 
-            document.getElementById('nav-name').innerText = name;
+            document.getElementById('nav-name-desk').innerText = name;
             document.getElementById('mobile-name').innerText = name;
-            document.getElementById('nav-imd').innerText = `IMD: ${imd}`;
+            document.getElementById('nav-imd-desk').innerText = `IMD: ${imd}`;
             document.getElementById('mobile-imd').innerText = `IMD: ${imd}`;
-            document.getElementById('nav-avatar').innerText = init;
+            document.getElementById('nav-avatar-desk').innerText = init;
             document.getElementById('mobile-avatar').innerText = init;
             
             const hr = new Date().getHours();
@@ -416,28 +456,75 @@
 
         function switchModule(moduleName) {
             state.mainModule = moduleName;
-            ['attendance', 'fresh', 'renewal'].forEach(id => { document.getElementById(`nav-${id}`).classList.remove('active'); });
+            ['attendance', 'fresh', 'renewal'].forEach(id => { document.getElementById(`nav-${id}`).classList.remove('active'); document.getElementById(`module-${id}`).classList.add('hidden'); });
             document.getElementById(`nav-${moduleName}`).classList.add('active');
+            document.getElementById(`module-${moduleName}`).classList.remove('hidden');
 
             if (moduleName === 'attendance') {
-                document.getElementById('module-attendance').classList.remove('hidden');
-                document.getElementById('module-performance').classList.add('hidden');
                 loadAgentDashboard();
-            } else {
-                document.getElementById('module-attendance').classList.add('hidden');
-                document.getElementById('module-performance').classList.remove('hidden');
-                document.getElementById('perf-title').innerText = moduleName === 'fresh' ? 'Fresh Business' : 'Renewal Performance';
-                document.getElementById('perf-subtitle').innerText = moduleName === 'fresh' ? 'Track your individual production and targets.' : 'Track your base policies and retention rate.';
-                
-                if (state.selectedYear) renderDashboard();
+            } else if (moduleName === 'fresh') {
+                renderFreshDashboard();
+            } else if (moduleName === 'renewal') {
+                if (state.selectedRenewalYear) renderRenewalDashboard();
                 else {
-                    document.getElementById('perf-empty-state').classList.remove('hidden');
-                    document.getElementById('perf-content').classList.add('hidden');
+                    document.getElementById('renewal-empty-state').classList.remove('hidden');
+                    document.getElementById('renewal-content').classList.add('hidden');
                 }
             }
         }
 
-        // --- ATTENDANCE LOGIC ---
+        // --- EXCEL HELPERS ---
+        function getColValue(row, possibleKeys) {
+            if (!row || typeof row !== 'object') return "";
+            const rowKeys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let k of rowKeys) if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
+            }
+            return "";
+        }
+        function parseNumber(val) {
+            if (!val) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            const num = parseFloat(val.toString().replace(/[^0-9.\-]/g, ''));
+            return isNaN(num) ? 0 : num;
+        }
+        function parseExcelDate(val) {
+            if (!val) return null;
+            if (typeof val === 'number') {
+                let temp = new Date(Math.round((val - 25569) * 86400000));
+                return new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate(), 0, 0, 0);
+            }
+            let s = val.toString().trim(); let d = new Date(s);
+            if(!isNaN(d.getTime())) { d.setHours(0,0,0,0); return d; }
+            return null;
+        }
+        function toTitleCase(str) { return !str ? '' : str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+        function parseTransactionType(typeStr) {
+            const t = (typeStr || '').toString().toLowerCase().trim();
+            const isCancel = t.includes('cancel') || t.includes('reversal') || t.includes('dishonor');
+            const isRefund = t.includes('refund');
+            const isRenewal = (t.includes('renewal') || t.includes('rnw')) && !t.includes('roll');
+            const isFresh = (t.includes('fresh') || t.includes('new') || t === 'nb' || t.includes('roll')) && !isRenewal && !isCancel && !isRefund;
+            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement: t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh };
+        }
+        function formatSumInsured(val) {
+            const n = parseNumber(val);
+            if (n === 0) return '-';
+            if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
+            if (n >= 100000) return '₹' + (n / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
+            return '₹' + n.toLocaleString('en-IN');
+        }
+        function findExactNameInExcel(imdCode) {
+            for(let row of rawData) {
+                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) {
+                    return toTitleCase(getColValue(row, COL_AGENT_KEYS));
+                }
+            }
+            return null;
+        }
+
+        // --- ATTENDANCE ---
         async function loadAgentDashboard() {
             agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
             const container = document.getElementById('agentMeetingsContainer');
@@ -567,102 +654,104 @@
             }).join('');
         }
 
-        // --- PERFORMANCE LOGIC ---
-        function getColValue(row, possibleKeys) {
-            if (!row || typeof row !== 'object') return "";
-            const rowKeys = Object.keys(row);
-            for (let pk of possibleKeys) {
-                const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
-                for (let k of rowKeys) if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
-            }
-            return "";
-        }
-        function parseNumber(val) {
-            if (!val) return 0;
-            if (typeof val === 'number') return isNaN(val) ? 0 : val;
-            const num = parseFloat(val.toString().replace(/[^0-9.\-]/g, ''));
-            return isNaN(num) ? 0 : num;
-        }
-        function parseExcelDate(val) {
-            if (!val) return null;
-            if (typeof val === 'number') {
-                let temp = new Date(Math.round((val - 25569) * 86400000));
-                return new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate(), 12, 0, 0);
-            }
-            let s = val.toString().trim(); let d = new Date(s);
-            if(!isNaN(d.getTime())) return d;
-            return null;
-        }
-        function toTitleCase(str) { return !str ? '' : str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
-        function parseTransactionType(typeStr) {
-            const t = (typeStr || '').toString().toLowerCase().trim();
-            const isCancel = t.includes('cancel') || t.includes('reversal') || t.includes('dishonor');
-            const isRefund = t.includes('refund');
-            const isRenewal = (t.includes('renewal') || t.includes('rnw')) && !t.includes('roll');
-            const isFresh = (t.includes('fresh') || t.includes('new') || t === 'nb' || t.includes('roll')) && !isRenewal && !isCancel && !isRefund;
-            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement: t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh };
-        }
-        function formatSumInsured(val) {
-            const n = parseNumber(val);
-            if (n === 0) return '-';
-            if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
-            if (n >= 100000) return '₹' + (n / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
-            return '₹' + n.toLocaleString('en-IN');
-        }
+        // --- FRESH BIZ LIVE MONTHLY LOGIC ---
+        function renderFreshDashboard() {
+            if(!state.agentProfile.name) return;
+            const dateVal = document.getElementById('freshMonthPicker').value; // Format: YYYY-MM
+            if(!dateVal) return;
+            
+            const [yStr, mStr] = dateVal.split('-');
+            const targetYear = parseInt(yStr);
+            const targetMonth = parseInt(mStr) - 1; // 0-indexed month
 
-        function findExactNameInExcel(imdCode) {
-            for(let row of rawData) {
-                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) {
-                    return toTitleCase(getColValue(row, COL_AGENT_KEYS));
+            let fAmt = 0, fNop = 0;
+            let productBreakdown = {}, siBreakdown = {};
+
+            rawData.forEach(row => {
+                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                if (!d) return;
+
+                if (d.getFullYear() === targetYear && d.getMonth() === targetMonth) {
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+                    const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
+
+                    let prem = 0, nop = 0;
+                    if (tx.isFresh) { nop = 1; prem = premium; } 
+                    else if (tx.isCancel) { nop = -1; prem = premium > 0 ? -Math.abs(premium) : premium; }
+                    else if (tx.isRefund) { prem = premium > 0 ? -Math.abs(premium) : premium; }
+                    else if (tx.isEndorsement) { prem = premium; }
+                    
+                    if (nop !== 0 || prem !== 0) {
+                        fNop += nop; fAmt += prem;
+                        let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
+                        let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
+                        if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
+                        productBreakdown[prod].nop += nop; productBreakdown[prod].prem += prem;
+                        if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
+                        siBreakdown[si].nop += nop; siBreakdown[si].prem += prem;
+                    }
                 }
-            }
-            return null;
+            });
+
+            // Standard Placeholder Payout Logic (Editable)
+            let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; // Assuming 15% Base
+            let incentivePayout = fNop >= 5 ? (fAmt * 0.05) : 0; // Assuming 5% Incentive if >= 5 Policies
+            let totalPayout = basePayout + incentivePayout;
+
+            // Render Cards
+            document.getElementById('fresh-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
+            document.getElementById('fresh-nop').innerText = fNop;
+            document.getElementById('fresh-ticket').innerText = `₹${fNop > 0 ? Math.round(fAmt/fNop).toLocaleString('en-IN') : 0}`;
+            
+            document.getElementById('fresh-payout-total').innerText = `₹${Math.round(totalPayout).toLocaleString('en-IN')}`;
+            document.getElementById('fresh-payout-base').innerText = `₹${Math.round(basePayout).toLocaleString('en-IN')}`;
+            document.getElementById('fresh-payout-inc').innerText = `₹${Math.round(incentivePayout).toLocaleString('en-IN')}`;
+
+            // Render Breakdowns
+            const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
+            document.getElementById('fresh-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
+            
+            const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${siBreakdown[s].nop} Policies</div></div></div>`).join('');
+            document.getElementById('fresh-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        function populateYears() {
-            const yearSelect = document.getElementById('year-select');
+        // --- RENEWAL LOGIC ---
+        function populateRenewalYears() {
+            const yrSelect = document.getElementById('renewal-year-select');
             const years = [...new Set(rawData.map(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
-            yearSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            yrSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
         }
 
-        function onYearChange() {
-            const val = document.getElementById('year-select').value;
-            state.selectedYear = val ? parseInt(val) : null;
-            if (state.selectedYear) {
-                document.getElementById('perf-empty-state').classList.add('hidden');
-                document.getElementById('perf-content').classList.remove('hidden');
-                renderDashboard();
-            } else {
-                document.getElementById('perf-empty-state').classList.remove('hidden');
-                document.getElementById('perf-content').classList.add('hidden');
+        function renderRenewalDashboard() {
+            const val = document.getElementById('renewal-year-select').value;
+            state.selectedRenewalYear = val ? parseInt(val) : null;
+            
+            if (!state.selectedRenewalYear || !state.agentProfile.name) {
+                document.getElementById('renewal-empty-state').classList.remove('hidden');
+                document.getElementById('renewal-content').classList.add('hidden');
+                return;
             }
-        }
 
-        function renderDashboard() {
-            if(!state.agentProfile.name) return;
-            
-            const agentName = state.agentProfile.name;
-            const fyData = Array.from({ length: 12 }, () => ({ freshNOP: 0, freshAmount: 0, baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false }));
-            
-            let totalFreshAmt = 0, totalFreshNOP = 0, prevFreshAmt = 0, prevFreshNOP = 0;
-            let productBreakdown = {}, siBreakdown = {};
+            document.getElementById('renewal-empty-state').classList.add('hidden');
+            document.getElementById('renewal-content').classList.remove('hidden');
+
+            const fyData = Array.from({ length: 12 }, () => ({ baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false }));
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
             rawData.forEach(row => {
-                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== agentName) return;
+                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                 if (!date) return;
 
-                const month = date.getMonth(); const year = date.getFullYear();
-                const rowFY = month >= 3 ? year : year - 1;
-                const fyMonthIndex = month >= 3 ? month - 3 : month + 9;
+                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
                 
                 let expFY, expFyMonthIndex;
                 if (endDate) {
@@ -673,283 +762,142 @@
                     expFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
                 }
                 
-                const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-
-                if (state.mainModule === 'fresh') {
-                    if (rowFY === state.selectedYear) {
-                        let fPrem = 0, fNop = 0;
-                        if (tx.isFresh) { fNop = 1; fPrem = premium; } 
-                        else if (tx.isCancel) { fNop = -1; fPrem = premium > 0 ? -Math.abs(premium) : premium; }
-                        else if (tx.isRefund) { fPrem = premium > 0 ? -Math.abs(premium) : premium; }
-                        else if (tx.isEndorsement) { fPrem = premium; }
-                        
-                        if (fNop !== 0 || fPrem !== 0) {
-                            fyData[fyMonthIndex].freshNOP += fNop; fyData[fyMonthIndex].freshAmount += fPrem;
-                            totalFreshNOP += fNop; totalFreshAmt += fPrem;
-
-                            let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
-                            let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
-                            if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
-                            productBreakdown[prod].nop += fNop; productBreakdown[prod].prem += fPrem;
-                            if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
-                            siBreakdown[si].nop += fNop; siBreakdown[si].prem += fPrem;
-                        }
-                    } else if (rowFY === (state.selectedYear - 1)) {
-                        if (tx.isFresh) { prevFreshNOP += 1; prevFreshAmt += premium; }
-                        else if (tx.isCancel) { prevFreshNOP -= 1; prevFreshAmt += (premium > 0 ? -Math.abs(premium) : premium); }
-                        else if (tx.isRefund) { prevFreshAmt += (premium > 0 ? -Math.abs(premium) : premium); }
-                        else if (tx.isEndorsement) { prevFreshAmt += premium; }
-                    }
-                } 
-                else if (state.mainModule === 'renewal') {
-                    if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                    if (rowFY === state.selectedYear && tx.isRenewal) renPool.push(row);
-                    if (expFY === state.selectedYear - 1 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                    if (rowFY === state.selectedYear - 1 && tx.isRenewal) yr2RenPool.push(row);
-                }
+                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                if (rowFY === state.selectedRenewalYear && tx.isRenewal) renPool.push(row);
+                if (expFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
+                if (rowFY === state.selectedRenewalYear - 1 && tx.isRenewal) yr2RenPool.push(row);
             });
 
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
             let retentionYr1Base = 0, retentionYr1Ren = 0, retentionYr2Base = 0, retentionYr2Ren = 0; 
             
-            if (state.mainModule === 'renewal') {
-                fyData.forEach((d, i) => {
-                    const cM = (i + 3) % 12; const cY = i < 9 ? state.selectedYear : state.selectedYear + 1;
-                    d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
-                });
+            fyData.forEach((d, i) => {
+                const cM = (i + 3) % 12; const cY = i < 9 ? state.selectedRenewalYear : state.selectedRenewalYear + 1;
+                d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
+            });
 
-                let renUsage = renPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
-                basePool.forEach(b => {
-                    fyData[b.fyMonthIndex].baseNOP += 1; totalBaseNOP += 1;
-                    const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
-                    let mIdx = renUsage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
-                    
-                    if (mIdx !== -1) { renUsage[mIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
-                    else { if (fyData[b.fyMonthIndex].isFuture) { fyData[b.fyMonthIndex].yetToRenew += 1; totalYet += 1; } else { fyData[b.fyMonthIndex].renMissed += 1; totalMissed += 1; } }
-                });
+            let renUsage = renPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
+            basePool.forEach(b => {
+                fyData[b.fyMonthIndex].baseNOP += 1; totalBaseNOP += 1;
+                const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
+                let mIdx = renUsage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
+                
+                if (mIdx !== -1) { renUsage[mIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
+                else { if (fyData[b.fyMonthIndex].isFuture) { fyData[b.fyMonthIndex].yetToRenew += 1; totalYet += 1; } else { fyData[b.fyMonthIndex].renMissed += 1; totalMissed += 1; } }
+            });
 
-                retentionYr1Base = totalBaseNOP; retentionYr1Ren = totalRenewed;
-                retentionYr2Base = yr2BasePool.length;
-                let yr2Usage = yr2RenPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
-                yr2BasePool.forEach(b => {
-                    const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
-                    let mIdx = yr2Usage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
-                    if (mIdx !== -1) { yr2Usage[mIdx].used = true; retentionYr2Ren += 1; }
-                });
+            retentionYr1Base = totalBaseNOP; retentionYr1Ren = totalRenewed;
+            retentionYr2Base = yr2BasePool.length;
+            let yr2Usage = yr2RenPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
+            yr2BasePool.forEach(b => {
+                const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
+                let mIdx = yr2Usage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
+                if (mIdx !== -1) { yr2Usage[mIdx].used = true; retentionYr2Ren += 1; }
+            });
 
-                document.getElementById('persistency-tracker').classList.remove('hidden');
-                document.getElementById('persistency-stats').innerHTML = `
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">1st Yr Retention (13M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr1Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr1Ren}</span></div></div>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Yr Retention (25M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr2Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr2Ren}</span></div></div>`;
-            } else { document.getElementById('persistency-tracker').classList.add('hidden'); }
+            document.getElementById('persistency-stats').innerHTML = `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">1st Yr Retention (13M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr1Base > 0 ? Math.round((retentionYr1Ren/retentionYr1Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr1Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr1Ren}</span></div></div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Yr Retention (25M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr2Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr2Ren}</span></div></div>`;
+            
+            const rt = totalBaseNOP > 0 ? Math.round((totalRenewed / totalBaseNOP) * 100) : 0;
+            document.getElementById('renewal-summary-section').innerHTML = `
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${totalBaseNOP}</div></div>
+                <div class="bg-green-50 rounded-2xl p-5 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${totalRenewed}</div></div>
+                <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${totalMissed}</div></div>
+                <div class="bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${totalYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
+            `;
 
-            renderSummary(totalFreshAmt, totalFreshNOP, prevFreshAmt, prevFreshNOP, totalBaseNOP, totalRenewed, totalMissed, totalYet);
-            renderGrid(fyData);
-            renderChart(fyData);
-
-            if (state.mainModule === 'fresh') {
-                document.getElementById('fresh-breakdowns').classList.remove('hidden'); document.getElementById('fresh-breakdowns').classList.add('grid');
-                const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Pol</div></div></div>`).join('');
-                document.getElementById('product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No data</div>';
-                const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `<div class="flex justify-between text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${siBreakdown[s].nop} Pol</div></div></div>`).join('');
-                document.getElementById('si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No data</div>';
-            } else { document.getElementById('fresh-breakdowns').classList.add('hidden'); document.getElementById('fresh-breakdowns').classList.remove('grid'); }
-        }
-
-        function renderSummary(tFAmt, tFNOP, pFAmt, pFNOP, tBase, tRen, tMissed, tYet) {
-            const div = document.getElementById('summary-section');
-            if (state.mainModule === 'fresh') {
-                const diff = pFAmt ? ((tFAmt - pFAmt) / pFAmt) * 100 : 0;
-                const badge = pFAmt ? `<span class="${diff>=0?'bg-green-100 text-green-700':'bg-rose-100 text-sbi-red'} text-[9px] px-1.5 py-0.5 rounded font-extrabold ml-2">${diff>=0?'↑':'↓'} ${Math.abs(diff).toFixed(0)}%</span>` : '';
-                div.innerHTML = `
-                    <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white col-span-1 sm:col-span-2"><div class="flex items-center mb-1"><span class="text-white/80 text-[10px] font-bold uppercase tracking-widest">Net Fresh GWP</span>${badge}</div><div class="text-3xl font-black tracking-tight">₹${tFAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Net Policies</div><div class="text-2xl font-black text-sbi-purple tracking-tight">${tFNOP}</div></div>
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div><div class="text-2xl font-black text-slate-800 tracking-tight">₹${tFNOP > 0 ? Math.round(tFAmt/tFNOP).toLocaleString('en-IN') : 0}</div></div>
-                `;
-            } else {
-                const rt = tBase > 0 ? Math.round((tRen / tBase) * 100) : 0;
-                div.innerHTML = `
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${tBase}</div></div>
-                    <div class="bg-green-50 rounded-2xl p-5 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${tRen}</div></div>
-                    <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${tMissed}</div></div>
-                    <div class="bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${tYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
-                `;
-            }
-        }
-
-        function renderGrid(fyData) {
-            document.getElementById('fy-grid').innerHTML = fyData.map((d, i) => {
-                if (state.mainModule === 'fresh') {
-                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span><span class="text-sbi-purple text-[10px] font-extrabold bg-purple-50 px-2 py-0.5 rounded-lg">${d.freshNOP} NOP</span></div><div class="text-base font-black ${d.freshAmount < 0 ? 'text-sbi-red' : 'text-slate-800'} truncate">₹${d.freshAmount.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div></div>`;
-                } else {
-                    const badge = d.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded">Future</span>` : '';
-                    return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span>${badge}</div><div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${d.baseNOP}</span></div><div class="space-y-1 mt-2 pt-2 border-t border-slate-100"><div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-green-600 font-bold">${d.renRenewed}</span></div>${d.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${d.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-sbi-red font-bold">${d.renMissed}</span></div>`}</div></div>`;
-                }
+            document.getElementById('renewal-grid').innerHTML = fyData.map((d, i) => {
+                const badge = d.isFuture ? `<span class="bg-amber-50 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded">Future</span>` : '';
+                return `<div class="bg-white rounded-2xl border border-slate-200 p-4 stat-card cursor-pointer" onclick="openRenewalDrillDown(${i})"><div class="flex justify-between items-center mb-2"><span class="text-xs font-black text-slate-400 uppercase">${FY_MONTHS[i]}</span>${badge}</div><div class="text-[10px] font-semibold text-slate-500 mb-2">Base: <span class="text-slate-800 font-bold">${d.baseNOP}</span></div><div class="space-y-1 mt-2 pt-2 border-t border-slate-100"><div class="flex justify-between text-[11px]"><span class="text-slate-500">Renewed</span><span class="text-green-600 font-bold">${d.renRenewed}</span></div>${d.isFuture ? `<div class="flex justify-between text-[11px]"><span class="text-amber-500">Pending</span><span class="text-amber-500 font-bold">${d.yetToRenew}</span></div>` : `<div class="flex justify-between text-[11px]"><span class="text-slate-500">Missed</span><span class="text-sbi-red font-bold">${d.renMissed}</span></div>`}</div></div>`;
             }).join('');
+
+            const ctx = document.getElementById('renewalChart').getContext('2d');
+            if (renewalChartInstance) renewalChartInstance.destroy();
+            let ds = [
+                { label: 'Renewed', data: fyData.map(d => d.renRenewed), backgroundColor: '#10b981', borderRadius: 4, type: 'bar' },
+                { label: 'Missed', data: fyData.map(d => d.renMissed), backgroundColor: '#e40046', borderRadius: 4, type: 'bar' },
+                { label: 'Pending', data: fyData.map(d => d.yetToRenew), backgroundColor: '#fbbf24', borderRadius: 4, type: 'bar' }
+            ];
+            renewalChartInstance = new Chart(ctx, { type: 'bar', data: { labels: FY_MONTHS, datasets: ds }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, display: false } }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 10, weight: '600' } } } } } });
         }
 
-        function renderChart(fyData) {
-            const ctx = document.getElementById('performanceChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            let chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 10, weight: '600' } } } } };
-            let datasets = [];
-
-            if (state.mainModule === 'fresh') {
-                datasets = [
-                    { label: 'Net GWP', data: fyData.map(d => d.freshAmount), backgroundColor: '#3a1a5b', borderRadius: 4, type: 'bar', yAxisID: 'y' },
-                    { label: 'Net NOP', data: fyData.map(d => d.freshNOP), borderColor: '#e40046', backgroundColor: '#e40046', borderWidth: 2, pointRadius: 2, type: 'line', tension: 0.3, yAxisID: 'y1' }
-                ];
-                chartOptions.scales = { x: { grid: { display: false } }, y: { display: false }, y1: { display: false } };
-            } else {
-                datasets = [
-                    { label: 'Renewed', data: fyData.map(d => d.renRenewed), backgroundColor: '#10b981', borderRadius: 4, type: 'bar' },
-                    { label: 'Missed', data: fyData.map(d => d.renMissed), backgroundColor: '#e40046', borderRadius: 4, type: 'bar' },
-                    { label: 'Pending', data: fyData.map(d => d.yetToRenew), backgroundColor: '#fbbf24', borderRadius: 4, type: 'bar' }
-                ];
-                chartOptions.scales = { x: { stacked: true, grid: { display: false } }, y: { stacked: true, display: false } };
-            }
-            chartInstance = new Chart(ctx, { type: 'bar', data: { labels: FY_MONTHS, datasets }, options: chartOptions });
-        }
-
-        function openDrillDown(monthIndex) {
-            document.getElementById('modal-title').innerText = `${FY_MONTHS[monthIndex]} FY${state.selectedYear}-${state.selectedYear+1}`;
+        function openRenewalDrillDown(monthIndex) {
+            document.getElementById('modal-title').innerText = `${FY_MONTHS[monthIndex]} FY${state.selectedRenewalYear}-${state.selectedRenewalYear+1}`;
+            document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
             const thead = document.getElementById('modal-table-head');
             const tbody = document.getElementById('modal-table-body');
             
-            if (state.mainModule === 'fresh') {
-                document.getElementById('modal-subtitle').innerText = "Fresh & Rollover Policies Breakdown";
-                thead.innerHTML = `<tr>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Premium</th>
-                </tr>`;
+            thead.innerHTML = `<tr>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">LY Premium</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
+            </tr>`;
+
+            let baseDue = [], currentYearRenewals = [];
+            rawData.forEach(r => {
+                if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+                const date = parseExcelDate(getColValue(r, COL_DATE_KEYS));
+                const endDate = parseExcelDate(getColValue(r, COL_END_DATE_KEYS));
+                if(!date) return;
                 
-                let policies = rawData.filter(r => {
-                    if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return false;
-                    const d = parseExcelDate(getColValue(r, COL_DATE_KEYS));
-                    if(!d) return false;
-                    const fy = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1; 
-                    const mIdx = d.getMonth() >= 3 ? d.getMonth() - 3 : d.getMonth() + 9;
-                    if (fy !== state.selectedYear || mIdx !== monthIndex) return false;
-                    const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
-                    return tx.isFresh || tx.isCancel || tx.isRefund || tx.isEndorsement;
-                });
+                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+                let expFY, expFyMonthIndex;
+                if (endDate) { expFY = endDate.getMonth() >= 3 ? endDate.getFullYear() : endDate.getFullYear() - 1; expFyMonthIndex = endDate.getMonth() >= 3 ? endDate.getMonth() - 3 : endDate.getMonth() + 9; } 
+                else { expFY = date.getMonth() >= 3 ? date.getFullYear() + 1 : date.getFullYear(); expFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9; }
 
-                if (policies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
-                else tbody.innerHTML = policies.map(p => {
-                    const d = parseExcelDate(getColValue(p, COL_DATE_KEYS));
-                    const dStr = d ? `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}` : '-';
-                    const prem = parseNumber(getColValue(p, COL_PREM_KEYS));
-                    const tx = parseTransactionType(getColValue(p, COL_TRANSACTION_KEYS));
-                    const isRed = tx.isCancel || tx.isRefund || prem < 0;
-                    
-                    return `
-                    <tr class="${isRed?'bg-rose-50':'hover:bg-slate-50'} border-b border-slate-50 transition-colors">
-                        <td class="p-3 text-[11px] whitespace-nowrap">${dStr}</td>
-                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
-                        <td class="p-3 text-right whitespace-nowrap">
-                            <div class="font-bold ${isRed?'text-sbi-red':'text-slate-800'}">₹${Math.abs(prem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
-                        </td>
-                    </tr>`;
-                }).join('');
-            } else {
-                document.getElementById('modal-subtitle').innerText = "Base Policies Due for Renewal";
-                thead.innerHTML = `<tr>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">LY Premium</th>
-                    <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
-                </tr>`;
+                const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
+                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(r);
+                if (rowFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
+            });
 
-                let baseDue = [];
-                let currentYearRenewals = [];
+            let renPool = currentYearRenewals.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().trim().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().trim().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().trim().toLowerCase(), used: false }));
+            const now = new Date(); now.setHours(0,0,0,0);
+            
+            let mappedPolicies = baseDue.map(p => {
+                const bNo = (getColValue(p, COL_POLICY_KEYS)||'').toString().trim().toLowerCase();
+                let matchIdx = renPool.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
+                let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
                 
-                rawData.forEach(r => {
-                    if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
-                    const date = parseExcelDate(getColValue(r, COL_DATE_KEYS));
-                    const endDate = parseExcelDate(getColValue(r, COL_END_DATE_KEYS));
-                    if(!date) return;
-                    
-                    const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
-                    
-                    let expFY, expFyMonthIndex;
-                    if (endDate) {
-                        expFY = endDate.getMonth() >= 3 ? endDate.getFullYear() : endDate.getFullYear() - 1;
-                        expFyMonthIndex = endDate.getMonth() >= 3 ? endDate.getMonth() - 3 : endDate.getMonth() + 9;
-                    } else {
-                        expFY = date.getMonth() >= 3 ? date.getFullYear() + 1 : date.getFullYear();
-                        expFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
-                    }
+                let edStr = getColValue(p, COL_END_DATE_KEYS);
+                let ed = parseExcelDate(edStr);
+                if (!ed) {
+                    let sd = parseExcelDate(getColValue(p, COL_DATE_KEYS));
+                    if(sd) { ed = new Date(sd); ed.setFullYear(ed.getFullYear() + 1); }
+                }
 
-                    const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
-                    if (expFY === state.selectedYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(r);
-                    if (rowFY === state.selectedYear && tx.isRenewal) currentYearRenewals.push(r);
-                });
-
-                let renPool = currentYearRenewals.map(r => ({
-                    no: (getColValue(r, COL_POLICY_KEYS)||'').toString().trim().toLowerCase(),
-                    prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().trim().toLowerCase(),
-                    alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().trim().toLowerCase(),
-                    used: false
-                }));
-
-                const now = new Date();
-                
-                let mappedPolicies = baseDue.map(p => {
-                    const bNo = (getColValue(p, COL_POLICY_KEYS)||'').toString().trim().toLowerCase();
-                    let matchIdx = renPool.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
-                    let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
-                    
-                    let edStr = getColValue(p, COL_END_DATE_KEYS);
-                    let ed = parseExcelDate(edStr);
+                let statusBadge = '';
+                if (isRenewed) {
+                    statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>`;
+                } else {
                     if (!ed) {
-                        let sd = parseExcelDate(getColValue(p, COL_DATE_KEYS));
-                        if(sd) { ed = new Date(sd); ed.setFullYear(ed.getFullYear() + 1); }
-                    }
-
-                    let statusBadge = '';
-                    if (isRenewed) {
-                        statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Renewed</span>`;
+                        statusBadge = `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Unknown</span>`;
+                    } else if (ed.getTime() > now.getTime()) {
+                        statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Pending</span>`;
                     } else {
-                        if (!ed) {
-                            statusBadge = `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Unknown</span>`;
-                        } else if (ed > now) {
-                            statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Pending</span>`;
-                        } else {
-                            const diffDays = (now - ed) / (1000 * 60 * 60 * 24);
-                            if (diffDays <= 30) {
-                                statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Grace Period</span>`;
-                            } else {
-                                statusBadge = `<span class="bg-rose-100 text-sbi-red px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Expired</span>`;
-                            }
-                        }
+                        const diffDays = Math.floor((now.getTime() - ed.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 30) statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Grace Period</span>`;
+                        else statusBadge = `<span class="bg-rose-100 text-sbi-red px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Expired</span>`;
                     }
+                }
+                return { ...p, _statusBadge: statusBadge };
+            });
 
-                    return { ...p, _statusBadge: statusBadge };
-                });
-
-                if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
-                else tbody.innerHTML = mappedPolicies.map(p => {
-                    const lyPrem = parseNumber(getColValue(p, COL_PREM_KEYS));
-
-                    return `
-                    <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
-                        <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
-                        <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
-                        <td class="p-3 text-right whitespace-nowrap">
-                            <div class="font-bold text-slate-800">₹${Math.abs(lyPrem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
-                        </td>
-                        <td class="p-3 text-right whitespace-nowrap">${p._statusBadge}</td>
-                    </tr>`;
-                }).join('');
-            }
+            if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+            else tbody.innerHTML = mappedPolicies.map(p => {
+                const lyPrem = parseNumber(getColValue(p, COL_PREM_KEYS));
+                return `
+                <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
+                    <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
+                    <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
+                    <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
+                    <td class="p-3 text-right whitespace-nowrap"><div class="font-bold text-slate-800">₹${Math.abs(lyPrem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div></td>
+                    <td class="p-3 text-right whitespace-nowrap">${p._statusBadge}</td>
+                </tr>`;
+            }).join('');
             
             document.getElementById('drilldown-modal').classList.remove('hidden');
         }
