@@ -204,7 +204,6 @@
 
     <!-- ========================================== -->
     <!-- MAIN PORTAL LAYOUT (Agent View)            -->
-    <!-- THIS WRAPPER IS PERFECTLY RESTORED         -->
     <!-- ========================================== -->
     <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
         
@@ -496,7 +495,15 @@
         let rawData = [];
         let renewalChartInstance = null;
         let agentCountdownIntervals = [];
-        let state = { mainModule: 'attendance', selectedRenewalYear: null, selectedYtdYear: null, agentProfile: { imd: null, name: null } };
+        
+        // --- ADDED: agentData property to store pre-filtered array ---
+        let state = { 
+            mainModule: 'attendance', 
+            selectedRenewalYear: null, 
+            selectedYtdYear: null, 
+            agentProfile: { imd: null, name: null },
+            agentData: [] 
+        };
 
         window.onload = () => {
             const now = new Date();
@@ -551,12 +558,30 @@
             throw new Error(lastError);
         }
 
+        // --- ADDED: Timeout wrapper to prevent UI freezing ---
         function loadExcel(file) {
             const reader = new FileReader();
+            
+            const uploadBtn = document.querySelector('#upload-overlay button');
+            const originalText = uploadBtn.innerText;
+            uploadBtn.innerText = "Parsing Data... Please wait";
+            uploadBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            
             reader.onload = (e) => {
-                parseExcelData(e.target.result);
-                document.getElementById('upload-overlay').classList.add('hidden');
-                checkAuth();
+                setTimeout(() => {
+                    try {
+                        parseExcelData(e.target.result);
+                        document.getElementById('upload-overlay').classList.add('hidden');
+                        checkAuth();
+                    } catch(err) {
+                        const errDiv = document.getElementById('upload-error-msg');
+                        errDiv.innerText = "Parsing Error: " + err.message;
+                        errDiv.classList.remove('hidden');
+                    } finally {
+                        uploadBtn.innerText = originalText;
+                        uploadBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    }
+                }, 50);
             };
             reader.readAsArrayBuffer(file);
         }
@@ -578,10 +603,31 @@
             populateYears();
         }
 
+        // --- ADDED: processAgentData to isolate the logged-in agent's rows ---
+        function processAgentData() {
+            if (!state.agentProfile.name || rawData.length === 0) return;
+            
+            const targetName = state.agentProfile.name.toLowerCase().trim();
+            
+            state.agentData = rawData.filter(row => {
+                const rowAgentName = getColValue(row, COL_AGENT_KEYS).toString().toLowerCase().trim();
+                return rowAgentName === targetName;
+            });
+
+            console.log(`Performance Optimization: Extracted ${state.agentData.length} records for ${state.agentProfile.name}`);
+        }
+
+        // --- UPDATED: checkAuth calls processAgentData before rendering UI ---
         function checkAuth() {
             if(localStorage.getItem('agentIMD')) {
                 state.agentProfile.imd = localStorage.getItem('agentIMD');
                 state.agentProfile.name = localStorage.getItem('agentName');
+                
+                // Pre-filter the data BEFORE rendering the UI
+                if (rawData.length > 0) {
+                    processAgentData();
+                }
+                
                 setupPortalUI();
                 document.getElementById('login-screen').classList.add('hidden');
                 
@@ -590,7 +636,8 @@
                     layout.classList.remove('hidden');
                     layout.classList.add('flex');
                 }
-                switchModule('attendance');
+                // Keep the current tab open if reloading
+                switchModule(state.mainModule || 'attendance');
             } else {
                 document.getElementById('login-screen').classList.remove('hidden');
                 const layout = document.getElementById('portal-layout');
@@ -975,9 +1022,9 @@
             }).join('');
         }
 
-        // --- MTD LOGIC ---
+        // --- MTD LOGIC (UPDATED FOR PERFORMANCE) ---
         function renderMtdDashboard() {
-            if(!state.agentProfile.name) return;
+            if(!state.agentProfile.name || state.agentData.length === 0) return;
             const dateVal = document.getElementById('mtdMonthPicker').value; 
             if(!dateVal) return;
             const [yStr, mStr] = dateVal.split('-');
@@ -986,8 +1033,7 @@
             let fAmt = 0, fNop = 0;
             let productBreakdown = {}, siBreakdown = {};
 
-            rawData.forEach(row => {
-                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+            state.agentData.forEach(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return;
 
@@ -1031,19 +1077,18 @@
             document.getElementById('mtd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- YTD LOGIC ---
+        // --- YTD LOGIC (UPDATED FOR PERFORMANCE) ---
         function renderYtdDashboard() {
             const val = document.getElementById('ytd-year-select').value;
             state.selectedYtdYear = val ? parseInt(val) : null;
-            if (!state.selectedYtdYear || !state.agentProfile.name) {
+            if (!state.selectedYtdYear || !state.agentProfile.name || state.agentData.length === 0) {
                 document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); return;
             }
             document.getElementById('ytd-empty-state').classList.add('hidden'); document.getElementById('ytd-content').classList.remove('hidden');
 
             let fAmt = 0, fNop = 0; let productBreakdown = {}, siBreakdown = {};
 
-            rawData.forEach(row => {
-                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+            state.agentData.forEach(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return;
 
@@ -1073,7 +1118,7 @@
             });
 
             let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; 
-            let incentivePayout = fNop >= 60 ? (fAmt * 0.05) : 0; // Scaled assumed logic for FY
+            let incentivePayout = fNop >= 60 ? (fAmt * 0.05) : 0; 
             let totalPayout = basePayout + incentivePayout;
 
             document.getElementById('ytd-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
@@ -1090,7 +1135,7 @@
             document.getElementById('ytd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- RENEWAL LOGIC ---
+        // --- RENEWAL LOGIC (UPDATED FOR PERFORMANCE) ---
         function populateYears() {
             const years = [...new Set(rawData.map(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
@@ -1106,7 +1151,7 @@
         function renderRenewalDashboard() {
             const val = document.getElementById('renewal-year-select').value;
             state.selectedRenewalYear = val ? parseInt(val) : null;
-            if (!state.selectedRenewalYear || !state.agentProfile.name) {
+            if (!state.selectedRenewalYear || !state.agentProfile.name || state.agentData.length === 0) {
                 document.getElementById('renewal-empty-state').classList.remove('hidden'); document.getElementById('renewal-content').classList.add('hidden'); return;
             }
             document.getElementById('renewal-empty-state').classList.add('hidden'); document.getElementById('renewal-content').classList.remove('hidden');
@@ -1115,10 +1160,7 @@
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
-            // Exact Code 1 Extraction Logic
-            rawData.forEach(row => {
-                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
-
+            state.agentData.forEach(row => {
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                 if(!date) return;
@@ -1149,7 +1191,6 @@
                 d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
             });
 
-            // Exact Code 1 Mapping Logic
             let renUsage = renPool.map(r => {
                 const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
                 const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
@@ -1245,8 +1286,7 @@
             </tr>`;
 
             let baseDue = [], currentYearRenewals = [];
-            rawData.forEach(r => {
-                if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+            state.agentData.forEach(r => {
                 const date = parseExcelDate(getColValue(r, COL_DATE_KEYS));
                 const endDate = parseExcelDate(getColValue(r, COL_END_DATE_KEYS));
                 if(!date) return;
