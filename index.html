@@ -106,253 +106,257 @@
         </div>
     </div>
 
-    <!-- PORTAL LAYOUT: Header (Mobile) -->
-    <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
-            <div>
-                <div class="text-sm font-bold text-slate-800" id="mobile-name">Agent Name</div>
-                <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
+    <!-- MAIN PORTAL LAYOUT (The wrapper causing the issue is perfectly restored) -->
+    <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
+        
+        <!-- PORTAL LAYOUT: Header (Mobile) -->
+        <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
+                <div>
+                    <div class="text-sm font-bold text-slate-800" id="mobile-name">Agent Name</div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
+                </div>
             </div>
-        </div>
-        <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out" id="logoutBtnMob">
-            <span>Logout</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
-            <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
-        </button>
-    </header>
+            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out" id="logoutBtnMob">
+                <span>Logout</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
+                <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+            </button>
+        </header>
 
-    <!-- PORTAL LAYOUT: Main Content Area -->
-    <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1">
-        <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full pb-8">
-            
-            <!-- MODULE 1: ATTENDANCE -->
-            <div id="module-attendance" class="fade-in space-y-6">
-                <div class="flex justify-between items-end border-b border-slate-200 pb-4">
-                    <div>
-                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
-                        <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
+        <!-- PORTAL LAYOUT: Main Content Area -->
+        <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1">
+            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full">
+                
+                <!-- MODULE 1: ATTENDANCE -->
+                <div id="module-attendance" class="fade-in space-y-6">
+                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
+                        </div>
+                        <button onclick="loadAgentDashboard()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Refresh
+                        </button>
                     </div>
-                    <button onclick="loadAgentDashboard()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Refresh
+                    <div id="agentMeetingsContainer" class="space-y-4">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
+                    </div>
+                    <div class="pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
+                            <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
+                        </div>
+                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
+
+                <!-- MODULE 2: MTD (FRESH BIZ) -->
+                <div id="module-mtd" class="hidden fade-in space-y-6">
+                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">MTD Performance</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Live monthly dashboard.</p>
+                        </div>
+                        <div class="flex flex-col text-right gap-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Select Month</span>
+                            <input type="month" id="mtdMonthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="renderMtdDashboard()">
+                        </div>
+                    </div>
+
+                    <div id="mtd-content" class="space-y-6 slide-up">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Premium</div>
+                                <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">NOP Policies</div>
+                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-nop">0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-ticket">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
+                                    <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-total">₹0</div>
+                                </div>
+                                <div class="border-t border-slate-100 pt-2 mt-auto">
+                                    <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="mtd-payout-base">₹0</span></div>
+                                    <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="mtd-payout-inc">₹0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                                <div id="mtd-product-list" class="space-y-3"></div>
+                            </div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                                <div id="mtd-si-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODULE 3: RENEWALS -->
+                <div id="module-renewal" class="hidden fade-in space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
+                        </div>
+                        <div class="w-full md:w-auto flex items-center gap-3">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
+                            <select id="renewal-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderRenewalDashboard()">
+                                <option value="">Select Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="renewal-content" class="hidden space-y-6 slide-up">
+                        <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <div class="xl:col-span-2">
+                                <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                            </div>
+                            <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
+                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
+                                <div class="relative flex-1 w-full min-h-[220px]">
+                                    <canvas id="renewalChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
+                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
+                        </div>
+                    </div>
+
+                    <div id="renewal-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
+                        <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view retention data.</p>
+                    </div>
+                </div>
+
+                <!-- MODULE 4: YTD DASHBOARD -->
+                <div id="module-ytd" class="hidden fade-in space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">YTD Performance</h1>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date summary dashboard.</p>
+                        </div>
+                        <div class="w-full md:w-auto flex items-center gap-3">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
+                            <select id="ytd-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderYtdDashboard()">
+                                <option value="">Select Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="ytd-content" class="hidden space-y-6 slide-up">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Premium</div>
+                                <div class="text-3xl font-black tracking-tight" id="ytd-gwp">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Policies</div>
+                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="ytd-nop">0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="ytd-ticket">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
+                                    <div class="text-xl font-black text-slate-800 tracking-tight" id="ytd-payout-total">₹0</div>
+                                </div>
+                                <div class="border-t border-slate-100 pt-2 mt-auto">
+                                    <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="ytd-payout-base">₹0</span></div>
+                                    <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="ytd-payout-inc">₹0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                                <div id="ytd-product-list" class="space-y-3"></div>
+                            </div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                                <div id="ytd-si-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ytd-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
+                        <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view YTD data.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- PORTAL LAYOUT: Bottom Bar (Mobile/Tablet) / Sidebar (Desktop) -->
+        <nav class="flex-none bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex flex-row xl:flex-col justify-between z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first safe-pb">
+            <div>
+                <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
+                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
+                </div>
+                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
+                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar-desk">A</div>
+                    <div class="overflow-hidden">
+                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name-desk">Agent Name</div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd-desk">IMD: --</div>
+                    </div>
+                </div>
+
+                <!-- Tab Buttons -->
+                <div class="flex xl:flex-col p-1 xl:p-3 gap-1 overflow-x-auto w-full">
+                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[11px] md:text-sm font-semibold">Attendance</span>
+                    </button>
+                    <button onclick="switchModule('mtd')" id="nav-mtd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        <span class="text-[11px] md:text-sm font-semibold">MTD</span>
+                    </button>
+                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span class="text-[11px] md:text-sm font-semibold">Renewals</span>
+                    </button>
+                    <button onclick="switchModule('ytd')" id="nav-ytd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2zm2 0v-8a2 2 0 012-2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2a2 2 0 01-2-2zm2-10V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <span class="text-[11px] md:text-sm font-semibold">YTD</span>
                     </button>
                 </div>
-                <div id="agentMeetingsContainer" class="space-y-4">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
-                </div>
-                <div class="pt-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
-                        <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
-                    </div>
-                    <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
             </div>
-
-            <!-- MODULE 2: MTD (FRESH BIZ) -->
-            <div id="module-mtd" class="hidden fade-in space-y-6">
-                <div class="flex justify-between items-end border-b border-slate-200 pb-4">
-                    <div>
-                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">MTD Performance</h1>
-                        <p class="text-slate-500 text-xs font-medium mt-1">Live monthly dashboard.</p>
-                    </div>
-                    <div class="flex flex-col text-right gap-1">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Select Month</span>
-                        <input type="month" id="mtdMonthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="renderMtdDashboard()">
-                    </div>
-                </div>
-
-                <div id="mtd-content" class="space-y-6 slide-up">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
-                            <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Premium</div>
-                            <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">NOP Policies</div>
-                            <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-nop">0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
-                            <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-ticket">₹0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
-                                <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-total">₹0</div>
-                            </div>
-                            <div class="border-t border-slate-100 pt-2 mt-auto">
-                                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="mtd-payout-base">₹0</span></div>
-                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="mtd-payout-inc">₹0</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
-                            <div id="mtd-product-list" class="space-y-3"></div>
-                        </div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
-                            <div id="mtd-si-list" class="space-y-3"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODULE 3: RENEWALS -->
-            <div id="module-renewal" class="hidden fade-in space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
-                    <div>
-                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
-                        <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
-                    </div>
-                    <div class="w-full md:w-auto flex items-center gap-3">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
-                        <select id="renewal-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderRenewalDashboard()">
-                            <option value="">Select Year</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="renewal-content" class="hidden space-y-6 slide-up">
-                    <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div class="xl:col-span-2">
-                            <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                        </div>
-                        <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
-                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
-                            <div class="relative flex-1 w-full min-h-[220px]">
-                                <canvas id="renewalChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
-                        <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
-                    </div>
-                </div>
-
-                <div id="renewal-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
-                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
-                    <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view retention data.</p>
-                </div>
-            </div>
-
-            <!-- MODULE 4: YTD DASHBOARD -->
-            <div id="module-ytd" class="hidden fade-in space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
-                    <div>
-                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">YTD Performance</h1>
-                        <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date summary dashboard.</p>
-                    </div>
-                    <div class="w-full md:w-auto flex items-center gap-3">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
-                        <select id="ytd-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderYtdDashboard()">
-                            <option value="">Select Year</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="ytd-content" class="hidden space-y-6 slide-up">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
-                            <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Premium</div>
-                            <div class="text-3xl font-black tracking-tight" id="ytd-gwp">₹0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Policies</div>
-                            <div class="text-2xl font-black text-sbi-purple tracking-tight" id="ytd-nop">0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
-                            <div class="text-2xl font-black text-slate-800 tracking-tight" id="ytd-ticket">₹0</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
-                                <div class="text-xl font-black text-slate-800 tracking-tight" id="ytd-payout-total">₹0</div>
-                            </div>
-                            <div class="border-t border-slate-100 pt-2 mt-auto">
-                                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="ytd-payout-base">₹0</span></div>
-                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="ytd-payout-inc">₹0</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
-                            <div id="ytd-product-list" class="space-y-3"></div>
-                        </div>
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
-                            <div id="ytd-si-list" class="space-y-3"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="ytd-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
-                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
-                    <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view YTD data.</p>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- PORTAL LAYOUT: Bottom Bar (Mobile/Tablet) / Sidebar (Desktop) -->
-    <nav class="flex-none bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex flex-row xl:flex-col justify-between z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first safe-pb">
-        <div>
-            <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
-                <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
-            </div>
-            <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
-                <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar-desk">A</div>
-                <div class="overflow-hidden">
-                    <div class="text-sm font-bold text-slate-800 truncate" id="nav-name-desk">Agent Name</div>
-                    <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd-desk">IMD: --</div>
-                </div>
-            </div>
-
-            <!-- Tab Buttons -->
-            <div class="flex xl:flex-col p-1 xl:p-3 gap-1 overflow-x-auto w-full">
-                <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span class="text-[11px] md:text-sm font-semibold">Attendance</span>
-                </button>
-                <button onclick="switchModule('mtd')" id="nav-mtd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    <span class="text-[11px] md:text-sm font-semibold">MTD</span>
-                </button>
-                <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    <span class="text-[11px] md:text-sm font-semibold">Renewals</span>
-                </button>
-                <button onclick="switchModule('ytd')" id="nav-ytd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2zm2 0v-8a2 2 0 012-2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2a2 2 0 01-2-2zm2-10V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <span class="text-[11px] md:text-sm font-semibold">YTD</span>
+            <div class="p-4 hidden xl:block">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
                 </button>
             </div>
-        </div>
-        <div class="p-4 hidden xl:block">
-            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
-            </button>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
     <!-- DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
@@ -389,6 +393,9 @@
         const COL_PRODUCT_KEYS = ["product name", "product"];
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+        
+        // Cleanse policy strings to guarantee match
+        const cleanNo = (val) => val ? val.toString().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
 
         let rawData = [];
         let renewalChartInstance = null;
@@ -421,17 +428,21 @@
             setTimeout(() => { toast.className = toast.className.replace(`show ${type}`, ""); }, 4000);
         }
 
+        // Bypasses caching and checks multiple potential absolute/relative URL paths
         async function attemptFetchDefaultFile() {
             let basePath = window.location.pathname;
             basePath = basePath.substring(0, basePath.lastIndexOf('/'));
             if (basePath === '') basePath = '.';
 
             const filePathsToTry = [
-                'data.xlsx', 'Data.xlsx',
-                './data.xlsx', basePath + '/data.xlsx'
+                'data.xlsx',
+                'Data.xlsx',
+                './data.xlsx',
+                basePath + '/data.xlsx'
             ];
             
             let lastError = "File not found on server.";
+
             for(let path of filePathsToTry) {
                 try {
                     let response = await fetch(path, { cache: 'no-store' });
@@ -440,9 +451,15 @@
                         try {
                             parseExcelData(arrayBuffer);
                             return; 
-                        } catch (parseErr) { throw new Error("File found, but could not be parsed. Make sure it's a valid Excel file."); }
-                    } else { lastError = `Server returned ${response.status} for ${path}`; }
-                } catch(e) { if (e.message.includes("could not be parsed")) throw e; }
+                        } catch (parseErr) {
+                            throw new Error("File found, but could not be parsed. Is it uploaded via Git LFS instead of standard upload?");
+                        }
+                    } else {
+                        lastError = `Server returned ${response.status} for ${path}`;
+                    }
+                } catch(e) {
+                    if (e.message.includes("could not be parsed")) throw e; 
+                }
             }
             throw new Error(lastError);
         }
@@ -965,7 +982,6 @@
                 if (rowFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
             });
 
-            // Exact mapping from Code 1
             let renPool = currentYearRenewals.map(r => {
                 const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS)); const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
                 return { 
