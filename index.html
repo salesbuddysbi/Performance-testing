@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SBI General Agent Portal</title>
+    <title>SBI General Portal</title>
     
     <!-- Tailwind Script for Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,7 +44,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        select, input[type="month"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; }
+        select, input[type="month"], input[type="date"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; }
         
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 18px; height: 18px; animation: spin 1s linear infinite; display: none; }
         .btn.loading .spinner { display: block; }
@@ -62,9 +62,12 @@
             .nav-item.active { border-right: none; border-bottom: 3px solid #3a1a5b; } 
             .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
         }
+
+        .drilldown-row { display: none; }
+        .drilldown-row.active { display: table-row; animation: fadeIn 0.3s ease; }
     </style>
 </head>
-<body class="h-[100dvh] w-screen flex flex-col xl:flex-row overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm bg-sbi-bg">
+<body class="h-[100dvh] w-screen flex flex-col xl:flex-row overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm bg-sbi-bg relative">
 
     <div id="toast">Message here</div>
 
@@ -76,17 +79,14 @@
             </div>
             <h2 class="text-2xl font-bold mb-2 text-slate-800">Data Required</h2>
             <p class="text-slate-500 mb-4 text-xs">Please upload the Master Excel file to initialize the performance module before logging in.</p>
-            
-            <!-- Error Message Display -->
             <div id="upload-error-msg" class="text-[10px] font-bold text-sbi-red bg-rose-50 border border-rose-100 p-3 rounded-xl mb-5 hidden break-words"></div>
-
             <input type="file" id="file-upload" accept=".xlsx, .xls" class="hidden">
             <button onclick="document.getElementById('file-upload').click()" class="bg-sbi-purple hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl w-full text-sm transition-all shadow-lg">Browse Excel File</button>
         </div>
     </div>
 
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="absolute inset-0 bg-sbi-bg flex items-center justify-center z-[90] p-4">
+    <div id="login-screen" class="absolute inset-0 bg-sbi-bg flex flex-col items-center justify-center z-[90] p-4">
         <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200 slide-up relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-sbi-purple to-sbi-red"></div>
             <div class="text-center mb-8 mt-2">
@@ -103,13 +103,108 @@
                     <span>Secure Login</span><div class="spinner"></div>
                 </button>
             </div>
+            <div class="mt-6 text-center">
+                <a href="#" onclick="showAdminPinScreen()" class="text-[11px] font-bold text-slate-400 hover:text-sbi-purple underline transition-colors">Admin Portal</a>
+            </div>
         </div>
     </div>
 
-    <!-- MAIN PORTAL LAYOUT (The wrapper causing the issue is perfectly restored) -->
+    <!-- ADMIN PIN SCREEN -->
+    <div id="admin-pin-screen" class="absolute inset-0 bg-sbi-bg flex flex-col items-center justify-center z-[95] hidden p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200 slide-up relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-slate-800"></div>
+            <div class="text-center mb-8 mt-2">
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">Admin Portal</h1>
+                <p class="text-slate-500 text-xs mt-1">Enter administrative security PIN</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Security PIN</label>
+                    <input type="password" id="adminPinInput" placeholder="****" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 font-black text-slate-800 tracking-widest text-center transition-all">
+                </div>
+                <button id="pinBtn" onclick="verifyAdminPin()" class="w-full bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:opacity-90 flex justify-center items-center gap-2 btn">
+                    <span>Validate PIN</span><div class="spinner"></div>
+                </button>
+                <button onclick="hideAdminPinScreen()" class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all text-xs">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD SCREEN -->
+    <div id="admin-dashboard-screen" class="absolute inset-0 bg-sbi-bg z-[98] hidden flex-col overflow-hidden">
+        <header class="flex-none h-16 bg-slate-800 text-white border-b border-slate-900 flex justify-between items-center px-4 md:px-8 shadow-sm">
+            <h1 class="text-lg font-black tracking-tight">Admin Control Center</h1>
+            <button onclick="exitAdmin()" class="flex items-center gap-1.5 bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-bold text-xs border border-slate-600 hover:bg-slate-600 transition-colors">
+                <span>Exit Admin</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
+            </button>
+        </header>
+        
+        <div class="flex-none bg-white border-b border-slate-200 px-4 md:px-8 flex gap-4 overflow-x-auto">
+            <button class="admin-tab-btn active text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('controls', this); fetchAdminMeetings();">Session Controls</button>
+            <button class="admin-tab-btn text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('live', this); fetchLiveReport();">Live Report</button>
+            <button class="admin-tab-btn text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('history', this)">Report History</button>
+        </div>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 max-w-5xl mx-auto w-full pb-12">
+            <!-- Admin Tab: Controls -->
+            <div id="admin-tab-controls" class="admin-tab-content block fade-in">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Open New Meeting</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <select id="meetingTypeSelect" class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm px-4 py-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm">
+                            <option>Branch Meeting</option>
+                            <option>Unit Meeting</option>
+                            <option>Training</option>
+                        </select>
+                        <button class="bg-sbi-purple hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-md btn flex justify-center items-center gap-2 shrink-0" onclick="adminAction('Open', null, null, this)">
+                            <span>Start 15-Min Session</span><div class="spinner"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Master List (Today)</h3>
+                    <button onclick="fetchAdminMeetings()" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-bold transition-colors">Refresh</button>
+                </div>
+                <div id="adminMasterList" class="space-y-3">
+                    <div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading meetings...</div>
+                </div>
+            </div>
+
+            <!-- Admin Tab: Live Report -->
+            <div id="admin-tab-live" class="admin-tab-content hidden fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Today's Live Attendance</h3>
+                    <button onclick="fetchLiveReport()" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-bold transition-colors">Refresh</button>
+                </div>
+                <div id="liveReportContainer" class="space-y-4">
+                    <div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>
+                </div>
+            </div>
+
+            <!-- Admin Tab: History -->
+            <div id="admin-tab-history" class="admin-tab-content hidden fade-in">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Search Past Reports</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="date" id="historyDate" class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm px-4 py-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm">
+                        <button class="bg-slate-800 hover:opacity-90 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-md shrink-0" onclick="fetchHistoryReport()">
+                            Fetch Report
+                        </button>
+                    </div>
+                </div>
+                <div id="historyReportContainer" class="space-y-4"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MAIN PORTAL LAYOUT (Agent View) -->
     <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
         
-        <!-- PORTAL LAYOUT: Header (Mobile) -->
+        <!-- Header (Mobile) -->
         <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
@@ -125,7 +220,7 @@
             </button>
         </header>
 
-        <!-- PORTAL LAYOUT: Main Content Area -->
+        <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1">
             <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full">
                 
@@ -315,7 +410,7 @@
             </div>
         </main>
 
-        <!-- PORTAL LAYOUT: Bottom Bar (Mobile/Tablet) / Sidebar (Desktop) -->
+        <!-- Navigation Sidebar / Bottom Bar -->
         <nav class="flex-none bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex flex-row xl:flex-col justify-between z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first safe-pb">
             <div>
                 <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
@@ -393,9 +488,6 @@
         const COL_PRODUCT_KEYS = ["product name", "product"];
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-        
-        // Cleanse policy strings to guarantee match
-        const cleanNo = (val) => val ? val.toString().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
 
         let rawData = [];
         let renewalChartInstance = null;
@@ -408,6 +500,7 @@
             let m = (now.getMonth() + 1).toString().padStart(2, '0');
             document.getElementById('monthPicker').value = `${y}-${m}`;
             document.getElementById('mtdMonthPicker').value = `${y}-${m}`;
+            document.getElementById('historyDate').value = `${y}-${m}-${now.getDate().toString().padStart(2,'0')}`;
             
             attemptFetchDefaultFile().then(() => { 
                 checkAuth(); 
@@ -428,17 +521,14 @@
             setTimeout(() => { toast.className = toast.className.replace(`show ${type}`, ""); }, 4000);
         }
 
-        // Bypasses caching and checks multiple potential absolute/relative URL paths
         async function attemptFetchDefaultFile() {
             let basePath = window.location.pathname;
             basePath = basePath.substring(0, basePath.lastIndexOf('/'));
             if (basePath === '') basePath = '.';
 
             const filePathsToTry = [
-                'data.xlsx',
-                'Data.xlsx',
-                './data.xlsx',
-                basePath + '/data.xlsx'
+                'data.xlsx', 'Data.xlsx',
+                './data.xlsx', basePath + '/data.xlsx'
             ];
             
             let lastError = "File not found on server.";
@@ -548,6 +638,197 @@
             }, 600);
         }
 
+        // --- ADMIN LOGIN & DASHBOARD ---
+        function showAdminPinScreen() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-pin-screen').classList.remove('hidden');
+            document.getElementById('admin-pin-screen').classList.add('flex');
+        }
+
+        function hideAdminPinScreen() {
+            document.getElementById('admin-pin-screen').classList.add('hidden');
+            document.getElementById('admin-pin-screen').classList.remove('flex');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function verifyAdminPin() {
+            const pin = document.getElementById('adminPinInput').value;
+            const btn = document.getElementById('pinBtn');
+            if(!pin) return;
+            btn.classList.add('loading');
+            
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyAdmin', payload: {pin: pin} }) })
+            .then(r => r.json())
+            .then(isValid => {
+                btn.classList.remove('loading');
+                if(isValid) { 
+                    document.getElementById('adminPinInput').value = ''; 
+                    document.getElementById('admin-pin-screen').classList.add('hidden');
+                    document.getElementById('admin-pin-screen').classList.remove('flex');
+                    document.getElementById('admin-dashboard-screen').classList.remove('hidden');
+                    document.getElementById('admin-dashboard-screen').classList.add('flex');
+                    fetchAdminMeetings();
+                } else { showToast("Invalid Security PIN", "error"); }
+            }).catch(() => { btn.classList.remove('loading'); showToast("Network Error", "error"); });
+        }
+
+        function exitAdmin() {
+            document.getElementById('admin-dashboard-screen').classList.add('hidden');
+            document.getElementById('admin-dashboard-screen').classList.remove('flex');
+            checkAuth(); // Returns to either login or agent portal
+        }
+
+        function switchAdminTab(tabId, btnElement) {
+            document.querySelectorAll('.admin-tab-btn').forEach(b => {
+                b.classList.remove('active', 'text-sbi-purple', 'border-sbi-purple');
+                b.classList.add('text-slate-500', 'border-transparent');
+            });
+            btnElement.classList.remove('text-slate-500', 'border-transparent');
+            btnElement.classList.add('active', 'text-sbi-purple', 'border-sbi-purple');
+
+            document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`admin-tab-${tabId}`).classList.remove('hidden');
+        }
+
+        function renderAdminMeetings(meetings) {
+            let html = '';
+            if(!meetings || meetings.length === 0) { 
+                html = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">No meetings opened today.</div>'; 
+            } else {
+                meetings.forEach(m => {
+                    let isOpen = m.status === 'Open';
+                    let statusClass = isOpen ? 'bg-green-100 text-green-700 border-green-200' : 'bg-rose-100 text-sbi-red border-rose-200';
+                    html += `
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all hover:shadow-md">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-slate-800 text-base">${m.type}</h4>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${statusClass}">${m.status}</span>
+                                </div>
+                                <div class="text-xs text-slate-500 font-medium">Opened at ${format12Hour(m.startTime)}</div>
+                            </div>
+                            <div>
+                                ${isOpen 
+                                    ? `<button class="bg-rose-50 hover:bg-rose-100 text-sbi-red border border-rose-200 px-4 py-2 rounded-lg text-xs font-bold transition-colors btn flex justify-center items-center gap-1.5 w-full sm:w-auto" onclick="adminAction('Force-Close', null, '${m.id}', this)"><span>Force Close</span><div class="spinner !w-3 !h-3 !border-t-sbi-red"></div></button>`
+                                    : `<button class="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg text-xs font-bold transition-colors btn flex justify-center items-center gap-1.5 w-full sm:w-auto" onclick="adminAction('Re-Open', null, '${m.id}', this)"><span>Re-Open (15m)</span><div class="spinner !w-3 !h-3 !border-t-amber-700"></div></button>`
+                                }
+                            </div>
+                        </div>`;
+                });
+            }
+            document.getElementById('adminMasterList').innerHTML = html;
+        }
+
+        function fetchAdminMeetings() {
+            document.getElementById('adminMasterList').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading...</div>';
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAdminDashboard', payload: {} }) })
+            .then(r => r.json())
+            .then(meetings => renderAdminMeetings(meetings))
+            .catch(() => showToast("Failed to fetch meetings", "error"));
+        }
+
+        function adminAction(actionType, typeStr, meetingId, btnElem) {
+            let payload = { actionType: actionType };
+            if(typeStr) payload.type = typeStr;
+            if(meetingId) payload.meetingId = meetingId;
+            if(actionType === 'Open') payload.type = document.getElementById('meetingTypeSelect').value;
+
+            if (btnElem) btnElem.classList.add('loading');
+
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'adminMeetingAction', payload: payload }) })
+            .then(r => r.json())
+            .then(res => {
+                showToast(res.message, res.success ? 'success' : 'error');
+                if(btnElem) btnElem.classList.remove('loading');
+                if (res.meetings) renderAdminMeetings(res.meetings);
+                else fetchAdminMeetings();
+            }).catch(() => {
+                if(btnElem) btnElem.classList.remove('loading');
+                showToast("Action failed", "error");
+            });
+        }
+
+        function buildMultiMeetingReports(meetingsData, containerId) {
+            const container = document.getElementById(containerId);
+            if(!meetingsData || meetingsData.length === 0) {
+                container.innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-white rounded-xl border border-slate-200 shadow-sm">No meeting data available for this date.</div>'; return;
+            }
+            
+            let html = '';
+            meetingsData.forEach((m, mIdx) => {
+                let pct = m.totalBase > 0 ? Math.round((m.totalAttended/m.totalBase)*100) : 0;
+                let card = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-5">
+                        <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
+                            <div><h3 class="font-bold text-slate-800">${m.type}</h3><div class="text-[10px] text-slate-500 font-bold uppercase">${format12Hour(m.startTime)}</div></div>
+                            <div class="text-right"><div class="text-xl font-black text-sbi-purple">${pct}%</div><div class="text-[10px] text-slate-500 font-bold uppercase">Attended: ${m.totalAttended}/${m.totalBase}</div></div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead class="bg-slate-100/50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
+                                    <tr><th class="p-3">Manager</th><th class="p-3 text-center">Attended</th><th class="p-3 text-center">Base</th><th class="p-3 text-right">Coverage</th></tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                if(m.managers && m.managers.length > 0) {
+                    m.managers.forEach((mgr, idx) => {
+                        let mPct = mgr.base > 0 ? Math.round((mgr.attended/mgr.base)*100) : 0;
+                        let drillId = `${containerId}_m${mIdx}_d${idx}`;
+                        
+                        card += `
+                            <tr class="cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100" onclick="toggleDrilldown('${drillId}')">
+                                <td class="p-3 font-bold text-sbi-purple flex items-center gap-2"><svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg> ${mgr.name}</td>
+                                <td class="p-3 text-center font-bold text-slate-700">${mgr.attended}</td>
+                                <td class="p-3 text-center text-slate-500">${mgr.base}</td>
+                                <td class="p-3 text-right font-bold ${mPct >= 80 ? 'text-green-600' : (mPct >= 50 ? 'text-amber-600' : 'text-sbi-red')}">${mPct}%</td>
+                            </tr>
+                        `;
+                        
+                        if(mgr.agents && mgr.agents.length > 0) {
+                            let inner = `<div class="p-3 bg-slate-50"><table class="w-full text-[11px] border border-slate-200 rounded-lg overflow-hidden bg-white"><thead class="bg-slate-100 text-slate-500 font-bold border-b border-slate-200"><tr><th class="p-2">Agent</th><th class="p-2 text-right">Check-In</th><th class="p-2 text-right">Check-Out</th></tr></thead><tbody>`;
+                            mgr.agents.forEach(a => {
+                                let statusTag = a.checkOut ? '' : '<span class="text-amber-600 font-bold ml-1">(Pending Out)</span>';
+                                inner += `<tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50"><td class="p-2 font-semibold text-slate-800">${a.name} <span class="text-slate-400 font-normal">(${a.imd})</span>${statusTag}</td><td class="p-2 text-right text-green-600 font-bold">${format12Hour(a.checkIn)}</td><td class="p-2 text-right font-bold ${a.checkOut ? 'text-slate-700' : 'text-slate-300'}">${a.checkOut ? format12Hour(a.checkOut) : '--:--'}</td></tr>`;
+                            });
+                            inner += `</tbody></table></div>`;
+                            card += `<tr id="${drillId}" class="drilldown-row"><td colspan="4" class="p-0 border-b border-slate-200">${inner}</td></tr>`;
+                        }
+                    });
+                } else {
+                    card += `<tr><td colspan="4" class="p-4 text-center text-slate-400">No attendances yet.</td></tr>`;
+                }
+                
+                card += `</tbody></table></div></div>`;
+                html += card;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleDrilldown(id) {
+            const el = document.getElementById(id);
+            if(el) el.classList.toggle('active');
+        }
+
+        function fetchLiveReport() {
+            document.getElementById('liveReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>';
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getLiveManagerReport', payload: {} }) })
+            .then(r => r.json())
+            .then(data => buildMultiMeetingReports(data, 'liveReportContainer'))
+            .catch(() => showToast("Failed to load reports", "error"));
+        }
+
+        function fetchHistoryReport() {
+            const date = document.getElementById('historyDate').value;
+            if(!date) return showToast("Select a date", "error");
+            document.getElementById('historyReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Fetching reports...</div>';
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getHistoricalReport', payload: {date: date} }) })
+            .then(r => r.json())
+            .then(data => buildMultiMeetingReports(data, 'historyReportContainer'))
+            .catch(() => showToast("Failed to fetch history", "error"));
+        }
+
+        // --- AGENT UI & NAV ---
         function setupPortalUI() {
             const name = state.agentProfile.name || 'Agent';
             const imd = state.agentProfile.imd;
@@ -584,111 +865,6 @@
                 if (state.selectedYtdYear) renderYtdDashboard();
                 else { document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); }
             }
-        }
-
-        // --- DATA EXTRACTORS ---
-        function getColValue(row, possibleKeys) {
-            if (!row || typeof row !== 'object') return "";
-            const rowKeys = Object.keys(row);
-            for (let pk of possibleKeys) {
-                const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
-                for (let k of rowKeys) if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
-            }
-            return "";
-        }
-        function parseNumber(val) {
-            if (!val) return 0;
-            if (typeof val === 'number') return isNaN(val) ? 0 : val;
-            const num = parseFloat(val.toString().replace(/[^0-9.\-]/g, ''));
-            return isNaN(num) ? 0 : num;
-        }
-        function parseExcelDate(val) {
-            if (!val) return null;
-            if (typeof val === 'number') {
-                let temp = new Date(Math.round((val - 25569) * 86400000));
-                return new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate(), 0, 0, 0);
-            }
-            let s = val.toString().trim(); let d = new Date(s);
-            if(!isNaN(d.getTime())) { d.setHours(0,0,0,0); return d; }
-            return null;
-        }
-        function toTitleCase(str) { return !str ? '' : str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
-        function parseTransactionType(typeStr) {
-            const t = (typeStr || '').toString().toLowerCase().trim();
-            const isCancel = t.includes('cancel') || t.includes('reversal') || t.includes('dishonor');
-            const isRefund = t.includes('refund');
-            const isRenewal = (t.includes('renewal') || t.includes('rnw')) && !t.includes('roll');
-            const isFresh = (t.includes('fresh') || t.includes('new') || t === 'nb' || t.includes('roll')) && !isRenewal && !isCancel && !isRefund;
-            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement: t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh };
-        }
-        function formatSumInsured(val) {
-            const n = parseNumber(val);
-            if (n === 0) return '-';
-            if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
-            if (n >= 100000) return '₹' + (n / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
-            return '₹' + n.toLocaleString('en-IN');
-        }
-        function findExactNameInExcel(imdCode) {
-            for(let row of rawData) {
-                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) return toTitleCase(getColValue(row, COL_AGENT_KEYS));
-            }
-            return null;
-        }
-
-        // --- ATTENDANCE ---
-        async function loadAgentDashboard() {
-            agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
-            const container = document.getElementById('agentMeetingsContainer');
-            container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
-            const month = document.getElementById('monthPicker').value;
-            try {
-                const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAgentDashboard', payload: {imd: state.agentProfile.imd, month: month} }) });
-                const data = await response.json();
-                if(data.error) throw new Error(data.message);
-                renderAgentMeetings(data.todayMeetings, data.todayAttendances);
-                renderAttendanceStats(data.stats);
-            } catch(e) { container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`; }
-        }
-        function format12Hour(isoString) { return !isoString ? "--:--" : new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
-        function renderAgentMeetings(meetings, attendances) {
-            const container = document.getElementById('agentMeetingsContainer');
-            if (!meetings || meetings.length === 0) { container.innerHTML = '<div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>'; return; }
-            container.innerHTML = meetings.map((m, index) => {
-                let att = attendances[m.id]; 
-                let html = `<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">`;
-                if (m.status === 'Open' && !att) {
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span></div><div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4"><div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div><div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div></div><button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>`;
-                    startAgentTimer(index, m.expiryTime);
-                } else if (att && !att.checkOut) {
-                    let isOpen = m.status === 'Open';
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div></div><button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>`;
-                } else if (att && att.checkOut) {
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div></div>`;
-                } else { html += `<div class="flex justify-between items-center"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Closed</span></div>`; }
-                return html + `</div>`;
-            }).join('');
-        }
-        function startAgentTimer(id, expiry) {
-            let intv = setInterval(() => {
-                let el = document.getElementById(`timer_${id}`);
-                if(!el) return;
-                let dist = expiry - new Date().getTime();
-                if (dist <= 0) { clearInterval(intv); el.innerText = "00:00"; loadAgentDashboard(); } 
-                else { let m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); let s = Math.floor((dist % (1000 * 60)) / 1000); el.innerText = `${m}:${s < 10 ? '0' : ''}${s}`; }
-            }, 1000); agentCountdownIntervals.push(intv);
-        }
-        async function agentAction(action, meetingId, btn) {
-            btn.classList.add('loading');
-            try { const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: { imd: state.agentProfile.imd, meetingId: meetingId } }) }); const data = await res.json(); showToast(data.message, data.status === 'success' ? 'success' : 'error'); loadAgentDashboard(); } 
-            catch(e) { showToast("Action failed", "error"); btn.classList.remove('loading'); }
-        }
-        function renderAttendanceStats(stats) {
-            const container = document.getElementById('statsContainer');
-            if(!stats || Object.keys(stats).length === 0) { container.innerHTML = '<div class="col-span-full text-xs text-slate-400">No history found for this month.</div>'; return; }
-            container.innerHTML = Object.entries(stats).map(([type, data]) => {
-                const pct = data.scheduled > 0 ? Math.round((data.attended / data.scheduled) * 100) : 0;
-                return `<div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"><h4 class="text-xs font-bold text-slate-800 mb-2">${type}</h4><div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-sbi-purple">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div><div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-sbi-purple h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div></div>`;
-            }).join('');
         }
 
         // --- MTD LOGIC ---
@@ -806,19 +982,7 @@
             document.getElementById('ytd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- RENEWAL LOGIC ---
-        function populateYears() {
-            const years = [...new Set(rawData.map(row => {
-                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                if (!d) return null;
-                return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
-            }).filter(y => y !== null))].sort((a, b) => b - a);
-            
-            const opts = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
-            document.getElementById('renewal-year-select').innerHTML = opts;
-            document.getElementById('ytd-year-select').innerHTML = opts;
-        }
-
+        // --- RENEWAL LOGIC (Reverted to 100% Code 1 Logic) ---
         function renderRenewalDashboard() {
             const val = document.getElementById('renewal-year-select').value;
             state.selectedRenewalYear = val ? parseInt(val) : null;
@@ -831,7 +995,6 @@
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
-            // Exact Code 1 Extraction Logic
             rawData.forEach(row => {
                 if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
 
@@ -865,7 +1028,7 @@
                 d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
             });
 
-            // Exact Code 1 Mapping Logic
+            // Original Code 1 string matching logic
             let renUsage = renPool.map(r => {
                 const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
                 const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
