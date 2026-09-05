@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SBI General Portal</title>
+    <title>SBI General Agent Portal</title>
     
     <!-- Tailwind Script for Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -104,13 +104,13 @@
                 </button>
             </div>
             <div class="mt-6 text-center">
-                <a href="#" onclick="showAdminPinScreen()" class="text-[11px] font-bold text-slate-400 hover:text-sbi-purple underline transition-colors">Admin Portal</a>
+                <button onclick="showAdminPinScreen()" class="text-[11px] font-bold text-slate-400 hover:text-sbi-purple underline transition-colors focus:outline-none">Admin Portal</button>
             </div>
         </div>
     </div>
 
     <!-- ADMIN PIN SCREEN -->
-    <div id="admin-pin-screen" class="absolute inset-0 bg-sbi-bg flex flex-col items-center justify-center z-[95] hidden p-4">
+    <div id="admin-pin-screen" class="absolute inset-0 bg-sbi-bg flex-col items-center justify-center z-[95] hidden p-4">
         <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200 slide-up relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-slate-800"></div>
             <div class="text-center mb-8 mt-2">
@@ -143,9 +143,9 @@
         </header>
         
         <div class="flex-none bg-white border-b border-slate-200 px-4 md:px-8 flex gap-4 overflow-x-auto">
-            <button class="admin-tab-btn active text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('controls', this); fetchAdminMeetings();">Session Controls</button>
-            <button class="admin-tab-btn text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('live', this); fetchLiveReport();">Live Report</button>
-            <button class="admin-tab-btn text-slate-500 font-bold text-sm py-4 border-b-2 border-transparent hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('history', this)">Report History</button>
+            <button class="admin-tab-btn active text-sbi-purple border-sbi-purple font-bold text-sm py-4 border-b-2 hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('controls', this); fetchAdminMeetings();">Session Controls</button>
+            <button class="admin-tab-btn text-slate-500 border-transparent font-bold text-sm py-4 border-b-2 hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('live', this); fetchLiveReport();">Live Report</button>
+            <button class="admin-tab-btn text-slate-500 border-transparent font-bold text-sm py-4 border-b-2 hover:text-sbi-purple transition-colors whitespace-nowrap" onclick="switchAdminTab('history', this)">Report History</button>
         </div>
 
         <main class="flex-1 overflow-y-auto p-4 md:p-8 max-w-5xl mx-auto w-full pb-12">
@@ -201,7 +201,11 @@
         </main>
     </div>
 
-    <!-- MAIN PORTAL LAYOUT (Agent View) -->
+
+    <!-- ========================================== -->
+    <!-- MAIN PORTAL LAYOUT (Agent View)            -->
+    <!-- THIS WRAPPER IS PERFECTLY RESTORED         -->
+    <!-- ========================================== -->
     <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
         
         <!-- Header (Mobile) -->
@@ -532,7 +536,6 @@
             ];
             
             let lastError = "File not found on server.";
-
             for(let path of filePathsToTry) {
                 try {
                     let response = await fetch(path, { cache: 'no-store' });
@@ -541,15 +544,9 @@
                         try {
                             parseExcelData(arrayBuffer);
                             return; 
-                        } catch (parseErr) {
-                            throw new Error("File found, but could not be parsed. Is it uploaded via Git LFS instead of standard upload?");
-                        }
-                    } else {
-                        lastError = `Server returned ${response.status} for ${path}`;
-                    }
-                } catch(e) {
-                    if (e.message.includes("could not be parsed")) throw e; 
-                }
+                        } catch (parseErr) { throw new Error("File found, but could not be parsed. Make sure it's a valid Excel file."); }
+                    } else { lastError = `Server returned ${response.status} for ${path}`; }
+                } catch(e) { if (e.message.includes("could not be parsed")) throw e; }
             }
             throw new Error(lastError);
         }
@@ -587,13 +584,20 @@
                 state.agentProfile.name = localStorage.getItem('agentName');
                 setupPortalUI();
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('portal-layout').classList.remove('hidden');
-                document.getElementById('portal-layout').classList.add('flex');
+                
+                const layout = document.getElementById('portal-layout');
+                if(layout) {
+                    layout.classList.remove('hidden');
+                    layout.classList.add('flex');
+                }
                 switchModule('attendance');
             } else {
                 document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('portal-layout').classList.add('hidden');
-                document.getElementById('portal-layout').classList.remove('flex');
+                const layout = document.getElementById('portal-layout');
+                if(layout) {
+                    layout.classList.add('hidden');
+                    layout.classList.remove('flex');
+                }
             }
         }
 
@@ -675,7 +679,7 @@
         function exitAdmin() {
             document.getElementById('admin-dashboard-screen').classList.add('hidden');
             document.getElementById('admin-dashboard-screen').classList.remove('flex');
-            checkAuth(); // Returns to either login or agent portal
+            checkAuth();
         }
 
         function switchAdminTab(tabId, btnElement) {
@@ -828,7 +832,6 @@
             .catch(() => showToast("Failed to fetch history", "error"));
         }
 
-        // --- AGENT UI & NAV ---
         function setupPortalUI() {
             const name = state.agentProfile.name || 'Agent';
             const imd = state.agentProfile.imd;
@@ -865,6 +868,111 @@
                 if (state.selectedYtdYear) renderYtdDashboard();
                 else { document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); }
             }
+        }
+
+        // --- DATA EXTRACTORS ---
+        function getColValue(row, possibleKeys) {
+            if (!row || typeof row !== 'object') return "";
+            const rowKeys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                const pkClean = pk.toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let k of rowKeys) if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === pkClean) return row[k];
+            }
+            return "";
+        }
+        function parseNumber(val) {
+            if (!val) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            const num = parseFloat(val.toString().replace(/[^0-9.\-]/g, ''));
+            return isNaN(num) ? 0 : num;
+        }
+        function parseExcelDate(val) {
+            if (!val) return null;
+            if (typeof val === 'number') {
+                let temp = new Date(Math.round((val - 25569) * 86400000));
+                return new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate(), 0, 0, 0);
+            }
+            let s = val.toString().trim(); let d = new Date(s);
+            if(!isNaN(d.getTime())) { d.setHours(0,0,0,0); return d; }
+            return null;
+        }
+        function toTitleCase(str) { return !str ? '' : str.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+        function parseTransactionType(typeStr) {
+            const t = (typeStr || '').toString().toLowerCase().trim();
+            const isCancel = t.includes('cancel') || t.includes('reversal') || t.includes('dishonor');
+            const isRefund = t.includes('refund');
+            const isRenewal = (t.includes('renewal') || t.includes('rnw')) && !t.includes('roll');
+            const isFresh = (t.includes('fresh') || t.includes('new') || t === 'nb' || t.includes('roll')) && !isRenewal && !isCancel && !isRefund;
+            return { isCancel, isRenewal, isFresh, isRetentionBase: isFresh || isRenewal, isRefund, isEndorsement: t.includes('endorsement') && !isRenewal && !isCancel && !isRefund && !isFresh };
+        }
+        function formatSumInsured(val) {
+            const n = parseNumber(val);
+            if (n === 0) return '-';
+            if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2).replace(/\.00$/, '') + ' Cr';
+            if (n >= 100000) return '₹' + (n / 100000).toFixed(2).replace(/\.00$/, '') + ' Lac';
+            return '₹' + n.toLocaleString('en-IN');
+        }
+        function findExactNameInExcel(imdCode) {
+            for(let row of rawData) {
+                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) return toTitleCase(getColValue(row, COL_AGENT_KEYS));
+            }
+            return null;
+        }
+
+        // --- ATTENDANCE ---
+        async function loadAgentDashboard() {
+            agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
+            const container = document.getElementById('agentMeetingsContainer');
+            container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
+            const month = document.getElementById('monthPicker').value;
+            try {
+                const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAgentDashboard', payload: {imd: state.agentProfile.imd, month: month} }) });
+                const data = await response.json();
+                if(data.error) throw new Error(data.message);
+                renderAgentMeetings(data.todayMeetings, data.todayAttendances);
+                renderAttendanceStats(data.stats);
+            } catch(e) { container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`; }
+        }
+        function format12Hour(isoString) { return !isoString ? "--:--" : new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
+        function renderAgentMeetings(meetings, attendances) {
+            const container = document.getElementById('agentMeetingsContainer');
+            if (!meetings || meetings.length === 0) { container.innerHTML = '<div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>'; return; }
+            container.innerHTML = meetings.map((m, index) => {
+                let att = attendances[m.id]; 
+                let html = `<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">`;
+                if (m.status === 'Open' && !att) {
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span></div><div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4"><div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div><div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div></div><button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>`;
+                    startAgentTimer(index, m.expiryTime);
+                } else if (att && !att.checkOut) {
+                    let isOpen = m.status === 'Open';
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div></div><button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>`;
+                } else if (att && att.checkOut) {
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div></div>`;
+                } else { html += `<div class="flex justify-between items-center"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Closed</span></div>`; }
+                return html + `</div>`;
+            }).join('');
+        }
+        function startAgentTimer(id, expiry) {
+            let intv = setInterval(() => {
+                let el = document.getElementById(`timer_${id}`);
+                if(!el) return;
+                let dist = expiry - new Date().getTime();
+                if (dist <= 0) { clearInterval(intv); el.innerText = "00:00"; loadAgentDashboard(); } 
+                else { let m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); let s = Math.floor((dist % (1000 * 60)) / 1000); el.innerText = `${m}:${s < 10 ? '0' : ''}${s}`; }
+            }, 1000); agentCountdownIntervals.push(intv);
+        }
+        async function agentAction(action, meetingId, btn) {
+            btn.classList.add('loading');
+            try { const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: { imd: state.agentProfile.imd, meetingId: meetingId } }) }); const data = await res.json(); showToast(data.message, data.status === 'success' ? 'success' : 'error'); loadAgentDashboard(); } 
+            catch(e) { showToast("Action failed", "error"); btn.classList.remove('loading'); }
+        }
+        function renderAttendanceStats(stats) {
+            const container = document.getElementById('statsContainer');
+            if(!stats || Object.keys(stats).length === 0) { container.innerHTML = '<div class="col-span-full text-xs text-slate-400">No history found for this month.</div>'; return; }
+            container.innerHTML = Object.entries(stats).map(([type, data]) => {
+                const pct = data.scheduled > 0 ? Math.round((data.attended / data.scheduled) * 100) : 0;
+                return `<div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"><h4 class="text-xs font-bold text-slate-800 mb-2">${type}</h4><div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-sbi-purple">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div><div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-sbi-purple h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div></div>`;
+            }).join('');
         }
 
         // --- MTD LOGIC ---
@@ -982,7 +1090,19 @@
             document.getElementById('ytd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- RENEWAL LOGIC (Reverted to 100% Code 1 Logic) ---
+        // --- RENEWAL LOGIC ---
+        function populateYears() {
+            const years = [...new Set(rawData.map(row => {
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                if (!d) return null;
+                return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+            }).filter(y => y !== null))].sort((a, b) => b - a);
+            
+            const opts = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            document.getElementById('renewal-year-select').innerHTML = opts;
+            document.getElementById('ytd-year-select').innerHTML = opts;
+        }
+
         function renderRenewalDashboard() {
             const val = document.getElementById('renewal-year-select').value;
             state.selectedRenewalYear = val ? parseInt(val) : null;
@@ -995,6 +1115,7 @@
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
             const now = new Date(); 
 
+            // Exact Code 1 Extraction Logic
             rawData.forEach(row => {
                 if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
 
@@ -1028,7 +1149,7 @@
                 d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
             });
 
-            // Original Code 1 string matching logic
+            // Exact Code 1 Mapping Logic
             let renUsage = renPool.map(r => {
                 const ins = toTitleCase(getColValue(r, COL_INSURED_KEYS));
                 const prd = toTitleCase(getColValue(r, COL_PRODUCT_KEYS));
