@@ -265,40 +265,64 @@
                     </div>
 
                     <div id="mtd-content" class="space-y-6 slide-up">
-                        <!-- Top Stats Cards -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Row 1: Production Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
-                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">MTD Fresh Premium</div>
+                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Total Fresh Premium</div>
                                 <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
                             </div>
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Active Slab %</div>
-                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-slab-percent">15%</div>
-                            </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Total Payout</div>
-                                    <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-total">₹0</div>
-                                </div>
-                                <div class="border-t border-slate-100 pt-2 mt-auto">
-                                    <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="mtd-payout-base">₹0</span></div>
-                                    <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="mtd-payout-inc">₹0</span></div>
-                                </div>
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Fresh NOP</div>
+                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-nop">0</div>
                             </div>
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Policies</div>
-                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-nop">0</div>
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-ticket">₹0</div>
                             </div>
                         </div>
-                    
+
+                        <!-- Row 2: Earnings Stats -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-1">
+                                    <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fresh Base</div>
+                                    <div class="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded">15%</div>
+                                </div>
+                                <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-base">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-1">
+                                    <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fresh Incentive</div>
+                                    <div class="text-[10px] font-black text-sbi-purple bg-purple-50 px-2 py-0.5 rounded" id="mtd-slab-percent">+0%</div>
+                                </div>
+                                <div class="text-xl font-black text-sbi-purple tracking-tight" id="mtd-payout-inc">₹0</div>
+                            </div>
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-1">
+                                    <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Renewal Payout</div>
+                                    <div class="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">15%</div>
+                                </div>
+                                <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-ren">₹0</div>
+                            </div>
+                            <div class="bg-green-50 rounded-2xl p-4 shadow-sm border border-green-200 flex flex-col justify-between">
+                                <div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Total Payout</div>
+                                <div class="text-xl font-black text-green-600 tracking-tight" id="mtd-payout-total">₹0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col items-end gap-1.5 mt-2">
+                            <span class="text-[9px] font-bold text-sbi-red bg-rose-50 px-3 py-1.5 rounded border border-rose-100 uppercase tracking-widest">* TDS IS APPLICABLE ON ALL PAYOUTS</span>
+                            <span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded border border-slate-200 uppercase tracking-widest">Payouts realized between 10th - 25th of next month</span>
+                        </div>
+
                         <!-- Policy Level Breakdown Table -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
                             <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Policy Level Breakdown & Payouts</h2>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse text-xs">
                                     <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
                                         <tr>
-                                            <th class="p-3">Policy No</th>
+                                            <th class="p-3 whitespace-nowrap">Policy No</th>
                                             <th class="p-3">Customer</th>
                                             <th class="p-3 text-center">Type</th>
                                             <th class="p-3 text-right">Sum Insured</th>
@@ -314,7 +338,7 @@
                                 </table>
                             </div>
                         </div>
-                    
+
                         <!-- Product & SI Mix -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
@@ -468,7 +492,7 @@
                         <span class="text-[11px] md:text-sm font-semibold">Renewals</span>
                     </button>
                     <button onclick="switchModule('ytd')" id="nav-ytd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2zm2 0v-8a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2zm2 0v-8a2 2 0 012-2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2a2 2 0 01-2-2zm2-10V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         <span class="text-[11px] md:text-sm font-semibold">YTD</span>
                     </button>
                 </div>
@@ -522,7 +546,6 @@
         let renewalChartInstance = null;
         let agentCountdownIntervals = [];
         
-        // --- ADDED: agentData property to store pre-filtered array ---
         let state = { 
             mainModule: 'attendance', 
             selectedRenewalYear: null, 
@@ -584,7 +607,6 @@
             throw new Error(lastError);
         }
 
-        // --- Timeout wrapper to prevent UI freezing ---
         function loadExcel(file) {
             const reader = new FileReader();
             
@@ -629,9 +651,7 @@
             populateYears();
         }
 
-        // --- processAgentData to isolate by IMD safely ---
         function processAgentData() {
-            // Rely on IMD code primarily, as it is a unique identifier
             if (!state.agentProfile.imd || rawData.length === 0) return;
             
             const targetIMD = state.agentProfile.imd.toUpperCase().trim();
@@ -641,25 +661,19 @@
                 const rowIMD = getColValue(row, COL_IMD_CODE_KEYS).toString().toUpperCase().trim();
                 const rowName = toTitleCase(getColValue(row, COL_AGENT_KEYS));
                 
-                // 1. Try matching by IMD code first (Safest)
                 if (rowIMD && rowIMD === targetIMD) return true;
-                
-                // 2. Fallback to Name matching if IMD is missing in that Excel row
                 if (targetName && rowName === targetName) return true;
-                
                 return false;
             });
 
             console.log(`Data Ready: Found ${state.agentData.length} records for IMD: ${targetIMD}`);
         }
 
-        // --- checkAuth calls processAgentData before rendering UI ---
         function checkAuth() {
             if(localStorage.getItem('agentIMD')) {
                 state.agentProfile.imd = localStorage.getItem('agentIMD');
                 state.agentProfile.name = localStorage.getItem('agentName');
                 
-                // Pre-filter the data BEFORE rendering the UI
                 if (rawData.length > 0) {
                     processAgentData();
                 }
@@ -672,7 +686,6 @@
                     layout.classList.remove('hidden');
                     layout.classList.add('flex');
                 }
-                // Keep the current tab open if reloading
                 switchModule(state.mainModule || 'attendance');
             } else {
                 document.getElementById('login-screen').classList.remove('hidden');
@@ -725,7 +738,7 @@
             }, 600);
         }
 
-        // --- ADMIN LOGIN & DASHBOARD ---
+        // --- ADMIN LOGIC ---
         function showAdminPinScreen() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('admin-pin-screen').classList.remove('hidden');
@@ -1058,7 +1071,7 @@
             }).join('');
         }
 
-        // --- MTD LOGIC (CLIFF INTEGRATED) ---
+        // --- MTD LOGIC (UPDATED WITH CANCELS & RENEWALS) ---
         function renderMtdDashboard() {
             if(!state.agentProfile.imd) return;
             const dateVal = document.getElementById('mtdMonthPicker').value; 
@@ -1066,7 +1079,6 @@
             const [yStr, mStr] = dateVal.split('-');
             const targetYear = parseInt(yStr); const targetMonth = parseInt(mStr) - 1; 
 
-            // Extract valid policies for this month
             let mtdPolicies = [];
             state.agentData.forEach(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
@@ -1076,27 +1088,35 @@
             });
 
             // PASS 1: Calculate Total MTD Fresh Premium to determine the Slab
-            let totalFreshPremium = 0;
-            let totalNop = 0;
+            let totalFreshPremium = 0; // Net Premium (Fresh minus cancellations)
+            let totalFreshNop = 0;
             let productBreakdown = {}, siBreakdown = {};
 
             mtdPolicies.forEach(row => {
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                 const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
                 
-                if (tx.isFresh && premium > 0) {
-                    totalFreshPremium += premium;
-                }
-
-                // Data for breakdowns (Includes everything: Fresh, Renewals, Cancels)
                 let nop = 0, prem = 0;
-                if (tx.isFresh) { nop = 1; prem = premium; } 
-                else if (tx.isCancel) { nop = -1; prem = premium > 0 ? -Math.abs(premium) : premium; }
-                else if (tx.isRefund) { prem = premium > 0 ? -Math.abs(premium) : premium; }
-                else if (tx.isEndorsement) { prem = premium; }
+
+                if (tx.isFresh) {
+                    nop = 1; 
+                    prem = premium;
+                    totalFreshPremium += prem;
+                    totalFreshNop += nop;
+                } else if (tx.isCancel || tx.isRefund) {
+                    nop = -1;
+                    prem = premium > 0 ? -Math.abs(premium) : premium;
+                    // Deduct cancellations from MTD slab targets!
+                    totalFreshPremium += prem; 
+                    totalFreshNop += nop;
+                } else if (tx.isRenewal) {
+                    nop = 1;
+                    prem = premium;
+                } else if (tx.isEndorsement) {
+                    prem = premium;
+                }
                 
                 if (nop !== 0 || prem !== 0) {
-                    totalNop += nop;
                     let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
                     let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
                     
@@ -1107,57 +1127,78 @@
                 }
             });
 
-            // --- EXACT CLIFF LOGIC INTEGRATION ---
+            // EXACT CLIFF LOGIC INTEGRATION
             let slabIncentivePercent = 0;
-            if (totalFreshPremium >= 300001) slabIncentivePercent = 0.20;       // 300,001 & Above: +20%
-            else if (totalFreshPremium >= 200001) slabIncentivePercent = 0.15;  // 200,001 to 300,000: +15%
-            else if (totalFreshPremium >= 150001) slabIncentivePercent = 0.125; // 150,001 to 200,000: +12.5%
-            else if (totalFreshPremium >= 100001) slabIncentivePercent = 0.10;  // 100,001 to 150,000: +10%
-            else if (totalFreshPremium >= 50001) slabIncentivePercent = 0.075;  // 50,001 to 100,000: +7.5%
-            else if (totalFreshPremium >= 30001) slabIncentivePercent = 0.05;   // 30,001 to 50,000: +5%
-            else slabIncentivePercent = 0;                                      // Upto 30,000: 0%
+            if (totalFreshPremium >= 300001) slabIncentivePercent = 0.20;       
+            else if (totalFreshPremium >= 200001) slabIncentivePercent = 0.15;  
+            else if (totalFreshPremium >= 150001) slabIncentivePercent = 0.125; 
+            else if (totalFreshPremium >= 100001) slabIncentivePercent = 0.10;  
+            else if (totalFreshPremium >= 50001) slabIncentivePercent = 0.075;  
+            else if (totalFreshPremium >= 30001) slabIncentivePercent = 0.05;   
+            else slabIncentivePercent = 0;                                      
 
             // PASS 2: Calculate individual policy payouts & build UI
-            let totalEarnedBase = 0;
-            let totalEarnedIncentive = 0;
+            let totalEarnedFreshBase = 0;
+            let totalEarnedFreshIncentive = 0;
+            let totalEarnedRenewal = 0;
             let policyRowsHtml = '';
 
             mtdPolicies.forEach(row => {
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-                const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
+                const rawPremium = parseNumber(getColValue(row, COL_PREM_KEYS));
                 
-                // Skip rendering cancels/refunds in the payout list to keep it clean
-                if (premium <= 0 || tx.isCancel || tx.isRefund) return;
+                // Adjust premium correctly if it's a cancellation or refund
+                let premium = rawPremium;
+                if (tx.isCancel || tx.isRefund) {
+                    premium = rawPremium > 0 ? -Math.abs(rawPremium) : rawPremium;
+                }
+
+                if (premium === 0) return; // Skip mathematically empty rows
 
                 const policyNo = getColValue(row, COL_POLICY_KEYS) || 'N/A';
                 const customer = toTitleCase(getColValue(row, COL_INSURED_KEYS)) || 'Unknown';
                 const rawSi = parseNumber(getColValue(row, COL_SUM_INSURED_KEYS));
                 const formattedSi = formatSumInsured(getColValue(row, COL_SUM_INSURED_KEYS));
                 
-                // Base logic for Fresh vs Renewal
-                const isFresh = tx.isFresh;
-                const basePercent = 0.15; // 15% Base
-                const applicableIncPercent = isFresh ? slabIncentivePercent : 0; // New Business gets the slab bump
-                const siKickerPercent = (isFresh && rawSi >= 2000000) ? 0.02 : 0; // 20 Lacs & Above gets 2% extra
+                let earnedTotal = 0;
+                let totalPolicyPercent = 0;
+                let calcStr = '';
 
-                const totalPolicyPercent = basePercent + applicableIncPercent + siKickerPercent;
-                
-                // Monetary calculations
-                const earnedBase = premium * basePercent;
-                const earnedInc = premium * (applicableIncPercent + siKickerPercent);
-                const earnedTotal = earnedBase + earnedInc;
+                if (tx.isFresh && premium > 0) {
+                    const basePercent = 0.15;
+                    const siKickerPercent = (rawSi >= 2000000) ? 0.02 : 0; 
 
-                totalEarnedBase += earnedBase;
-                totalEarnedIncentive += earnedInc;
+                    totalPolicyPercent = basePercent + slabIncentivePercent + siKickerPercent;
+                    
+                    const earnedBase = premium * basePercent;
+                    const earnedInc = premium * (slabIncentivePercent + siKickerPercent);
+                    earnedTotal = earnedBase + earnedInc;
 
-                // Visual Tags
-                const typeLabel = isFresh ? 'Fresh' : (tx.isRenewal ? 'Renewal' : 'Endorsement');
-                const typeStyle = isFresh ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600';
-                
-                // Show the calculation breakdown to the agent (e.g. "15% + 7.5% + 2%")
-                let calcStr = `15%`;
-                if (applicableIncPercent > 0) calcStr += ` + ${(applicableIncPercent * 100).toFixed(1)}%`;
-                if (siKickerPercent > 0) calcStr += ` + 2% (SI)`;
+                    totalEarnedFreshBase += earnedBase;
+                    totalEarnedFreshIncentive += earnedInc;
+
+                    calcStr = `15%`;
+                    if (slabIncentivePercent > 0) calcStr += ` + ${(slabIncentivePercent * 100).toFixed(1)}%`;
+                    if (siKickerPercent > 0) calcStr += ` + 2% (SI)`;
+                } else if (tx.isRenewal && premium > 0) {
+                    totalPolicyPercent = 0.15; 
+                    earnedTotal = premium * totalPolicyPercent;
+                    totalEarnedRenewal += earnedTotal;
+                    calcStr = `15% Base`;
+                } else if (tx.isCancel || tx.isRefund) {
+                    // CLAWBACK CALCULATION
+                    totalPolicyPercent = 0.15; // Standard base clawback
+                    earnedTotal = premium * totalPolicyPercent; // Creates negative earned amount
+                    
+                    // Deduct from the base bucket
+                    totalEarnedFreshBase += earnedTotal; 
+                    calcStr = `15% Clawback`;
+                } else {
+                    calcStr = `0%`; // Standard endorsements etc
+                }
+
+                const typeLabel = tx.isFresh ? 'Fresh' : (tx.isRenewal ? 'Renewal' : (tx.isCancel ? 'Cancel' : (tx.isRefund ? 'Refund' : 'Endorsement')));
+                const typeStyle = tx.isFresh ? 'bg-green-100 text-green-700' : (tx.isRenewal ? 'bg-blue-100 text-blue-700' : (tx.isCancel || tx.isRefund ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'));
 
                 policyRowsHtml += `
                 <tr class="hover:bg-slate-50 transition-colors">
@@ -1165,25 +1206,31 @@
                     <td class="p-3 truncate max-w-[120px]">${customer}</td>
                     <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${typeStyle}">${typeLabel}</span></td>
                     <td class="p-3 text-right font-medium text-slate-600">${formattedSi}</td>
-                    <td class="p-3 text-right font-bold text-slate-800">₹${premium.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
-                    <td class="p-3 text-center text-[10px] text-slate-400 font-medium">${isFresh ? calcStr : 'Standard Base'}</td>
+                    <td class="p-3 text-right font-bold ${premium < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${premium.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                    <td class="p-3 text-center text-[10px] text-slate-400 font-medium">${calcStr}</td>
                     <td class="p-3 text-right font-bold text-sbi-purple">${(totalPolicyPercent * 100).toFixed(1)}%</td>
-                    <td class="p-3 text-right font-black text-green-600">₹${Math.round(earnedTotal).toLocaleString('en-IN')}</td>
+                    <td class="p-3 text-right font-black ${earnedTotal < 0 ? 'text-sbi-red' : 'text-green-600'}">₹${Math.round(earnedTotal).toLocaleString('en-IN')}</td>
                 </tr>`;
             });
 
-            // Update Top Stat Cards
-            document.getElementById('mtd-gwp').innerText = `₹${totalFreshPremium.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
-            document.getElementById('mtd-nop').innerText = totalNop;
-            document.getElementById('mtd-slab-percent').innerText = `${((0.15 + slabIncentivePercent) * 100).toFixed(1)}%`;
-            document.getElementById('mtd-payout-total').innerText = `₹${Math.round(totalEarnedBase + totalEarnedIncentive).toLocaleString('en-IN')}`;
-            document.getElementById('mtd-payout-base').innerText = `₹${Math.round(totalEarnedBase).toLocaleString('en-IN')}`;
-            document.getElementById('mtd-payout-inc').innerText = `₹${Math.round(totalEarnedIncentive).toLocaleString('en-IN')}`;
+            const averageTicketSize = totalFreshNop > 0 ? Math.round(totalFreshPremium / totalFreshNop) : 0;
+            const finalTotalPayout = totalEarnedFreshBase + totalEarnedFreshIncentive + totalEarnedRenewal;
 
-            // Render Lists
+            // Row 1 Updates
+            document.getElementById('mtd-gwp').innerText = `₹${totalFreshPremium.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
+            document.getElementById('mtd-nop').innerText = totalFreshNop;
+            document.getElementById('mtd-ticket').innerText = `₹${averageTicketSize.toLocaleString('en-IN')}`;
+
+            // Row 2 Updates
+            document.getElementById('mtd-payout-base').innerText = `₹${Math.round(totalEarnedFreshBase).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-slab-percent').innerText = `+${(slabIncentivePercent * 100).toFixed(1)}%`;
+            document.getElementById('mtd-payout-inc').innerText = `₹${Math.round(totalEarnedFreshIncentive).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-payout-ren').innerText = `₹${Math.round(totalEarnedRenewal).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-payout-total').innerText = `₹${Math.round(finalTotalPayout).toLocaleString('en-IN')}`;
+
+            // Lists Updates
             document.getElementById('mtd-policy-table-body').innerHTML = policyRowsHtml || `<tr><td colspan="8" class="p-5 text-center text-slate-400">No paid policies found for this month.</td></tr>`;
             
-            // Render Breakdowns
             const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
             document.getElementById('mtd-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
             
