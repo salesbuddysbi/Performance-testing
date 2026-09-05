@@ -415,12 +415,12 @@
             setTimeout(() => { toast.className = toast.className.replace(`show ${type}`, ""); }, 4000);
         }
 
-        // Robust fetch mechanism for GitHub Pages and Local Hosting
+        // Extremely robust fetch mechanism for GitHub Pages and Local Hosting
         async function attemptFetchDefaultFile() {
             const filePathsToTry = [
-                'Kollam%20Cluster.xlsx', 'Kollam Cluster.xlsx', 
                 'data.xlsx', 'Data.xlsx',
-                './Kollam%20Cluster.xlsx', './data.xlsx'
+                'Kollam%20Cluster.xlsx', 'Kollam Cluster.xlsx', 
+                './data.xlsx', './Kollam%20Cluster.xlsx'
             ];
             
             for(let path of filePathsToTry) {
@@ -761,7 +761,7 @@
             });
 
             let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; 
-            let incentivePayout = fNop >= 60 ? (fAmt * 0.05) : 0; 
+            let incentivePayout = fNop >= 60 ? (fAmt * 0.05) : 0; // Scaled assumed logic for FY
             let totalPayout = basePayout + incentivePayout;
 
             document.getElementById('ytd-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
@@ -924,6 +924,7 @@
                 <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Policy No</th>
                 <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Insured Name</th>
                 <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Product Name</th>
+                <th class="p-3 text-[10px] font-bold text-slate-500 uppercase">Sum Insured</th>
                 <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">LY Premium</th>
                 <th class="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
             </tr>`;
@@ -997,14 +998,16 @@
                 return { ...p, _statusBadge: statusBadge };
             });
 
-            if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+            if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
             else tbody.innerHTML = mappedPolicies.map(p => {
                 const lyPrem = parseNumber(getColValue(p, COL_PREM_KEYS));
+                const sumInsured = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
                 return `
                 <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
                     <td class="p-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">${getColValue(p, COL_POLICY_KEYS) || 'N/A'}</td>
                     <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-slate-700">${toTitleCase(getColValue(p, COL_INSURED_KEYS)) || 'Unknown'}</td>
                     <td class="p-3 text-[11px] truncate max-w-[200px] font-semibold text-sbi-purple">${getColValue(p, COL_PRODUCT_KEYS) || 'Unspecified'}</td>
+                    <td class="p-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">${sumInsured}</td>
                     <td class="p-3 text-right whitespace-nowrap"><div class="font-bold text-slate-800">₹${Math.abs(lyPrem).toLocaleString('en-IN', {maximumFractionDigits:0})}</div></td>
                     <td class="p-3 text-right whitespace-nowrap">${p._statusBadge}</td>
                 </tr>`;
