@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SBI General Agent Portal</title>
     
+    <!-- Tailwind Script for Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        sbi: { purple: '#3a1a5b', red: '#e40046', bg: '#f4f6f9' }
+                        sbi: {
+                            purple: '#3a1a5b',
+                            red: '#e40046',
+                            bg: '#f4f6f9'
+                        }
                     }
                 }
             }
@@ -46,6 +51,7 @@
         .btn.loading span { display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Toast Notifications */
         #toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 12px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: max(30px, env(safe-area-inset-bottom)); transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
         #toast.show { visibility: visible; bottom: max(90px, calc(50px + env(safe-area-inset-bottom))); opacity: 1; }
         #toast.success { background-color: #38a169; color: #fff; }
@@ -54,10 +60,12 @@
         .nav-item.active { background-color: #f5f3f7; color: #3a1a5b; border-right: 3px solid #3a1a5b; font-weight: 700; }
         @media (max-width: 1280px) { 
             .nav-item.active { border-right: none; border-bottom: 3px solid #3a1a5b; } 
+            .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
         }
     </style>
 </head>
-<body class="h-[100dvh] w-screen overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm bg-sbi-bg">
+<!-- Pure Flexbox constraints guarantee nav bar never drops off screen -->
+<body class="h-[100dvh] w-screen flex flex-col xl:flex-row overflow-hidden selection:bg-sbi-purple/20 selection:text-sbi-purple text-sm bg-sbi-bg">
 
     <div id="toast">Message here</div>
 
@@ -95,201 +103,258 @@
         </div>
     </div>
 
-    <!-- MAIN PORTAL LAYOUT -->
-    <div id="portal-layout" class="hidden w-full h-full flex-col xl:flex-row">
-        
-        <!-- Mobile/Tablet Header -->
-        <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
-                <div>
-                    <div class="text-sm font-bold text-slate-800" id="mobile-name">Agent Name</div>
-                    <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
+    <!-- PORTAL LAYOUT: Header (Mobile) -->
+    <header class="xl:hidden flex-none h-16 bg-white border-b border-slate-200 flex justify-between items-center z-40 px-4 shrink-0 shadow-sm w-full">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-sm shadow-inner" id="mobile-avatar">A</div>
+            <div>
+                <div class="text-sm font-bold text-slate-800" id="mobile-name">Agent Name</div>
+                <div class="text-[10px] font-bold text-slate-500 uppercase" id="mobile-imd">IMD: --</div>
+            </div>
+        </div>
+        <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out" id="logoutBtnMob">
+            <span>Logout</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
+            <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+        </button>
+    </header>
+
+    <!-- PORTAL LAYOUT: Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1">
+        <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full">
+            
+            <!-- MODULE 1: ATTENDANCE -->
+            <div id="module-attendance" class="fade-in space-y-6">
+                <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
+                        <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
+                    </div>
+                    <button onclick="loadAgentDashboard()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh
+                    </button>
+                </div>
+                <div id="agentMeetingsContainer" class="space-y-4">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
+                </div>
+                <div class="pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
+                        <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
+                    </div>
+                    <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
             </div>
-            <button onclick="logout()" class="flex items-center gap-1.5 bg-rose-50 text-sbi-red px-3 py-1.5 rounded-lg font-bold text-xs border border-rose-100 hover:bg-rose-100 transition-colors btn" title="Log Out">
-                <span>Logout</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
-                <div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
-            </button>
-        </header>
 
-        <!-- Navigation Sidebar / Bottom Bar -->
-        <nav class="bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex-none flex flex-row xl:flex-col justify-between xl:h-full z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first shrink-0 pb-[env(safe-area-inset-bottom)] xl:pb-0">
-            <div>
-                <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
-                    <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
-                </div>
-                
-                <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
-                    <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar-desk">A</div>
-                    <div class="overflow-hidden">
-                        <div class="text-sm font-bold text-slate-800 truncate" id="nav-name-desk">Agent Name</div>
-                        <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd-desk">IMD: --</div>
+            <!-- MODULE 2: MTD (FRESH BIZ) -->
+            <div id="module-mtd" class="hidden fade-in space-y-6">
+                <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">MTD Performance</h1>
+                        <p class="text-slate-500 text-xs font-medium mt-1">Live monthly dashboard.</p>
+                    </div>
+                    <div class="flex flex-col text-right gap-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Select Month</span>
+                        <input type="month" id="mtdMonthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="renderMtdDashboard()">
                     </div>
                 </div>
 
-                <div class="flex xl:flex-col p-2 xl:p-3 gap-1 overflow-x-auto xl:overflow-visible w-full">
-                    <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span class="text-[12px] xl:text-sm font-semibold">Attendance</span>
-                    </button>
-                    <button onclick="switchModule('fresh')" id="nav-fresh" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <span class="text-[12px] xl:text-sm font-semibold">Fresh Biz</span>
-                    </button>
-                    <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-2 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
-                        <svg class="w-5 h-5 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span class="text-[12px] xl:text-sm font-semibold">Renewals</span>
-                    </button>
+                <div id="mtd-content" class="space-y-6 slide-up">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                            <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Premium</div>
+                            <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">NOP Policies</div>
+                            <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-nop">0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                            <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-ticket">₹0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
+                                <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-total">₹0</div>
+                            </div>
+                            <div class="border-t border-slate-100 pt-2 mt-auto">
+                                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="mtd-payout-base">₹0</span></div>
+                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="mtd-payout-inc">₹0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                            <div id="mtd-product-list" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                            <div id="mtd-si-list" class="space-y-3"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="p-4 hidden xl:block">
-                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+
+            <!-- MODULE 3: RENEWALS -->
+            <div id="module-renewal" class="hidden fade-in space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
+                        <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
+                    </div>
+                    <div class="w-full md:w-auto flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
+                        <select id="renewal-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderRenewalDashboard()">
+                            <option value="">Select Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="renewal-content" class="hidden space-y-6 slide-up">
+                    <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2">
+                            <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+                        <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
+                            <div class="relative flex-1 w-full min-h-[220px]">
+                                <canvas id="renewalChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
+                        <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
+                    </div>
+                </div>
+
+                <div id="renewal-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
+                    <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view retention data.</p>
+                </div>
+            </div>
+
+            <!-- MODULE 4: YTD DASHBOARD -->
+            <div id="module-ytd" class="hidden fade-in space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-sbi-purple tracking-tight">YTD Performance</h1>
+                        <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date summary dashboard.</p>
+                    </div>
+                    <div class="w-full md:w-auto flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
+                        <select id="ytd-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderYtdDashboard()">
+                            <option value="">Select Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="ytd-content" class="hidden space-y-6 slide-up">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                            <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Premium</div>
+                            <div class="text-3xl font-black tracking-tight" id="ytd-gwp">₹0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Policies</div>
+                            <div class="text-2xl font-black text-sbi-purple tracking-tight" id="ytd-nop">0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
+                            <div class="text-2xl font-black text-slate-800 tracking-tight" id="ytd-ticket">₹0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
+                                <div class="text-xl font-black text-slate-800 tracking-tight" id="ytd-payout-total">₹0</div>
+                            </div>
+                            <div class="border-t border-slate-100 pt-2 mt-auto">
+                                <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="ytd-payout-base">₹0</span></div>
+                                <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="ytd-payout-inc">₹0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                            <div id="ytd-product-list" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                            <div id="ytd-si-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ytd-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
+                    <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view YTD data.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- PORTAL LAYOUT: Bottom Bar (Mobile/Tablet) / Sidebar (Desktop) -->
+    <nav class="flex-none bg-white border-t xl:border-t-0 xl:border-r border-slate-200 w-full xl:w-64 flex flex-row xl:flex-col justify-between z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] xl:shadow-none order-last xl:order-first safe-pb">
+        <div>
+            <div class="p-5 border-b border-slate-100 hidden xl:block bg-gradient-to-r from-sbi-purple to-sbi-red">
+                <h2 class="text-lg font-black text-white tracking-tight text-center">SBI General</h2>
+            </div>
+            <div class="p-4 border-b border-slate-100 bg-slate-50 items-center gap-3 hidden xl:flex">
+                <div class="w-11 h-11 bg-gradient-to-br from-sbi-purple to-sbi-red text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="nav-avatar-desk">A</div>
+                <div class="overflow-hidden">
+                    <div class="text-sm font-bold text-slate-800 truncate" id="nav-name-desk">Agent Name</div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase" id="nav-imd-desk">IMD: --</div>
+                </div>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex xl:flex-col p-1 xl:p-3 gap-1 overflow-x-auto w-full">
+                <button onclick="switchModule('attendance')" id="nav-attendance" class="nav-item active flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="text-[11px] md:text-sm font-semibold">Attendance</span>
+                </button>
+                <button onclick="switchModule('mtd')" id="nav-mtd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    <span class="text-[11px] md:text-sm font-semibold">MTD</span>
+                </button>
+                <button onclick="switchModule('renewal')" id="nav-renewal" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span class="text-[11px] md:text-sm font-semibold">Renewals</span>
+                </button>
+                <button onclick="switchModule('ytd')" id="nav-ytd" class="nav-item flex-1 xl:flex-none flex xl:justify-start justify-center items-center gap-1.5 xl:gap-3 px-2 py-3.5 xl:py-3 rounded-xl xl:rounded-lg text-slate-500 transition-colors whitespace-nowrap">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2zm2 0v-8a2 2 0 012-2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2a2 2 0 01-2-2zm2-10V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span class="text-[11px] md:text-sm font-semibold">YTD</span>
                 </button>
             </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-sbi-bg relative scroll-smooth order-1 h-full">
-            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full pb-8">
-                
-                <!-- MODULE 1: ATTENDANCE -->
-                <div id="module-attendance" class="fade-in space-y-6">
-                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
-                        <div>
-                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
-                            <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
-                        </div>
-                        <button onclick="loadAgentDashboard()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                            Refresh
-                        </button>
-                    </div>
-
-                    <div id="agentMeetingsContainer" class="space-y-4">
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
-                    </div>
-
-                    <div class="pt-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
-                            <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
-                        </div>
-                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                    </div>
-                </div>
-
-                <!-- MODULE 2: FRESH BUSINESS -->
-                <div id="module-fresh" class="hidden fade-in space-y-6">
-                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
-                        <div>
-                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Fresh Business</h1>
-                            <p class="text-slate-500 text-xs font-medium mt-1">Live monthly performance dashboard.</p>
-                        </div>
-                        <div class="flex flex-col text-right gap-1">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Select Month</span>
-                            <input type="month" id="freshMonthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="renderFreshDashboard()">
-                        </div>
-                    </div>
-
-                    <div id="fresh-content" class="space-y-6 slide-up">
-                        <!-- Top KPI Cards -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
-                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Premium</div>
-                                <div class="text-3xl font-black tracking-tight" id="fresh-gwp">₹0</div>
-                            </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">NOP Policies</div>
-                                <div class="text-2xl font-black text-sbi-purple tracking-tight" id="fresh-nop">0</div>
-                            </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
-                                <div class="text-2xl font-black text-slate-800 tracking-tight" id="fresh-ticket">₹0</div>
-                            </div>
-                            <!-- Payout Estimation Card -->
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="text-green-600 text-[10px] font-extrabold uppercase tracking-widest">Tentative Payout</div>
-                                    <div class="text-xl font-black text-slate-800 tracking-tight" id="fresh-payout-total">₹0</div>
-                                </div>
-                                <div class="border-t border-slate-100 pt-2 mt-auto">
-                                    <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-500">Base</span><span class="text-slate-800 font-bold" id="fresh-payout-base">₹0</span></div>
-                                    <div class="flex justify-between text-[11px]"><span class="text-slate-500">Incentive</span><span class="text-green-600 font-bold" id="fresh-payout-inc">₹0</span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Breakdowns -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
-                                <div id="fresh-product-list" class="space-y-3"></div>
-                            </div>
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
-                                <div id="fresh-si-list" class="space-y-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MODULE 3: RENEWALS -->
-                <div id="module-renewal" class="hidden fade-in space-y-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
-                        <div>
-                            <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
-                            <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
-                        </div>
-                        <div class="w-full md:w-auto flex items-center gap-3">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
-                            <select id="renewal-year-select" class="bg-white border border-slate-200 text-slate-800 font-bold text-sm px-4 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-sbi-purple shadow-sm flex-1 md:flex-none" onchange="renderRenewalDashboard()">
-                                <option value="">Select Year</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="renewal-content" class="hidden space-y-6 slide-up">
-                        <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-
-                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                            <div class="xl:col-span-2">
-                                <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                            </div>
-                            <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
-                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
-                                <div class="relative flex-1 w-full min-h-[220px]">
-                                    <canvas id="renewalChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
-                        </div>
-                    </div>
-
-                    <div id="renewal-empty-state" class="flex flex-col items-center justify-center h-64 text-center slide-up">
-                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 border border-slate-200">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <h3 class="text-sm font-bold text-slate-700 mb-1">Select Financial Year</h3>
-                        <p class="text-slate-400 text-xs">Please select a year from the dropdown above to view retention data.</p>
-                    </div>
-                </div>
-
-            </div>
-        </main>
+        </div>
+        <div class="p-4 hidden xl:block">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-sbi-red py-2.5 rounded-xl font-bold transition-colors btn" id="logoutBtnDesk">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <span>Log Out</span><div class="spinner border-slate-300 border-t-sbi-red !w-4 !h-4 hidden"></div>
+            </button>
+        </div>
+    </nav>
     </div>
 
     <!-- DRILL-DOWN MODAL -->
     <div id="drilldown-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden p-4" onclick="if(event.target === this) document.getElementById('drilldown-modal').classList.add('hidden')">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col slide-up overflow-hidden border border-slate-100">
             <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
                 <div><h2 class="text-lg font-bold text-slate-800" id="modal-title">Details</h2><p class="text-xs font-semibold text-slate-500" id="modal-subtitle">Breakdown</p></div>
                 <button onclick="document.getElementById('drilldown-modal').classList.add('hidden')" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-500 transition shadow-sm border border-slate-200">
@@ -323,17 +388,20 @@
         const COL_SUM_INSURED_KEYS = ["total sum insured", "sum insured", "si"];
         const FY_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
         
+        // Cleanse policy strings to guarantee match
+        const cleanNo = (val) => val ? val.toString().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+
         let rawData = [];
         let renewalChartInstance = null;
         let agentCountdownIntervals = [];
-        let state = { mainModule: 'attendance', selectedRenewalYear: null, agentProfile: { imd: null, name: null } };
+        let state = { mainModule: 'attendance', selectedRenewalYear: null, selectedYtdYear: null, agentProfile: { imd: null, name: null } };
 
         window.onload = () => {
             const now = new Date();
             let y = now.getFullYear();
             let m = (now.getMonth() + 1).toString().padStart(2, '0');
             document.getElementById('monthPicker').value = `${y}-${m}`;
-            document.getElementById('freshMonthPicker').value = `${y}-${m}`;
+            document.getElementById('mtdMonthPicker').value = `${y}-${m}`;
             
             attemptFetchDefaultFile().then(() => { checkAuth(); }).catch(() => { document.getElementById('upload-overlay').classList.remove('hidden'); });
             document.getElementById('file-upload').addEventListener('change', (e) => { if (e.target.files[0]) loadExcel(e.target.files[0]); });
@@ -377,7 +445,7 @@
                     rawData = rawData.concat(cleanedSheet);
                 }
             });
-            populateRenewalYears();
+            populateYears();
         }
 
         function checkAuth() {
@@ -456,24 +524,26 @@
 
         function switchModule(moduleName) {
             state.mainModule = moduleName;
-            ['attendance', 'fresh', 'renewal'].forEach(id => { document.getElementById(`nav-${id}`).classList.remove('active'); document.getElementById(`module-${id}`).classList.add('hidden'); });
+            ['attendance', 'mtd', 'renewal', 'ytd'].forEach(id => { 
+                document.getElementById(`nav-${id}`).classList.remove('active'); 
+                document.getElementById(`module-${id}`).classList.add('hidden'); 
+            });
             document.getElementById(`nav-${moduleName}`).classList.add('active');
             document.getElementById(`module-${moduleName}`).classList.remove('hidden');
 
-            if (moduleName === 'attendance') {
-                loadAgentDashboard();
-            } else if (moduleName === 'fresh') {
-                renderFreshDashboard();
-            } else if (moduleName === 'renewal') {
+            if (moduleName === 'attendance') loadAgentDashboard();
+            else if (moduleName === 'mtd') renderMtdDashboard();
+            else if (moduleName === 'renewal') {
                 if (state.selectedRenewalYear) renderRenewalDashboard();
-                else {
-                    document.getElementById('renewal-empty-state').classList.remove('hidden');
-                    document.getElementById('renewal-content').classList.add('hidden');
-                }
+                else { document.getElementById('renewal-empty-state').classList.remove('hidden'); document.getElementById('renewal-content').classList.add('hidden'); }
+            }
+            else if (moduleName === 'ytd') {
+                if (state.selectedYtdYear) renderYtdDashboard();
+                else { document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); }
             }
         }
 
-        // --- EXCEL HELPERS ---
+        // --- DATA EXTRACTORS ---
         function getColValue(row, possibleKeys) {
             if (!row || typeof row !== 'object') return "";
             const rowKeys = Object.keys(row);
@@ -517,19 +587,16 @@
         }
         function findExactNameInExcel(imdCode) {
             for(let row of rawData) {
-                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) {
-                    return toTitleCase(getColValue(row, COL_AGENT_KEYS));
-                }
+                if(getColValue(row, COL_IMD_CODE_KEYS).toString().trim().toUpperCase() === imdCode) return toTitleCase(getColValue(row, COL_AGENT_KEYS));
             }
             return null;
         }
 
-        // --- ATTENDANCE ---
+        // --- ATTENDANCE (Unchanged) ---
         async function loadAgentDashboard() {
             agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
             const container = document.getElementById('agentMeetingsContainer');
             container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
-            
             const month = document.getElementById('monthPicker').value;
             try {
                 const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAgentDashboard', payload: {imd: state.agentProfile.imd, month: month} }) });
@@ -537,132 +604,57 @@
                 if(data.error) throw new Error(data.message);
                 renderAgentMeetings(data.todayMeetings, data.todayAttendances);
                 renderAttendanceStats(data.stats);
-            } catch(e) {
-                container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`;
-            }
+            } catch(e) { container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`; }
         }
-
-        function format12Hour(isoString) {
-            if(!isoString) return "--:--";
-            return new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        }
-
+        function format12Hour(isoString) { return !isoString ? "--:--" : new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
         function renderAgentMeetings(meetings, attendances) {
             const container = document.getElementById('agentMeetingsContainer');
-            if (!meetings || meetings.length === 0) {
-                container.innerHTML = '<div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>';
-                return;
-            }
-
+            if (!meetings || meetings.length === 0) { container.innerHTML = '<div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>'; return; }
             container.innerHTML = meetings.map((m, index) => {
                 let att = attendances[m.id]; 
                 let html = `<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">`;
-                
                 if (m.status === 'Open' && !att) {
-                    html += `
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span>
-                        </div>
-                        <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4">
-                            <div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div>
-                            <div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div>
-                        </div>
-                        <button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>
-                    `;
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span></div><div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4"><div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div><div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div></div><button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>`;
                     startAgentTimer(index, m.expiryTime);
-                } 
-                else if (att && !att.checkOut) {
+                } else if (att && !att.checkOut) {
                     let isOpen = m.status === 'Open';
-                    html += `
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span>
-                        </div>
-                        <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4">
-                            <div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div>
-                        </div>
-                        <button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>
-                    `;
-                }
-                else if (att && att.checkOut) {
-                    html += `
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span>
-                        </div>
-                        <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center">
-                            <div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div>
-                            <div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div>
-                        </div>
-                    `;
-                } 
-                else {
-                    html += `
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-base font-bold text-slate-900">${m.type}</h3>
-                            <span class="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Closed</span>
-                        </div>
-                    `;
-                }
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div></div><button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>`;
+                } else if (att && att.checkOut) {
+                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div></div>`;
+                } else { html += `<div class="flex justify-between items-center"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Closed</span></div>`; }
                 return html + `</div>`;
             }).join('');
         }
-
         function startAgentTimer(id, expiry) {
             let intv = setInterval(() => {
                 let el = document.getElementById(`timer_${id}`);
                 if(!el) return;
                 let dist = expiry - new Date().getTime();
                 if (dist <= 0) { clearInterval(intv); el.innerText = "00:00"; loadAgentDashboard(); } 
-                else {
-                    let m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
-                    let s = Math.floor((dist % (1000 * 60)) / 1000);
-                    el.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                }
-            }, 1000);
-            agentCountdownIntervals.push(intv);
+                else { let m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); let s = Math.floor((dist % (1000 * 60)) / 1000); el.innerText = `${m}:${s < 10 ? '0' : ''}${s}`; }
+            }, 1000); agentCountdownIntervals.push(intv);
         }
-
         async function agentAction(action, meetingId, btn) {
             btn.classList.add('loading');
-            try {
-                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: { imd: state.agentProfile.imd, meetingId: meetingId } }) });
-                const data = await res.json();
-                showToast(data.message, data.status === 'success' ? 'success' : 'error');
-                loadAgentDashboard();
-            } catch(e) {
-                showToast("Action failed", "error");
-                btn.classList.remove('loading');
-            }
+            try { const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: { imd: state.agentProfile.imd, meetingId: meetingId } }) }); const data = await res.json(); showToast(data.message, data.status === 'success' ? 'success' : 'error'); loadAgentDashboard(); } 
+            catch(e) { showToast("Action failed", "error"); btn.classList.remove('loading'); }
         }
-
         function renderAttendanceStats(stats) {
             const container = document.getElementById('statsContainer');
-            if(!stats || Object.keys(stats).length === 0) {
-                container.innerHTML = '<div class="col-span-full text-xs text-slate-400">No history found for this month.</div>';
-                return;
-            }
+            if(!stats || Object.keys(stats).length === 0) { container.innerHTML = '<div class="col-span-full text-xs text-slate-400">No history found for this month.</div>'; return; }
             container.innerHTML = Object.entries(stats).map(([type, data]) => {
                 const pct = data.scheduled > 0 ? Math.round((data.attended / data.scheduled) * 100) : 0;
-                return `
-                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                    <h4 class="text-xs font-bold text-slate-800 mb-2">${type}</h4>
-                    <div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-sbi-purple">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div>
-                    <div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-sbi-purple h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div>
-                </div>`;
+                return `<div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"><h4 class="text-xs font-bold text-slate-800 mb-2">${type}</h4><div class="flex justify-between text-[11px] font-bold mb-1.5"><span class="text-slate-500">Attended: <span class="text-sbi-purple">${data.attended}/${data.scheduled}</span></span><span class="text-slate-800">${pct}%</span></div><div class="w-full bg-slate-100 rounded-full h-1.5"><div class="bg-sbi-purple h-1.5 rounded-full transition-all" style="width: ${pct}%"></div></div></div>`;
             }).join('');
         }
 
-        // --- FRESH BIZ LIVE MONTHLY LOGIC ---
-        function renderFreshDashboard() {
+        // --- MTD LOGIC ---
+        function renderMtdDashboard() {
             if(!state.agentProfile.name) return;
-            const dateVal = document.getElementById('freshMonthPicker').value; // Format: YYYY-MM
+            const dateVal = document.getElementById('mtdMonthPicker').value; 
             if(!dateVal) return;
-            
             const [yStr, mStr] = dateVal.split('-');
-            const targetYear = parseInt(yStr);
-            const targetMonth = parseInt(mStr) - 1; // 0-indexed month
+            const targetYear = parseInt(yStr); const targetMonth = parseInt(mStr) - 1; 
 
             let fAmt = 0, fNop = 0;
             let productBreakdown = {}, siBreakdown = {};
@@ -694,51 +686,103 @@
                 }
             });
 
-            // Standard Placeholder Payout Logic (Editable)
-            let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; // Assuming 15% Base
-            let incentivePayout = fNop >= 5 ? (fAmt * 0.05) : 0; // Assuming 5% Incentive if >= 5 Policies
+            let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; 
+            let incentivePayout = fNop >= 5 ? (fAmt * 0.05) : 0; 
             let totalPayout = basePayout + incentivePayout;
 
-            // Render Cards
-            document.getElementById('fresh-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
-            document.getElementById('fresh-nop').innerText = fNop;
-            document.getElementById('fresh-ticket').innerText = `₹${fNop > 0 ? Math.round(fAmt/fNop).toLocaleString('en-IN') : 0}`;
-            
-            document.getElementById('fresh-payout-total').innerText = `₹${Math.round(totalPayout).toLocaleString('en-IN')}`;
-            document.getElementById('fresh-payout-base').innerText = `₹${Math.round(basePayout).toLocaleString('en-IN')}`;
-            document.getElementById('fresh-payout-inc').innerText = `₹${Math.round(incentivePayout).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
+            document.getElementById('mtd-nop').innerText = fNop;
+            document.getElementById('mtd-ticket').innerText = `₹${fNop > 0 ? Math.round(fAmt/fNop).toLocaleString('en-IN') : 0}`;
+            document.getElementById('mtd-payout-total').innerText = `₹${Math.round(totalPayout).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-payout-base').innerText = `₹${Math.round(basePayout).toLocaleString('en-IN')}`;
+            document.getElementById('mtd-payout-inc').innerText = `₹${Math.round(incentivePayout).toLocaleString('en-IN')}`;
 
-            // Render Breakdowns
             const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
-            document.getElementById('fresh-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
+            document.getElementById('mtd-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
             
             const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${siBreakdown[s].nop} Policies</div></div></div>`).join('');
-            document.getElementById('fresh-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
+            document.getElementById('mtd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
+        }
+
+        // --- YTD LOGIC ---
+        function renderYtdDashboard() {
+            const val = document.getElementById('ytd-year-select').value;
+            state.selectedYtdYear = val ? parseInt(val) : null;
+            if (!state.selectedYtdYear || !state.agentProfile.name) {
+                document.getElementById('ytd-empty-state').classList.remove('hidden'); document.getElementById('ytd-content').classList.add('hidden'); return;
+            }
+            document.getElementById('ytd-empty-state').classList.add('hidden'); document.getElementById('ytd-content').classList.remove('hidden');
+
+            let fAmt = 0, fNop = 0; let productBreakdown = {}, siBreakdown = {};
+
+            rawData.forEach(row => {
+                if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
+                const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
+                if (!d) return;
+
+                const m = d.getMonth(); const y = d.getFullYear();
+                const rowFY = m >= 3 ? y : y - 1;
+
+                if (rowFY === state.selectedYtdYear) {
+                    const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
+                    const premium = parseNumber(getColValue(row, COL_PREM_KEYS));
+
+                    let prem = 0, nop = 0;
+                    if (tx.isFresh) { nop = 1; prem = premium; } 
+                    else if (tx.isCancel) { nop = -1; prem = premium > 0 ? -Math.abs(premium) : premium; }
+                    else if (tx.isRefund) { prem = premium > 0 ? -Math.abs(premium) : premium; }
+                    else if (tx.isEndorsement) { prem = premium; }
+                    
+                    if (nop !== 0 || prem !== 0) {
+                        fNop += nop; fAmt += prem;
+                        let prod = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
+                        let si = getColValue(row, COL_SUM_INSURED_KEYS) || 'Unspecified';
+                        if(!productBreakdown[prod]) productBreakdown[prod] = { nop: 0, prem: 0 };
+                        productBreakdown[prod].nop += nop; productBreakdown[prod].prem += prem;
+                        if(!siBreakdown[si]) siBreakdown[si] = { nop: 0, prem: 0 };
+                        siBreakdown[si].nop += nop; siBreakdown[si].prem += prem;
+                    }
+                }
+            });
+
+            let basePayout = fAmt > 0 ? (fAmt * 0.15) : 0; 
+            let incentivePayout = fNop >= 60 ? (fAmt * 0.05) : 0; // Scaled assumed logic for FY
+            let totalPayout = basePayout + incentivePayout;
+
+            document.getElementById('ytd-gwp').innerText = `₹${fAmt.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
+            document.getElementById('ytd-nop').innerText = fNop;
+            document.getElementById('ytd-ticket').innerText = `₹${fNop > 0 ? Math.round(fAmt/fNop).toLocaleString('en-IN') : 0}`;
+            document.getElementById('ytd-payout-total').innerText = `₹${Math.round(totalPayout).toLocaleString('en-IN')}`;
+            document.getElementById('ytd-payout-base').innerText = `₹${Math.round(basePayout).toLocaleString('en-IN')}`;
+            document.getElementById('ytd-payout-inc').innerText = `₹${Math.round(incentivePayout).toLocaleString('en-IN')}`;
+
+            const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
+            document.getElementById('ytd-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
+            
+            const sList = Object.keys(siBreakdown).sort((a,b) => parseNumber(a) - parseNumber(b)).map(s => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 w-1/2">${formatSumInsured(s)}</span><div class="text-right"><div class="font-bold ${siBreakdown[s].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${siBreakdown[s].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${siBreakdown[s].nop} Policies</div></div></div>`).join('');
+            document.getElementById('ytd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
         // --- RENEWAL LOGIC ---
-        function populateRenewalYears() {
-            const yrSelect = document.getElementById('renewal-year-select');
+        function populateYears() {
             const years = [...new Set(rawData.map(row => {
                 const d = parseExcelDate(getColValue(row, COL_DATE_KEYS));
                 if (!d) return null;
                 return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
             }).filter(y => y !== null))].sort((a, b) => b - a);
-            yrSelect.innerHTML = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            
+            const opts = '<option value="">Select Year</option>' + years.map(y => `<option value="${y}">FY ${y}-${y+1}</option>`).join('');
+            document.getElementById('renewal-year-select').innerHTML = opts;
+            document.getElementById('ytd-year-select').innerHTML = opts;
         }
 
         function renderRenewalDashboard() {
             const val = document.getElementById('renewal-year-select').value;
             state.selectedRenewalYear = val ? parseInt(val) : null;
-            
             if (!state.selectedRenewalYear || !state.agentProfile.name) {
-                document.getElementById('renewal-empty-state').classList.remove('hidden');
-                document.getElementById('renewal-content').classList.add('hidden');
-                return;
+                document.getElementById('renewal-empty-state').classList.remove('hidden'); document.getElementById('renewal-content').classList.add('hidden'); return;
             }
-
-            document.getElementById('renewal-empty-state').classList.add('hidden');
-            document.getElementById('renewal-content').classList.remove('hidden');
+            document.getElementById('renewal-empty-state').classList.add('hidden'); document.getElementById('renewal-content').classList.remove('hidden');
 
             const fyData = Array.from({ length: 12 }, () => ({ baseNOP: 0, renRenewed: 0, renMissed: 0, yetToRenew: 0, isFuture: false }));
             let basePool = [], renPool = [], yr2BasePool = [], yr2RenPool = [];
@@ -748,25 +792,26 @@
                 if(toTitleCase(getColValue(row, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
 
                 const date = parseExcelDate(getColValue(row, COL_DATE_KEYS));
-                const endDate = parseExcelDate(getColValue(row, COL_END_DATE_KEYS));
                 if (!date) return;
-
-                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
                 
-                let expFY, expFyMonthIndex;
-                if (endDate) {
-                    expFY = endDate.getMonth() >= 3 ? endDate.getFullYear() : endDate.getFullYear() - 1; 
-                    expFyMonthIndex = endDate.getMonth() >= 3 ? endDate.getMonth() - 3 : endDate.getMonth() + 9;
-                } else {
-                    expFY = date.getMonth() >= 3 ? date.getFullYear() + 1 : date.getFullYear(); 
-                    expFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9;
-                }
+                const m = date.getMonth(); const y = date.getFullYear();
+                const startFY = m >= 3 ? y : y - 1; 
+                const startFyMonthIndex = m >= 3 ? m - 3 : m + 9;
                 
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
-                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel) basePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                if (rowFY === state.selectedRenewalYear && tx.isRenewal) renPool.push(row);
-                if (expFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push({...row, fyMonthIndex: expFyMonthIndex});
-                if (rowFY === state.selectedRenewalYear - 1 && tx.isRenewal) yr2RenPool.push(row);
+                
+                // Base: Policies started in the PREVIOUS FY
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel) {
+                    basePool.push({...row, fyMonthIndex: startFyMonthIndex});
+                }
+                // Renewals: Policies transacted in CURRENT FY as Renewal
+                if (startFY === state.selectedRenewalYear && tx.isRenewal) {
+                    renPool.push(row);
+                }
+
+                // 2nd Year Proxy Tracking
+                if (startFY === state.selectedRenewalYear - 2 && tx.isRetentionBase && !tx.isCancel) yr2BasePool.push(row);
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRenewal) yr2RenPool.push(row);
             });
 
             let totalBaseNOP = 0, totalRenewed = 0, totalMissed = 0, totalYet = 0;
@@ -777,10 +822,11 @@
                 d.isFuture = (cY > now.getFullYear()) || (cY === now.getFullYear() && cM > now.getMonth());
             });
 
-            let renUsage = renPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
+            let renUsage = renPool.map(r => ({ no: cleanNo(getColValue(r, COL_POLICY_KEYS)), prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)), alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)), used: false }));
+            
             basePool.forEach(b => {
                 fyData[b.fyMonthIndex].baseNOP += 1; totalBaseNOP += 1;
-                const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
+                const bNo = cleanNo(getColValue(b, COL_POLICY_KEYS));
                 let mIdx = renUsage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
                 
                 if (mIdx !== -1) { renUsage[mIdx].used = true; fyData[b.fyMonthIndex].renRenewed += 1; totalRenewed += 1; }
@@ -789,9 +835,9 @@
 
             retentionYr1Base = totalBaseNOP; retentionYr1Ren = totalRenewed;
             retentionYr2Base = yr2BasePool.length;
-            let yr2Usage = yr2RenPool.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().toLowerCase(), used: false }));
+            let yr2Usage = yr2RenPool.map(r => ({ no: cleanNo(getColValue(r, COL_POLICY_KEYS)), prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)), alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)), used: false }));
             yr2BasePool.forEach(b => {
-                const bNo = (getColValue(b, COL_POLICY_KEYS)||'').toString().toLowerCase();
+                const bNo = cleanNo(getColValue(b, COL_POLICY_KEYS));
                 let mIdx = yr2Usage.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
                 if (mIdx !== -1) { yr2Usage[mIdx].used = true; retentionYr2Ren += 1; }
             });
@@ -841,24 +887,22 @@
             rawData.forEach(r => {
                 if(toTitleCase(getColValue(r, COL_AGENT_KEYS)) !== state.agentProfile.name) return;
                 const date = parseExcelDate(getColValue(r, COL_DATE_KEYS));
-                const endDate = parseExcelDate(getColValue(r, COL_END_DATE_KEYS));
                 if(!date) return;
                 
-                const rowFY = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
-                let expFY, expFyMonthIndex;
-                if (endDate) { expFY = endDate.getMonth() >= 3 ? endDate.getFullYear() : endDate.getFullYear() - 1; expFyMonthIndex = endDate.getMonth() >= 3 ? endDate.getMonth() - 3 : endDate.getMonth() + 9; } 
-                else { expFY = date.getMonth() >= 3 ? date.getFullYear() + 1 : date.getFullYear(); expFyMonthIndex = date.getMonth() >= 3 ? date.getMonth() - 3 : date.getMonth() + 9; }
+                const m = date.getMonth(); const y = date.getFullYear();
+                const startFY = m >= 3 ? y : y - 1; 
+                const startFyMonthIndex = m >= 3 ? m - 3 : m + 9;
 
                 const tx = parseTransactionType(getColValue(r, COL_TRANSACTION_KEYS));
-                if (expFY === state.selectedRenewalYear && tx.isRetentionBase && !tx.isCancel && expFyMonthIndex === monthIndex) baseDue.push(r);
-                if (rowFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
+                if (startFY === state.selectedRenewalYear - 1 && tx.isRetentionBase && !tx.isCancel && startFyMonthIndex === monthIndex) baseDue.push(r);
+                if (startFY === state.selectedRenewalYear && tx.isRenewal) currentYearRenewals.push(r);
             });
 
-            let renPool = currentYearRenewals.map(r => ({ no: (getColValue(r, COL_POLICY_KEYS)||'').toString().trim().toLowerCase(), prev: (getColValue(r, COL_PREV_POLICY_KEYS)||'').toString().trim().toLowerCase(), alt: (getColValue(r, COL_ALT_POLICY_KEYS)||'').toString().trim().toLowerCase(), used: false }));
+            let renPool = currentYearRenewals.map(r => ({ no: cleanNo(getColValue(r, COL_POLICY_KEYS)), prev: cleanNo(getColValue(r, COL_PREV_POLICY_KEYS)), alt: cleanNo(getColValue(r, COL_ALT_POLICY_KEYS)), used: false }));
             const now = new Date(); now.setHours(0,0,0,0);
             
             let mappedPolicies = baseDue.map(p => {
-                const bNo = (getColValue(p, COL_POLICY_KEYS)||'').toString().trim().toLowerCase();
+                const bNo = cleanNo(getColValue(p, COL_POLICY_KEYS));
                 let matchIdx = renPool.findIndex(r => !r.used && bNo && (r.prev === bNo || r.alt === bNo || r.no === bNo));
                 let isRenewed = false; if (matchIdx !== -1) { renPool[matchIdx].used = true; isRenewed = true; }
                 
@@ -875,7 +919,7 @@
                 } else {
                     if (!ed) {
                         statusBadge = `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Unknown</span>`;
-                    } else if (ed.getTime() > now.getTime()) {
+                    } else if (ed.getTime() >= now.getTime()) {
                         statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Pending</span>`;
                     } else {
                         const diffDays = Math.floor((now.getTime() - ed.getTime()) / (1000 * 60 * 60 * 24));
