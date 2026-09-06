@@ -170,7 +170,7 @@
                     <button onclick="fetchAdminMeetings()" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-bold transition-colors">Refresh</button>
                 </div>
                 <div id="adminMasterList" class="space-y-3">
-                    <div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading meetings...</div>
+                    <div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">Loading meetings...</div>
                 </div>
             </div>
 
@@ -181,7 +181,7 @@
                     <button onclick="fetchLiveReport()" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-bold transition-colors">Refresh</button>
                 </div>
                 <div id="liveReportContainer" class="space-y-4">
-                    <div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>
+                    <div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>
                 </div>
             </div>
 
@@ -224,12 +224,12 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1">
-            <div class="p-4 md:p-6 xl:p-8 max-w-6xl mx-auto w-full">
+        <main class="flex-1 overflow-y-auto relative scroll-smooth w-full order-1 bg-sbi-bg">
+            <div class="p-4 md:p-6 lg:p-8 max-w-6xl mx-auto w-full">
                 
                 <!-- MODULE 1: ATTENDANCE -->
-                <div id="module-attendance" class="fade-in space-y-6">
-                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                <div id="module-attendance" class="fade-in space-y-4">
+                    <div class="flex justify-between items-end border-b border-slate-200 pb-3">
                         <div>
                             <h1 class="text-2xl font-black text-sbi-purple tracking-tight" id="greetText">Good Day</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1">Manage your daily sessions and check-ins.</p>
@@ -239,21 +239,21 @@
                             Refresh
                         </button>
                     </div>
-                    <div id="agentMeetingsContainer" class="space-y-4">
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
+                    <div id="agentMeetingsContainer" class="space-y-3">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">Checking Meetings...</div>
                     </div>
-                    <div class="pt-6">
-                        <div class="flex justify-between items-center mb-4">
+                    <div class="pt-4">
+                        <div class="flex justify-between items-center mb-3">
                             <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Attendance History</h3>
                             <input type="month" id="monthPicker" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-sbi-purple shadow-sm" onchange="loadAgentDashboard()">
                         </div>
-                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                     </div>
                 </div>
 
                 <!-- MODULE 2: MTD (FRESH BIZ) -->
-                <div id="module-mtd" class="hidden fade-in space-y-6">
-                    <div class="flex justify-between items-end border-b border-slate-200 pb-4">
+                <div id="module-mtd" class="hidden fade-in space-y-4">
+                    <div class="flex justify-between items-end border-b border-slate-200 pb-3">
                         <div>
                             <h1 class="text-2xl font-black text-sbi-purple tracking-tight">MTD Performance</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1">Live monthly dashboard.</p>
@@ -264,24 +264,24 @@
                         </div>
                     </div>
 
-                    <div id="mtd-content" class="space-y-6 slide-up">
-                        <!-- Row 1: Production Stats (Compact Mobile Grid) -->
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                    <div id="mtd-content" class="space-y-4 slide-up">
+                        <!-- Row 1: Production Stats (Strict 3-Column Grid) -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-4 shadow-lg text-white">
                                 <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Total Fresh Premium</div>
                                 <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
                             </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                                 <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Fresh NOP</div>
                                 <div class="text-2xl font-black text-sbi-purple tracking-tight" id="mtd-nop">0</div>
                             </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                                 <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
                                 <div class="text-2xl font-black text-slate-800 tracking-tight" id="mtd-ticket">₹0</div>
                             </div>
                         </div>
 
-                        <!-- Row 2: Earnings Stats (Compact Mobile Grid) -->
+                        <!-- Row 2: Earnings Stats (5 columns on desktop, 3 columns wrapping on medium) -->
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 relative">
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
                                 <div class="flex justify-between items-center mb-1">
@@ -311,21 +311,20 @@
                                 </div>
                                 <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-ren">₹0</div>
                             </div>
-                            <!-- Takes up 2 columns on mobile so it centers nicely -->
                             <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-green-50 rounded-2xl p-4 shadow-sm border border-green-200 flex flex-col justify-between">
                                 <div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Total Payout</div>
                                 <div class="text-xl font-black text-green-600 tracking-tight" id="mtd-payout-total">₹0</div>
                             </div>
                         </div>
                         
-                        <div class="flex flex-col items-end gap-1.5 mt-2">
+                        <div class="flex flex-col items-end gap-1.5 mt-1">
                             <span class="text-[9px] font-bold text-sbi-red bg-rose-50 px-3 py-1.5 rounded border border-rose-100 uppercase tracking-widest">* TDS IS APPLICABLE ON ALL PAYOUTS</span>
                             <span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded border border-slate-200 uppercase tracking-widest">Payouts realized between 10th - 25th of next month</span>
                         </div>
 
                         <!-- Policy Level Breakdown Table -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Policy Level Breakdown & Payouts</h2>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                            <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Policy Level Breakdown & Payouts</h2>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse text-xs">
                                     <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
@@ -348,22 +347,22 @@
                         </div>
 
                         <!-- Product & SI Mix -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
-                                <div id="mtd-product-list" class="space-y-3"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                                <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                                <div id="mtd-product-list" class="space-y-2"></div>
                             </div>
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
-                                <div id="mtd-si-list" class="space-y-3"></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                                <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                                <div id="mtd-si-list" class="space-y-2"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- MODULE 3: RENEWALS -->
-                <div id="module-renewal" class="hidden fade-in space-y-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                <div id="module-renewal" class="hidden fade-in space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-3 gap-3">
                         <div>
                             <h1 class="text-2xl font-black text-sbi-purple tracking-tight">Renewal Performance</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1">Track your base policies and retention rate.</p>
@@ -376,25 +375,25 @@
                         </div>
                     </div>
 
-                    <div id="renewal-content" class="hidden space-y-6 slide-up">
-                        <!-- Compact Mobile Grid applied in JS via id="renewal-summary-section" -->
-                        <div id="renewal-summary-section" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+                    <div id="renewal-content" class="hidden space-y-4 slide-up">
+                        <!-- Top Summary Grid -->
+                        <div id="renewal-summary-section" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
 
-                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
                             <div class="xl:col-span-2">
-                                <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                                <div id="renewal-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                             </div>
-                            <div class="xl:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[350px] xl:h-auto chart-container">
-                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Retention Trend</h2>
-                                <div class="relative flex-1 w-full min-h-[220px]">
+                            <div class="xl:col-span-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[300px] xl:h-auto chart-container">
+                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Retention Trend</h2>
+                                <div class="relative flex-1 w-full min-h-[200px]">
                                     <canvas id="renewalChart"></canvas>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-2">
-                            <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="persistency-stats"></div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                            <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Historical Retention Tracker</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="persistency-stats"></div>
                         </div>
                     </div>
 
@@ -408,8 +407,8 @@
                 </div>
 
                 <!-- MODULE 4: YTD DASHBOARD -->
-                <div id="module-ytd" class="hidden fade-in space-y-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
+                <div id="module-ytd" class="hidden fade-in space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-3 gap-3">
                         <div>
                             <h1 class="text-2xl font-black text-sbi-purple tracking-tight">YTD Performance</h1>
                             <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date volume and production summary.</p>
@@ -422,31 +421,31 @@
                         </div>
                     </div>
 
-                    <div id="ytd-content" class="hidden space-y-6 slide-up">
-                        <!-- Compact Mobile Grid -->
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                    <div id="ytd-content" class="hidden space-y-4 slide-up">
+                        <!-- Strict 3-Column Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-4 shadow-lg text-white">
                                 <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Total YTD Premium</div>
                                 <div class="text-3xl font-black tracking-tight" id="ytd-gwp">₹0</div>
                             </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                                 <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Policies</div>
                                 <div class="text-2xl font-black text-sbi-purple tracking-tight" id="ytd-nop">0</div>
                             </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                                 <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg Ticket Size</div>
                                 <div class="text-2xl font-black text-slate-800 tracking-tight" id="ytd-ticket">₹0</div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
-                                <div id="ytd-product-list" class="space-y-3"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                                <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Product Mix</h2>
+                                <div id="ytd-product-list" class="space-y-2"></div>
                             </div>
-                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                                <h2 class="text-xs font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
-                                <div id="ytd-si-list" class="space-y-3"></div>
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                                <h2 class="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">Sum Insured Mix</h2>
+                                <div id="ytd-si-list" class="space-y-2"></div>
                             </div>
                         </div>
                     </div>
@@ -553,6 +552,27 @@
             agentProfile: { imd: null, name: null },
             agentData: [] 
         };
+
+        // --- INACTIVITY LOGOUT LOGIC ---
+        let inactivityTimer;
+        const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            if (localStorage.getItem('agentIMD')) {
+                inactivityTimer = setTimeout(() => {
+                    showToast("Logged out due to 5 minutes of inactivity", "error");
+                    logout();
+                }, INACTIVITY_LIMIT);
+            }
+        }
+
+        // Attach listeners to reset timer on user activity
+        window.addEventListener('mousemove', resetInactivityTimer);
+        window.addEventListener('keydown', resetInactivityTimer);
+        window.addEventListener('click', resetInactivityTimer);
+        window.addEventListener('scroll', resetInactivityTimer);
+        window.addEventListener('touchstart', resetInactivityTimer);
 
         window.onload = () => {
             const now = new Date();
@@ -686,8 +706,11 @@
                     layout.classList.remove('hidden');
                     layout.classList.add('flex');
                 }
+                
+                resetInactivityTimer(); // Start security timer
                 switchModule(state.mainModule || 'attendance');
             } else {
+                clearTimeout(inactivityTimer); // Clear security timer
                 document.getElementById('login-screen').classList.remove('hidden');
                 const layout = document.getElementById('portal-layout');
                 if(layout) {
@@ -793,7 +816,7 @@
         function renderAdminMeetings(meetings) {
             let html = '';
             if(!meetings || meetings.length === 0) { 
-                html = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">No meetings opened today.</div>'; 
+                html = '<div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">No meetings opened today.</div>'; 
             } else {
                 meetings.forEach(m => {
                     let isOpen = m.status === 'Open';
@@ -820,7 +843,7 @@
         }
 
         function fetchAdminMeetings() {
-            document.getElementById('adminMasterList').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading...</div>';
+            document.getElementById('adminMasterList').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">Loading...</div>';
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAdminDashboard', payload: {} }) })
             .then(r => r.json())
             .then(meetings => renderAdminMeetings(meetings))
@@ -851,7 +874,7 @@
         function buildMultiMeetingReports(meetingsData, containerId) {
             const container = document.getElementById(containerId);
             if(!meetingsData || meetingsData.length === 0) {
-                container.innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-white rounded-xl border border-slate-200 shadow-sm">No meeting data available for this date.</div>'; return;
+                container.innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-4 bg-white rounded-xl border border-slate-200 shadow-sm">No meeting data available for this date.</div>'; return;
             }
             
             let html = '';
@@ -911,7 +934,7 @@
         }
 
         function fetchLiveReport() {
-            document.getElementById('liveReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>';
+            document.getElementById('liveReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">Loading live reports...</div>';
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getLiveManagerReport', payload: {} }) })
             .then(r => r.json())
             .then(data => buildMultiMeetingReports(data, 'liveReportContainer'))
@@ -921,7 +944,7 @@
         function fetchHistoryReport() {
             const date = document.getElementById('historyDate').value;
             if(!date) return showToast("Select a date", "error");
-            document.getElementById('historyReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-6 bg-slate-50 rounded-xl border border-slate-200">Fetching reports...</div>';
+            document.getElementById('historyReportContainer').innerHTML = '<div class="text-slate-400 text-sm font-medium text-center p-4 bg-slate-50 rounded-xl border border-slate-200">Fetching reports...</div>';
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getHistoricalReport', payload: {date: date} }) })
             .then(r => r.json())
             .then(data => buildMultiMeetingReports(data, 'historyReportContainer'))
@@ -1019,7 +1042,7 @@
         async function loadAgentDashboard() {
             agentCountdownIntervals.forEach(clearInterval); agentCountdownIntervals = [];
             const container = document.getElementById('agentMeetingsContainer');
-            container.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
+            container.innerHTML = `<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium flex items-center justify-center gap-3"><div class="spinner !border-slate-300 !border-t-sbi-purple !block"></div> Fetching active sessions...</div>`;
             const month = document.getElementById('monthPicker').value;
             try {
                 const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getAgentDashboard', payload: {imd: state.agentProfile.imd, month: month} }) });
@@ -1027,23 +1050,23 @@
                 if(data.error) throw new Error(data.message);
                 renderAgentMeetings(data.todayMeetings, data.todayAttendances);
                 renderAttendanceStats(data.stats);
-            } catch(e) { container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`; }
+            } catch(e) { container.innerHTML = `<div class="bg-rose-50 p-5 rounded-2xl border border-rose-200 shadow-sm text-center text-sbi-red text-sm font-bold">Failed to load attendance data.</div>`; }
         }
         function format12Hour(isoString) { return !isoString ? "--:--" : new Date(isoString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
         function renderAgentMeetings(meetings, attendances) {
             const container = document.getElementById('agentMeetingsContainer');
-            if (!meetings || meetings.length === 0) { container.innerHTML = '<div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>'; return; }
+            if (!meetings || meetings.length === 0) { container.innerHTML = '<div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-500 text-sm font-medium">No Sessions Scheduled Today</div>'; return; }
             container.innerHTML = meetings.map((m, index) => {
                 let att = attendances[m.id]; 
-                let html = `<div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">`;
+                let html = `<div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">`;
                 if (m.status === 'Open' && !att) {
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span></div><div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-4"><div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div><div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div></div><button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>`;
+                    html += `<div class="flex justify-between items-start mb-2"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Open</span></div><div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center mb-3"><div class="text-[10px] font-bold text-sbi-red uppercase tracking-wider mb-1">Time to Check-In</div><div class="text-3xl font-black text-sbi-red tracking-tight" id="timer_${index}">15:00</div></div><button class="w-full bg-sbi-purple hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckIn', '${m.id}', this)"><span>Check In Now</span><div class="spinner"></div></button>`;
                     startAgentTimer(index, m.expiryTime);
                 } else if (att && !att.checkOut) {
                     let isOpen = m.status === 'Open';
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-4"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div></div><button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>`;
+                    html += `<div class="flex justify-between items-start mb-2"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="${isOpen ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-sbi-red'} px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">${isOpen ? 'Checked In' : 'Pending Check-Out'}</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center mb-3"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Checked In At</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div></div><button class="w-full bg-sbi-red hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all btn shadow-md" onclick="agentAction('markCheckOut', '${m.id}', this)"><span>Complete Check Out</span><div class="spinner"></div></button>`;
                 } else if (att && att.checkOut) {
-                    html += `<div class="flex justify-between items-start mb-3"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div></div>`;
+                    html += `<div class="flex justify-between items-start mb-2"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-purple-50 border border-purple-100 text-sbi-purple px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Attendance Marked</span></div><div class="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center"><div><div class="text-[10px] font-bold text-slate-500 uppercase">Check In</div><div class="font-bold text-slate-800">${format12Hour(att.checkIn)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-slate-500 uppercase">Check Out</div><div class="font-bold text-slate-800">${format12Hour(att.checkOut)}</div></div></div>`;
                 } else { html += `<div class="flex justify-between items-center"><h3 class="text-base font-bold text-slate-900">${m.type}</h3><span class="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Session Closed</span></div>`; }
                 return html + `</div>`;
             }).join('');
@@ -1071,7 +1094,7 @@
             }).join('');
         }
 
-        // --- MTD LOGIC (CLIFF INTEGRATED + SI SPECIFIC PRODUCTS) ---
+        // --- MTD LOGIC ---
         function renderMtdDashboard() {
             if(!state.agentProfile.imd) return;
             const dateVal = document.getElementById('mtdMonthPicker').value; 
@@ -1087,7 +1110,6 @@
                 }
             });
 
-            // PASS 1: Calculate Total MTD Fresh Premium to determine the Slab
             let totalFreshPremium = 0; 
             let totalFreshNop = 0;
             let productBreakdown = {}, siBreakdown = {};
@@ -1135,7 +1157,6 @@
             else if (totalFreshPremium >= 30001) slabIncentivePercent = 0.05;   
             else slabIncentivePercent = 0;                                      
 
-            // PASS 2: Calculate individual policy payouts & build UI
             let totalEarnedFreshBase = 0;
             let totalEarnedFreshIncentive = 0;
             let totalEarnedSIExtra = 0;
@@ -1159,8 +1180,7 @@
                 const formattedSi = formatSumInsured(getColValue(row, COL_SUM_INSURED_KEYS));
                 const prodName = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
                 
-                // --- SI SPECIFIC LOGIC ---
-                // "Health Alpha will be Mentioned as DIY Health Insurance in Data"
+                // Specific SI Target logic for DIY Health & Others
                 const isEligibleProduct = ["arogya supreme", "super health", "diy health", "sanjeevani"].some(p => prodName.toLowerCase().includes(p));
                 
                 let earnedTotal = 0;
@@ -1185,7 +1205,7 @@
 
                     calcStr = `15%`;
                     if (slabIncentivePercent > 0) calcStr += ` + ${(slabIncentivePercent * 100).toFixed(1)}%`;
-                    if (siKickerPercent > 0) calcStr += ` + 2% (SI Extra)`;
+                    if (siKickerPercent > 0) calcStr += ` + 2% (SI)`;
                 } else if (tx.isRenewal && premium > 0) {
                     totalPolicyPercent = 0.15; 
                     earnedTotal = premium * totalPolicyPercent;
@@ -1230,7 +1250,7 @@
             document.getElementById('mtd-payout-ren').innerText = `₹${Math.round(totalEarnedRenewal).toLocaleString('en-IN')}`;
             document.getElementById('mtd-payout-total').innerText = `₹${Math.round(finalTotalPayout).toLocaleString('en-IN')}`;
 
-            document.getElementById('mtd-policy-table-body').innerHTML = policyRowsHtml || `<tr><td colspan="8" class="p-5 text-center text-slate-400">No paid policies found for this month.</td></tr>`;
+            document.getElementById('mtd-policy-table-body').innerHTML = policyRowsHtml || `<tr><td colspan="8" class="p-4 text-center text-slate-400">No paid policies found for this month.</td></tr>`;
             
             const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
             document.getElementById('mtd-product-list').innerHTML = pList || '<div class="text-xs text-slate-400">No records found.</div>';
@@ -1239,7 +1259,7 @@
             document.getElementById('mtd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- YTD LOGIC (NO PAYOUTS, PURE PRODUCTION) ---
+        // --- YTD LOGIC ---
         function renderYtdDashboard() {
             const val = document.getElementById('ytd-year-select').value;
             state.selectedYtdYear = val ? parseInt(val) : null;
@@ -1403,11 +1423,13 @@
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-[10px] font-bold text-slate-400 uppercase mb-1">2nd Yr Retention (25M Proxy)</div><div class="text-2xl font-black text-slate-800">${retentionYr2Base > 0 ? Math.round((retentionYr2Ren/retentionYr2Base)*100) : 0}%</div><div class="text-[10px] text-slate-500 font-medium mt-2">Base: ${retentionYr2Base} | <span class="text-green-600 font-bold">Renewed: ${retentionYr2Ren}</span></div></div>`;
             
             const rt = totalBaseNOP > 0 ? Math.round((totalRenewed / totalBaseNOP) * 100) : 0;
+            
+            // Render 4-Column Grid for Renewal Top Cards
             document.getElementById('renewal-summary-section').innerHTML = `
-                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${totalBaseNOP}</div></div>
-                <div class="bg-green-50 rounded-2xl p-5 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${totalRenewed}</div></div>
-                <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${totalMissed}</div></div>
-                <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${totalYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${totalBaseNOP}</div></div>
+                <div class="bg-green-50 rounded-2xl p-4 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${totalRenewed}</div></div>
+                <div class="bg-rose-50 rounded-2xl p-4 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${totalMissed}</div></div>
+                <div class="bg-sbi-purple rounded-2xl p-4 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${totalYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2 py-0.5 rounded">Rt: ${rt}%</div></div></div>
             `;
 
             document.getElementById('renewal-grid').innerHTML = fyData.map((d, i) => {
@@ -1509,7 +1531,7 @@
                 return { ...p, _statusBadge: statusBadge };
             });
 
-            if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-xs text-slate-500">No records found.</td></tr>`;
+            if (mappedPolicies.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-xs text-slate-500">No records found.</td></tr>`;
             else tbody.innerHTML = mappedPolicies.map(p => {
                 const lyPrem = parseNumber(getColValue(p, COL_PREM_KEYS));
                 const sumInsured = formatSumInsured(getColValue(p, COL_SUM_INSURED_KEYS));
