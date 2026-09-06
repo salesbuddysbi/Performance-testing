@@ -265,9 +265,9 @@
                     </div>
 
                     <div id="mtd-content" class="space-y-6 slide-up">
-                        <!-- Row 1: Production Stats -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                        <!-- Row 1: Production Stats (Compact Mobile Grid) -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
                                 <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Total Fresh Premium</div>
                                 <div class="text-3xl font-black tracking-tight" id="mtd-gwp">₹0</div>
                             </div>
@@ -281,8 +281,8 @@
                             </div>
                         </div>
 
-                        <!-- Row 2: Earnings Stats -->
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 relative">
+                        <!-- Row 2: Earnings Stats (Compact Mobile Grid) -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 relative">
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
                                 <div class="flex justify-between items-center mb-1">
                                     <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fresh Base Payout</div>
@@ -311,7 +311,8 @@
                                 </div>
                                 <div class="text-xl font-black text-slate-800 tracking-tight" id="mtd-payout-ren">₹0</div>
                             </div>
-                            <div class="bg-green-50 rounded-2xl p-4 shadow-sm border border-green-200 flex flex-col justify-between">
+                            <!-- Takes up 2 columns on mobile so it centers nicely -->
+                            <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-green-50 rounded-2xl p-4 shadow-sm border border-green-200 flex flex-col justify-between">
                                 <div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Total Payout</div>
                                 <div class="text-xl font-black text-green-600 tracking-tight" id="mtd-payout-total">₹0</div>
                             </div>
@@ -376,7 +377,8 @@
                     </div>
 
                     <div id="renewal-content" class="hidden space-y-6 slide-up">
-                        <div id="renewal-summary-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                        <!-- Compact Mobile Grid applied in JS via id="renewal-summary-section" -->
+                        <div id="renewal-summary-section" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
                         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                             <div class="xl:col-span-2">
@@ -410,7 +412,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4">
                         <div>
                             <h1 class="text-2xl font-black text-sbi-purple tracking-tight">YTD Performance</h1>
-                            <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date summary dashboard.</p>
+                            <p class="text-slate-500 text-xs font-medium mt-1">Year-to-date volume and production summary.</p>
                         </div>
                         <div class="w-full md:w-auto flex items-center gap-3">
                             <span class="text-[10px] font-bold text-slate-400 uppercase">Financial Year:</span>
@@ -421,13 +423,14 @@
                     </div>
 
                     <div id="ytd-content" class="hidden space-y-6 slide-up">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
-                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Premium</div>
+                        <!-- Compact Mobile Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-sbi-purple to-sbi-red rounded-2xl p-5 shadow-lg text-white">
+                                <div class="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Total YTD Premium</div>
                                 <div class="text-3xl font-black tracking-tight" id="ytd-gwp">₹0</div>
                             </div>
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">YTD Policies</div>
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Policies</div>
                                 <div class="text-2xl font-black text-sbi-purple tracking-tight" id="ytd-nop">0</div>
                             </div>
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -1068,7 +1071,7 @@
             }).join('');
         }
 
-        // --- MTD LOGIC (UPDATED WITH SPECIFIC SI PRODUCT LOGIC) ---
+        // --- MTD LOGIC (CLIFF INTEGRATED + SI SPECIFIC PRODUCTS) ---
         function renderMtdDashboard() {
             if(!state.agentProfile.imd) return;
             const dateVal = document.getElementById('mtdMonthPicker').value; 
@@ -1085,7 +1088,7 @@
             });
 
             // PASS 1: Calculate Total MTD Fresh Premium to determine the Slab
-            let totalFreshPremium = 0; // Net Premium (Fresh minus cancellations)
+            let totalFreshPremium = 0; 
             let totalFreshNop = 0;
             let productBreakdown = {}, siBreakdown = {};
 
@@ -1103,7 +1106,6 @@
                 } else if (tx.isCancel || tx.isRefund) {
                     nop = -1;
                     prem = premium > 0 ? -Math.abs(premium) : premium;
-                    // Deduct cancellations from MTD slab targets!
                     totalFreshPremium += prem; 
                     totalFreshNop += nop;
                 } else if (tx.isRenewal) {
@@ -1124,7 +1126,6 @@
                 }
             });
 
-            // EXACT CLIFF LOGIC INTEGRATION
             let slabIncentivePercent = 0;
             if (totalFreshPremium >= 300001) slabIncentivePercent = 0.20;       
             else if (totalFreshPremium >= 200001) slabIncentivePercent = 0.15;  
@@ -1145,13 +1146,12 @@
                 const tx = parseTransactionType(getColValue(row, COL_TRANSACTION_KEYS));
                 const rawPremium = parseNumber(getColValue(row, COL_PREM_KEYS));
                 
-                // Adjust premium correctly if it's a cancellation or refund
                 let premium = rawPremium;
                 if (tx.isCancel || tx.isRefund) {
                     premium = rawPremium > 0 ? -Math.abs(rawPremium) : rawPremium;
                 }
 
-                if (premium === 0) return; // Skip mathematically empty rows
+                if (premium === 0) return;
 
                 const policyNo = getColValue(row, COL_POLICY_KEYS) || 'N/A';
                 const customer = toTitleCase(getColValue(row, COL_INSURED_KEYS)) || 'Unknown';
@@ -1159,8 +1159,9 @@
                 const formattedSi = formatSumInsured(getColValue(row, COL_SUM_INSURED_KEYS));
                 const prodName = getColValue(row, COL_PRODUCT_KEYS) || 'Unspecified';
                 
-                // Determine if product is eligible for SI Kicker
-                const isEligibleProduct = ["arogya supreme", "super health", "health alpha", "sanjeevani"].some(p => prodName.toLowerCase().includes(p));
+                // --- SI SPECIFIC LOGIC ---
+                // "Health Alpha will be Mentioned as DIY Health Insurance in Data"
+                const isEligibleProduct = ["arogya supreme", "super health", "diy health", "sanjeevani"].some(p => prodName.toLowerCase().includes(p));
                 
                 let earnedTotal = 0;
                 let totalPolicyPercent = 0;
@@ -1191,15 +1192,12 @@
                     totalEarnedRenewal += earnedTotal;
                     calcStr = `15% Base`;
                 } else if (tx.isCancel || tx.isRefund) {
-                    // CLAWBACK CALCULATION
-                    totalPolicyPercent = 0.15; // Standard base clawback
-                    earnedTotal = premium * totalPolicyPercent; // Creates negative earned amount
-                    
-                    // Deduct from the base bucket
+                    totalPolicyPercent = 0.15;
+                    earnedTotal = premium * totalPolicyPercent;
                     totalEarnedFreshBase += earnedTotal; 
                     calcStr = `15% Clawback`;
                 } else {
-                    calcStr = `0%`; // Standard endorsements etc
+                    calcStr = `0%`;
                 }
 
                 const typeLabel = tx.isFresh ? 'Fresh' : (tx.isRenewal ? 'Renewal' : (tx.isCancel ? 'Cancel' : (tx.isRefund ? 'Refund' : 'Endorsement')));
@@ -1221,12 +1219,10 @@
             const averageTicketSize = totalFreshNop > 0 ? Math.round(totalFreshPremium / totalFreshNop) : 0;
             const finalTotalPayout = totalEarnedFreshBase + totalEarnedFreshIncentive + totalEarnedSIExtra + totalEarnedRenewal;
 
-            // Row 1 Updates
             document.getElementById('mtd-gwp').innerText = `₹${totalFreshPremium.toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
             document.getElementById('mtd-nop').innerText = totalFreshNop;
             document.getElementById('mtd-ticket').innerText = `₹${averageTicketSize.toLocaleString('en-IN')}`;
 
-            // Row 2 Updates
             document.getElementById('mtd-payout-base').innerText = `₹${Math.round(totalEarnedFreshBase).toLocaleString('en-IN')}`;
             document.getElementById('mtd-slab-percent').innerText = `+${(slabIncentivePercent * 100).toFixed(1)}%`;
             document.getElementById('mtd-payout-inc').innerText = `₹${Math.round(totalEarnedFreshIncentive).toLocaleString('en-IN')}`;
@@ -1234,7 +1230,6 @@
             document.getElementById('mtd-payout-ren').innerText = `₹${Math.round(totalEarnedRenewal).toLocaleString('en-IN')}`;
             document.getElementById('mtd-payout-total').innerText = `₹${Math.round(finalTotalPayout).toLocaleString('en-IN')}`;
 
-            // Lists Updates
             document.getElementById('mtd-policy-table-body').innerHTML = policyRowsHtml || `<tr><td colspan="8" class="p-5 text-center text-slate-400">No paid policies found for this month.</td></tr>`;
             
             const pList = Object.keys(productBreakdown).sort((a,b) => productBreakdown[b].prem - productBreakdown[a].prem).map(p => `<div class="flex justify-between items-center text-xs pb-3 border-b border-slate-50 last:border-0"><span class="font-medium text-slate-700 truncate w-1/2">${p}</span><div class="text-right"><div class="font-bold ${productBreakdown[p].prem < 0 ? 'text-sbi-red' : 'text-slate-800'}">₹${productBreakdown[p].prem.toLocaleString('en-IN', {maximumFractionDigits:0})}</div><div class="text-[9px] text-sbi-purple font-bold">${productBreakdown[p].nop} Policies</div></div></div>`).join('');
@@ -1244,7 +1239,7 @@
             document.getElementById('mtd-si-list').innerHTML = sList || '<div class="text-xs text-slate-400">No records found.</div>';
         }
 
-        // --- YTD LOGIC (UPDATED TO REMOVE PAYOUTS) ---
+        // --- YTD LOGIC (NO PAYOUTS, PURE PRODUCTION) ---
         function renderYtdDashboard() {
             const val = document.getElementById('ytd-year-select').value;
             state.selectedYtdYear = val ? parseInt(val) : null;
@@ -1412,7 +1407,7 @@
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"><div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Policies</div><div class="text-2xl font-black text-slate-800 tracking-tight">${totalBaseNOP}</div></div>
                 <div class="bg-green-50 rounded-2xl p-5 shadow-sm border border-green-200"><div class="text-green-700 text-[10px] font-bold uppercase tracking-widest mb-1">Renewed</div><div class="text-2xl font-black text-green-600 tracking-tight">${totalRenewed}</div></div>
                 <div class="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200"><div class="text-sbi-red text-[10px] font-bold uppercase tracking-widest mb-1">Missed</div><div class="text-2xl font-black text-sbi-red tracking-tight">${totalMissed}</div></div>
-                <div class="bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${totalYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
+                <div class="col-span-2 md:col-span-1 lg:col-span-1 bg-sbi-purple rounded-2xl p-5 shadow-lg text-white"><div class="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Pending</div><div class="flex items-end justify-between"><div class="text-2xl font-black text-amber-400 tracking-tight">${totalYet}</div><div class="text-[10px] font-bold text-white bg-white/20 px-2.5 py-1 rounded-lg">Rt: ${rt}%</div></div></div>
             `;
 
             document.getElementById('renewal-grid').innerHTML = fyData.map((d, i) => {
